@@ -5,7 +5,7 @@
 **Ogólnie:** stoją szkielet (0001), baza (0002) i serwer (0003): logowanie z
 AD daje JWT z rolami, każdy endpoint ma politykę, sekrety mają koperty
 AES-256-GCM przywiązane do karty i wydania, a serwer nie wystartuje bez TLS
-ani przy rozjeździe migracji — 136 testów jednostkowych i 84 na PostgreSQL 16.
+ani przy rozjeździe migracji — 164 testy jednostkowe i 84 na PostgreSQL 16.
 Nie ma jeszcze logiki wydania ani kontaktu z prawdziwym AD
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
@@ -105,6 +105,25 @@ językowe naprawdę się zbudowały i żeby w XAML nie było tekstu dla człowie
 To jedyny patch w stanie `done`: cała jego definicja ukończenia jest
 sprawdzana maszynowo, a CI robi to niezależnie ode mnie.
 
+Od 0005 (19 września 2026) sekrety są poza konfiguracją: `ISecretStore`
+czyta je z pliku (`Secrets:Files`, potem `Secrets:Directory` — najpierw
+`.dpapi`, potem zwykły) albo ze zmiennej `BLINKYLITE_SECRET_<NAZWA>`.
+Connection string w konfiguracji nie ma hasła; serwer dokleja je w pamięci.
+`--protect-secret <nazwa>` zapisuje plik DPAPI w zakresie maszyny. Sprawdzone:
+
+- 164 testy jednostkowe: sekret wpisany w `appsettings.json` (klucz JWT, hasło
+  LDAP, KEK, hasło w connection stringu) zatrzymuje start i podaje **nazwę
+  klucza, nie wartość**; w deweloperce ta sama konfiguracja przechodzi; plik
+  wygrywa ze zmienną; brak sekretu mówi, gdzie szukano; round trip DPAPI;
+- serwer naprawdę: w trybie Production z sekretem w konfiguracji kończy się
+  kodem 2 i wymienia oba znalezione klucze; z kluczem JWT w pliku DPAPI,
+  KEK-iem i hasłem bazy w plikach startuje, loguje `schema ok` i odpowiada na
+  `/health`, a w pliku `.dpapi` nie widać wartości.
+
+Stan `partly-done`: ostrzeżenie o zbyt szerokich prawach pliku działa na
+Linuksie (prawa POSIX), a na Windows ACL ustawia i sprawdza instalator —
+projekt serwera jest wieloplatformowy i nie ma w nim API do ACL (0051).
+
 Nie istnieje: logika wydania, warstwa PIV, kontakt z prawdziwym AD i CA.
 
 ## Stany
@@ -127,7 +146,7 @@ Nie istnieje: logika wydania, warstwa PIV, kontakt z prawdziwym AD i CA.
 | 0002 | 0 | Baza danych (NHibernate + procedury `bl_*`) | `done-unverified` |
 | 0003 | 0 | Serwer | `done-unverified` |
 | 0004 | 0 | Języki EN / DE / SV / PL | `done` |
-| 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `open` |
+| 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `partly-done` |
 | 0010 | 1 | Import `Blinky.Piv` | `open` |
 | 0011 | 1 | Personalizacja i klucz | `open` |
 | 0020 | 2 | API wydań | `open` |

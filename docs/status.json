@@ -41,7 +41,7 @@
     "phase": 0,
     "phaseTitle": "Fundament",
     "state": "open",
-    "summary": "Szkielet (0001), baza (0002) i serwer (0003) stoją, wszystkie done-unverified: logowanie AD -> JWT z rolami, polityka na każdym endpoincie, koperty AES-256-GCM przywiązane do karty i wydania, brak startu bez TLS. 136 testów jednostkowych, 84 na PostgreSQL 16. CI na GitHub zielone. Logiki wydania i kontaktu z AD jeszcze nie ma.",
+    "summary": "Szkielet (0001), baza (0002) i serwer (0003) stoją, wszystkie done-unverified: logowanie AD -> JWT z rolami, polityka na każdym endpoincie, koperty AES-256-GCM przywiązane do karty i wydania, brak startu bez TLS. 164 testy jednostkowe, 84 na PostgreSQL 16. CI na GitHub zielone. Logiki wydania i kontaktu z AD jeszcze nie ma.",
     "nothingIssuedYet": true
   },
   "stateLegend": {
@@ -462,9 +462,10 @@
       "id": "0005",
       "phase": 0,
       "title": "Sekrety poza konfiguracją (DPAPI / Docker secrets)",
-      "state": "open",
+      "state": "partly-done",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-19: ISecretStore (plik z Secrets:Files, potem Secrets:Directory - najpierw .dpapi, potem zwykly; na koncu BLINKYLITE_SECRET_<NAZWA>), haslo bazy doklejane do connection stringa w pamieci, --protect-secret pisze plik DPAPI w zakresie maszyny. 164 testy jednostkowe: sekret w appsettings.json zatrzymuje start i podaje nazwe klucza, nie wartosc; w deweloperce przechodzi; plik wygrywa ze zmienna; brak sekretu mowi gdzie szukano; round trip DPAPI. Serwer naprawde: Production + sekret w konfiguracji -> kod 2 z lista kluczy; klucz JWT z pliku DPAPI, KEK i haslo bazy z plikow -> start, schema ok, /health, a w pliku .dpapi nie widac wartosci.",
+      "gap": "Ostrzezenie o zbyt szerokich prawach pliku dziala na Linuksie (prawa POSIX); na Windows ACL ustawia i sprawdza instalator (0051), bo projekt serwera jest wieloplatformowy i nie ma w nim API do ACL."
     },
     {
       "id": "0010",

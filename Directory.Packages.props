@@ -13,6 +13,9 @@
     <PackageVersion Include="NHibernate" Version="5.7.0" />
     <PackageVersion Include="FluentNHibernate" Version="3.5.0" />
     <PackageVersion Include="Npgsql" Version="10.0.3" />
+    <!-- Windows-only API, guarded by OperatingSystem.IsWindows: the secret
+         file of a Windows installation is protected with the machine key. -->
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" />
     <!-- The whole Serilog family moves together: Serilog.AspNetCore 10 pins
          Extensions.Hosting and Settings.Configuration 10, and transitive
          pinning turns a mismatch into a downgrade error. -->

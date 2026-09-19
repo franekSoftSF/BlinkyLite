@@ -1,6 +1,7 @@
 using System.Reflection;
 using BlinkyLite.Server.Api;
 using BlinkyLite.Server.Data;
+using BlinkyLite.Server.Secrets;
 using BlinkyLite.Server.Startup;
 using Npgsql;
 using Serilog;
@@ -22,6 +23,40 @@ if (args.Contains("--migrate", StringComparer.Ordinal))
     return await MigrateAsync(builder.Configuration);
 }
 
+if (Array.IndexOf(args, "--protect-secret") is var flag and >= 0)
+{
+    if (flag + 1 >= args.Length)
+    {
+        Console.Error.WriteLine("--protect-secret needs a name, e.g. jwt-signing-key. The value is read from standard input.");
+        return ServerSetup.ExitConfiguration;
+    }
+
+    // Honours Secrets:Directory, so that the file lands where the server
+    // will look for it rather than in the default location.
+    return ServerSecrets.Protect(
+        args[flag + 1],
+        Console.In.ReadToEnd().Trim(),
+        builder.Configuration.GetSection(SecretOptions.Section)["Directory"]);
+}
+
+// Secrets come from files or environment variables, never from the
+// configuration itself (D-18). Laid on top, so everything downstream reads
+// them the usual way.
+var relaxedConfiguration = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing");
+using (var loggers = LoggerFactory.Create(logging => logging.AddSimpleConsole()))
+{
+    try
+    {
+        var store = ServerSecrets.Store(builder.Configuration, loggers);
+        builder.Configuration.AddInMemoryCollection(ServerSecrets.Resolve(builder.Configuration, store, relaxedConfiguration));
+    }
+    catch (SecretConfigurationException e)
+    {
+        loggers.CreateLogger("BlinkyLite").LogCritical("{Reason} The server will not start.", e.Message);
+        return ServerSetup.ExitConfiguration;
+    }
+}
+
 builder.Services.AddBlinkyLiteProblems();
 builder.Services.AddBlinkyLiteAuth(builder.Configuration);
 
@@ -32,7 +67,7 @@ if (!string.IsNullOrWhiteSpace(appConnectionString))
 }
 
 var app = builder.Build();
-var relaxed = app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing");
+var relaxed = relaxedConfiguration;
 
 if (!relaxed && !ServerSetup.HasHttpsEndpoint(app.Configuration))
 {

@@ -58,6 +58,7 @@ docker run -d --rm --name blinkylite-test-pg -e POSTGRES_PASSWORD=test -p 55432:
 BLINKYLITE_TEST_DB="Host=localhost;Port=55432;Username=postgres;Password=test" dotnet test tests/BlinkyLite.DbTests
 psql -d blinkylite -f db/init/00_roles.sql                # raz, superużytkownik; potem ALTER ROLE ... PASSWORD
 ConnectionStrings__Owner="..." dotnet run --project src/BlinkyLite.Server -- --migrate   # tylko blinkylite_owner
+echo "<wartosc>" | BlinkyLite.Server.exe --protect-secret jwt-signing-key      # Windows: plik DPAPI w Secrets:Directory
 dotnet publish src/BlinkyLite.Client -c Release -r win-x64
 dotnet publish src/BlinkyLite.Client -c Release -r win-arm64
 docker compose up -d --build       # serwer + postgres
