@@ -69,6 +69,12 @@ Jedna karta ma w danej chwili co najwyżej jedną kopertę `Active`. Nowe
 wydanie na znanej karcie przechodzi starą w `Retired` dopiero po
 `/customised` nowej — wcześniej karta wciąż ma stary MK.
 
+### `expiry_notifications` — wysłane powiadomienia (0060, po 1.0)
+
+`issuance_id` FK, `threshold_days` (`smallint`), `recipient` (`text`),
+`sent_at`; klucz unikalny `(issuance_id, threshold_days)` — ten sam próg nie
+wychodzi dwa razy, nawet po restarcie serwera w trakcie wysyłki.
+
 ### Profile i role — nie w bazie
 
 Profile wydania i mapowanie grup AD na role są w `appsettings.json` serwera

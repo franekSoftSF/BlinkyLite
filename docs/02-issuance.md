@@ -137,13 +137,16 @@ Cztery widoki:
 2. **Wydanie** (Admin, SecurityOfficer) — wybór użytkownika, profil, karta,
    postęp krok po kroku, okno PIN dla użytkownika (duże, `Topmost`, pole
    `PasswordBox`, reguły PIN na żywo), wynik.
-3. **Weryfikacja** (wszystkie role) — karta w czytniku: serial, certyfikat i
-   atestacja z 9A porównane z zapisem w bazie; komu, kiedy i przez kogo
-   wydana. Tylko odczyt — żadnego zapisu na kartę.
-4. **Przeglądarka** (wszystkie role) — wyszukiwanie po użytkowniku, numerze
-   seryjnym klucza, numerze certyfikatu, operatorze, dacie; szczegóły wydania
-   z atestacją; przycisk „Pokaż PUK” (pyta o powód), „Pokaż management key”
-   tylko dla Admina; zakładka „Audyt” tylko dla Admina.
+3. **Weryfikacja** (Admin, SecurityOfficer) — karta w czytniku: serial,
+   certyfikat i atestacja z 9A porównane z zapisem w bazie; komu, kiedy i
+   przez kogo wydana. Tylko odczyt — żadnego zapisu na kartę.
+4. **Przeglądarka** — lista: użytkownik, serial klucza, data wydania, stan;
+   wyszukiwanie po użytkowniku i serialu. Lista **nigdy nie zawiera PUK** —
+   PUK pokazuje się dopiero po wybraniu jednego wpisu i kliknięciu „Pokaż
+   PUK” (pyta o powód). Helpdesk widzi tylko to. Admin i SO dodatkowo:
+   szczegóły wydania (certyfikat, atestacja, operator), wyszukiwanie po
+   certyfikacie i operatorze; „Pokaż management key” i zakładka „Audyt” tylko
+   dla Admina.
 
 Wzorce z `Blinky.Agent.Ui`: `InvariantGlobalization=false`, motyw jasny/ciemny
 wg rejestru, `Strings` (tu czytające z `.resx` w czterech językach), okno odroczone przez
@@ -160,9 +163,9 @@ Moduł binarny na .NET 10, **wymaga pwsh 7.6+**. Ten sam silnik co WPF.
 | `Find-BlinkyLiteUser -Query <tekst>` | SO, Admin | wyszukanie celu w AD przez serwer |
 | `New-BlinkyLiteIssuance -User <DOMENA\sam> -Profile <nazwa> [-Serial]` | SO, Admin | pełne wydanie; PIN użytkownik wpisuje przez `Read-Host -AsSecureString` |
 | `Resume-BlinkyLiteIssuance -Id <guid>` | SO, Admin | wznowienie `PendingCa` / przerwanego wydania |
-| `Get-BlinkyLiteIssuance [-User] [-Serial] [-Since]` | każda | przeglądarka |
-| `Test-BlinkyLiteCard [-Serial]` | każda | weryfikacja karty w czytniku z zapisem w bazie — tylko odczyt |
-| `Get-BlinkyLitePuk -Serial <n> -Reason <tekst>` | każda | odsłonięcie PUK, audyt |
+| `Get-BlinkyLiteIssuance [-User] [-Serial] [-Since]` | każda | lista (Helpdesk: użytkownik, serial, data, stan; bez PUK) |
+| `Test-BlinkyLiteCard [-Serial]` | SO, Admin | weryfikacja karty w czytniku z zapisem w bazie — tylko odczyt |
+| `Get-BlinkyLitePuk (-Serial <n> \| -User <DOMENA\sam>) -Reason <tekst>` | każda | odsłonięcie PUK **jednej** karty, audyt; jeśli użytkownik ma kilka kart — błąd z listą seriali, trzeba wskazać `-Serial`. Nie przyjmuje wejścia z pipeline, żeby nie dało się wyciągnąć PUK hurtem |
 | `Get-BlinkyLiteManagementKey -Serial <n> -Reason <tekst>` | Admin | odsłonięcie MK, audyt |
 
 PIN nie jest parametrem żadnego cmdletu — parametr ląduje w historii

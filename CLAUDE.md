@@ -5,7 +5,8 @@ przez Enroll On Behalf Of. .NET 10: klient WPF (`win-x64`, `win-arm64`) i
 moduł PowerShell na wspólnym silniku, serwer Kestrel + PostgreSQL (Docker albo
 usługa Windows), logowanie AD → JWT, role Admin / SecurityOfficer / Helpdesk.
 **Nie jest CMS-em.** Robi dwie rzeczy: **wydaje** klucz i pozwala go
-**zweryfikować** (tylko odczyt). Zmiana PUK, odblokowanie PIN, reset, dalsze
+**zweryfikować** (tylko odczyt). Po 1.0 dochodzi jedna trzecia: e-mail, że
+certyfikat wygaśnie (0060) — tylko informacja, bez odnawiania. Zmiana PUK, odblokowanie PIN, reset, dalsze
 życie karty — to robi Blinky, nie BlinkyLite. Lista w „Poza zakresem” w
 [docs/05-roadmap.md](docs/05-roadmap.md).
 
@@ -85,7 +86,12 @@ docker compose up -d --build       # serwer + postgres
   w `Messages.resx` i jego trzech tłumaczeniach — żadnych literałów w XAML
   ani w cmdletach. Serwer zwraca `code` + `args`, nie tłumaczy. Test
   kompletności zasobów musi przechodzić; brak tłumaczenia to czerwony build.
-  Zdań nie składamy z kawałków — szyk w DE i SV jest inny.
+  Zdań nie składamy z kawałków — szyk w DE i SV jest inny. **Tłumaczenia
+  piszesz Ty**, w tym samym commicie co klucz, prostym językiem i według
+  `Resources/GLOSSARY.md` ([08](docs/08-localization.md#tłumaczenia)).
+- **Helpdesk widzi listę, nie szczegóły.** Lista (użytkownik, serial, data,
+  stan) nigdy nie zawiera PUK; PUK zawsze dla jednej wskazanej karty.
+  Szczegóły to osobny DTO i osobna polityka — nie ukrywaj pól w kliencie.
 - **Prosto.** BlinkyLite ma być mały. Zanim dodasz ekran, tabelę albo opcję,
   sprawdź, czy nie ma jej w „Poza zakresem” w roadmapie — jeśli jest, nie
   robimy jej. Poza wydaniem BlinkyLite nie pisze na kartę nigdy.

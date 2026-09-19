@@ -38,6 +38,13 @@ swoim języku. Dzięki temu:
 Dziennik audytu przechowuje kod akcji (`puk.disclosed`), a przeglądarka
 wyświetla `audit.puk.disclosed` w języku operatora.
 
+**Jeden wyjątek, po 1.0:** e-mail o wygaśnięciu certyfikatu (0060) serwer
+musi napisać sam, bo nie ma przy nim klienta. Wtedy serwer czyta ten sam
+katalog `Messages` i przechodzi na `InvariantGlobalization=false` — w trybie
+niezmiennym .NET nie utworzy kultur `de`, `sv`, `pl`. Obraz
+`mcr.microsoft.com/dotnet/aspnet` (Debian) ma ICU, więc kontener tego nie
+blokuje.
+
 ## Wybór języka
 
 | Gdzie | Domyślnie | Zmiana |
@@ -73,6 +80,21 @@ oknie.
 
 ## Tłumaczenia
 
-Pierwszą wersję niemiecką i szwedzką pisze autor kodu. Przed wydaniem 1.0 obie
-czyta osoba, dla której to język ojczysty — to jest punkt w DoD patcha 0004,
-a do tego czasu jego stan to `done-unverified`.
+Wszystkie cztery wersje pisze automatycznie autor kodu (AI) razem z kluczem
+komunikatu, w tym samym commicie — decyzja właściciela z 2026-09-19 (Q-05).
+Zasady, żeby tłumaczenie maszynowe było bezpieczne:
+
+- **Prosty język.** Krótkie zdania, tryb rozkazujący w instrukcjach
+  („Włóż klucz”, „Stecken Sie den Schlüssel ein”, „Sätt i nyckeln”), bez
+  żargonu, gdzie się da. Terminy techniczne zostają nieprzetłumaczone i
+  jednakowe we wszystkich językach: PIN, PUK, YubiKey, PIV, management key.
+- **Jedno znaczenie na klucz.** Klucz opisuje sytuację
+  (`pin.rule.too-short`), nie zdanie — łatwiej przetłumaczyć sens niż
+  przepisać cudzą frazę.
+- **Słowniczek** w `src/BlinkyLite.Contracts/Resources/GLOSSARY.md`: tabela
+  terminów w czterech językach (karta/Karte/kort, wydanie/Ausstellung/
+  utfärdande, …), której tłumaczenia się trzymają.
+- Formy grzecznościowe: DE — „Sie”, SV — „du”, PL — bezosobowo lub
+  „Wpisz…”, EN — imperatyw.
+
+Poprawki od użytkowników są mile widziane, ale nie są warunkiem wydania.

@@ -56,6 +56,10 @@ Każda przyjmuje aktora: `p_actor_upn`, `p_actor_sid`, `p_actor_roles text[]`,
 | `bl_secret_disclose(serial, kind, reason, aktor)` | `(envelope bytea, kek_version smallint)` | licznik odsłonięć +1 | `puk.disclosed` / `mgmt-key.disclosed` |
 | `bl_mgmt_key_candidates(serial, aktor)` | zbiór `(secret_id, envelope, mk_alg, kek_version)` | — | `mgmt-key.used` |
 | `bl_audit(action, data jsonb, aktor)` | — | — | dowolne zdarzenie bez zmiany danych (np. `auth.login`, `auth.denied`) |
+| `bl_expiry_notified(issuance_id, threshold_days, recipient)` *(0060, po 1.0)* | `boolean` — `false`, jeśli ten próg już wysłano | wiersz w `expiry_notifications` (unikalne `issuance_id` + `threshold_days`) | `cert.expiry-notified` |
+
+Aktor `bl_expiry_notified` to stały aktor systemowy `system:expiry-notifier`
+— powiadomienie nie ma operatora, a audyt nie może mieć pustego pola.
 
 Sprawdzenie ról (kto może wywołać co) robi serwer przez polityki ASP.NET
 Core. Funkcje sprawdzają **dodatkowo** najważniejsze: `bl_secret_disclose`

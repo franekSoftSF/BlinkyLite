@@ -20,7 +20,9 @@ po niej ślad:
    zapisem (serial, certyfikat, atestacja) — tylko odczyt.
 
 Na tym koniec. Zmiana PUK, odblokowanie PIN, reset i dalsze życie karty to
-zadanie [Blinky](../blinky), nie BlinkyLite.
+zadanie [Blinky](../blinky), nie BlinkyLite. Po wersji 1.0 dochodzi jedna
+rzecz: e-mail do użytkownika, że jego certyfikat wkrótce wygaśnie — tylko
+informacja, bez odnawiania.
 
 BlinkyLite to uproszczone rodzeństwo [Blinky](../blinky). Warstwa PIV,
 weryfikacja atestacji i wiedza o sprzęcie pochodzą z Blinky i zostały tam
@@ -74,9 +76,10 @@ i trafiają do JWT.
 | Uprawnienie | Admin | SecurityOfficer | Helpdesk |
 |---|:-:|:-:|:-:|
 | Wydanie klucza (WPF / PowerShell) | ✔ | ✔ | — |
-| Przeglądanie wydań: kto, jaki klucz, jaki certyfikat | ✔ | ✔ | ✔ |
-| Weryfikacja karty w czytniku z zapisem w bazie | ✔ | ✔ | ✔ |
-| Odsłonięcie **PUK** urządzenia (z podaniem powodu) | ✔ | ✔ | ✔ |
+| Lista: użytkownik — klucz (serial) — data wydania | ✔ | ✔ | ✔ |
+| Szczegóły wydania: certyfikat, atestacja, operator | ✔ | ✔ | — |
+| Weryfikacja karty w czytniku z zapisem w bazie | ✔ | ✔ | — |
+| Odsłonięcie **PUK** — po wybraniu wpisu z listy / wskazaniu w PowerShell, z powodem | ✔ | ✔ | ✔ |
 | Odsłonięcie **management key** | ✔ | — | — |
 | Dziennik audytu | ✔ | — | — |
 

@@ -4,7 +4,8 @@ Patch jest skończony, kiedy jego **definicję ukończenia (DoD)** może sprawdz
 ktoś, kto go nie pisał — nie wtedy, gdy kod istnieje. Stany patchy są w
 [STATUS.md](STATUS.md) i [status.json](status.json); tu są tylko definicje.
 
-BlinkyLite ma być mały. Roadmapa ma **16 patchy**; wszystko, co nie jest
+BlinkyLite ma być mały. Do wersji 1.0 roadmapa ma **16 patchy**, po 1.0
+jeden (powiadomienie o wygaśnięciu certyfikatu); wszystko, co nie jest
 niezbędne do „wydaj klucz, zapisz PUK, zweryfikuj kto co dostał”, jest
 „Poza zakresem” na dole. Numeracja: dziesiątki = faza.
 
@@ -16,7 +17,7 @@ niezbędne do „wydaj klucz, zapisz PUK, zweryfikuj kto co dostał”, jest
 | 0001 | Szkielet repozytorium | `BlinkyLite.slnx` z sześcioma projektami + testy; `dotnet build`/`test` przechodzą na Windows; `dotnet publish` klienta daje `win-x64` **i** `win-arm64`; CI: job Windows (build + testy) i job Linux (serwer + testy bazy na PostgreSQL); wersje pakietów (NHibernate, FluentNHibernate, Npgsql, JwtBearer, PowerShell SDK) z prawdziwego restore |
 | 0002 | Baza danych | migracje SQL, trzy role, wszystkie funkcje `bl_*`, mapowania FluentNHibernate tylko do odczytu, klasa `Procedures`, `SchemaValidator` — wg [07](07-database.md); **każdy punkt z „Testy bazy” w 07 przechodzi** |
 | 0003 | Serwer | Kestrel z TLS, Serilog, `/health`; logowanie LDAPS bind → JWT z rolami z grup AD; polityki na każdym endpoincie (test to wymusza); wyszukiwanie użytkownika; koperty AES-256-GCM (koperta przeniesiona do innego wiersza się nie deszyfruje); błędy jako `code` + `args` |
-| 0004 | Języki | katalog `Messages` EN/DE/SV/PL, `Strings` z przełączaniem na żywo, test kompletności z [08](08-localization.md#testy-kompletności); DE i SV przeczytane przez osoby z tym językiem ojczystym (do tego czasu `done-unverified`) |
+| 0004 | Języki | katalog `Messages` EN/DE/SV/PL, `Strings` z przełączaniem na żywo, test kompletności z [08](08-localization.md#testy-kompletności); wszystkie teksty w prostym języku według słowniczka `GLOSSARY.md` |
 
 ## Faza 1 — Karta
 
@@ -41,7 +42,7 @@ Windows, a PUK odczytany z bazy odblokowuje jego PIN.
 
 | Patch | Tytuł | DoD |
 |---|---|---|
-| 0030 | Przeglądarka i weryfikacja w WPF | **„Zweryfikuj kartę”** (wszystkie role): karta w czytniku → serial → wydanie z bazy; certyfikat w 9A == zapisany, atestacja 9A poprawna i zgodna z zapisaną, komu i kiedy wydano — tylko odczyt, nic nie pisze na kartę. Wyszukiwanie wydań (użytkownik, serial, certyfikat, operator, data) dla Admina, SO i **Helpdesku**; „Pokaż PUK” z powodem (Admin, SO, Helpdesk); „Pokaż management key” tylko Admin; dziennik audytu tylko Admin; każde odsłonięcie widoczne w audycie z aktorem i powodem |
+| 0030 | Przeglądarka i weryfikacja w WPF | **Lista** użytkownik — serial — data — stan dla wszystkich ról, bez PUK; **PUK** dopiero po wybraniu jednego wpisu, z powodem (Admin, SO, Helpdesk); Helpdesk nie dostaje z API pól szczegółów (test na DTO). **Szczegóły i „Zweryfikuj kartę”** (Admin, SO): karta w czytniku → serial → wydanie z bazy; certyfikat w 9A == zapisany, atestacja zgodna z zapisaną — tylko odczyt. „Pokaż management key” i dziennik audytu tylko Admin; każde odsłonięcie w audycie z aktorem i powodem |
 
 ## Faza 4 — PowerShell
 
@@ -57,6 +58,16 @@ Windows, a PUK odczytany z bazy odblokowuje jego PIN.
 | 0051 | Serwer Windows — MSIX | paczka MSIX z usługą (`desktop6:Service`), konfiguracja i KEK (DPAPI) w `%ProgramData%\BlinkyLite`, migracje; aktualizacja paczki zachowuje konfigurację; odinstalowanie nie rusza bazy. Jeśli usługa w MSIX okaże się niewykonalna na docelowym Windows Server — skrypt instalacyjny i zapisany powód |
 | 0052 | Klient — MSIX | `.msixbundle` z `win-x64` i `win-arm64`, podpisany certyfikatem code signing z firmowego CA; moduł PowerShell jako osobny `.nupkg` (patrz [01](01-architecture.md#instalacja-msix)); instalacja na czystej stacji x64 i ARM64 |
 | 0053 | Test end-to-end | brama fazy 2 powtórzona: stacja ARM64, wydanie z PowerShell, serwer raz w Dockerze i raz z MSIX; procedura kopii KEK opisana i sprawdzona odtworzeniem |
+
+## Faza 6 — Po 1.0: powiadomienie o wygaśnięciu
+
+| Patch | Tytuł | DoD |
+|---|---|---|
+| 0060 | Powiadomienie o wygaśnięciu certyfikatu | serwer raz dziennie (`PeriodicTimer` w usłudze, bez osobnego procesu) znajduje wydania `Issued`, których certyfikat wygasa za N dni (konfiguracja, np. 30 i 7), i wysyła e-mail (SMTP) do użytkownika — adres `mail` z AD — oraz opcjonalnie kopię na skrzynkę zespołu. Treść w języku z `preferredLanguage` użytkownika w AD albo domyślnym z konfiguracji, z katalogu `Messages`. Każde wysłanie przez funkcję `bl_expiry_notified` — ten sam próg nie idzie drugi raz (test), wpis w audycie. Tylko informacja: nic nie odnawia, nie dotyka karty ani CA |
+
+Powiadomienie to jedyny kod BlinkyLite, który działa sam, bez operatora.
+Nie rozrasta się w CMS: nie odnawia, nie przypomina drugim kanałem, nie ma
+kolejki — odnowienie robi Blinky albo operator nowym wydaniem.
 
 ## Poza zakresem
 

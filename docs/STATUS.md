@@ -61,6 +61,7 @@ Nie istnieje: rozwiązanie, projekty, kod, skrypty SQL, testy, CI.
 | 0051 | 5 | Serwer Windows — MSIX | `open` |
 | 0052 | 5 | Klient — MSIX | `open` |
 | 0053 | 5 | Test end-to-end | `open` |
+| 0060 | 6 | Powiadomienie o wygaśnięciu certyfikatu (po 1.0) | `open` |
 
 ## Zdecydowane
 
@@ -83,6 +84,9 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-11 | MSIX: klient bundle x64+ARM64, serwer Windows z usługą; moduł PS jako `.nupkg` |
 | D-12 | Języki EN, DE, SV, PL; serwer zwraca kody, klient tłumaczy |
 | D-13 | Profile i role w `appsettings.json`, bez ekranu edycji |
+| D-14 | Helpdesk: lista użytkownik — serial — data; PUK tylko po wybraniu jednego wpisu (WPF) lub wskazaniu w PowerShell; bez szczegółów i weryfikacji |
+| D-15 | Tłumaczenia pisze AI razem z kodem, prostym językiem, według słowniczka |
+| D-16 | Po 1.0: e-mail o wygaśnięciu certyfikatu — tylko informacja, bez odnawiania |
 
 ## Otwarte pytania
 
@@ -90,11 +94,12 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 |---|---|---|
 | Q-01 | Czy `IX509CertificateRequestCmc.InitializeFromInnerRequest` przyjmie PKCS#10 podpisany na karcie, bez dostępu do klucza prywatnego? | 0021 |
 | Q-02 | Licencja BlinkyLite — Apache-2.0 jak Blinky? | wydanie publiczne |
-| Q-04 | Czy Helpdesk ma widzieć certyfikat i atestację, czy tylko listę i PUK? | 0030 |
-| Q-05 | Kto przeczyta tłumaczenia DE i SV przed 1.0? | 0004 |
+| Q-06 | Powiadomienie: e-mail przez firmowy serwer SMTP wystarczy, czy potrzebny inny kanał (Teams)? Ile dni przed wygaśnięciem? | 0060 |
 
-Zamknięte: Q-03 (format instalatora) — **MSIX**, decyzja właściciela z
-2026-09-19 (D-11).
+Zamknięte 2026-09-19, decyzje właściciela:
+- Q-03 (format instalatora) — **MSIX** (D-11);
+- Q-04 (co widzi Helpdesk) — **lista użytkownik/klucz, PUK po wybraniu wpisu** (D-14);
+- Q-05 (kto sprawdza DE i SV) — **tłumaczenia automatyczne, prostym językiem** (D-15).
 
 ## Ryzyka
 

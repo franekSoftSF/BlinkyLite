@@ -10,7 +10,7 @@ temu jednemu celowi, jest poza zakresem:
 |---|---|
 | Wbudowane CA, Samba4, CES/CEP | Tylko ADCS, tylko przez mechanizm Windows |
 | Agent w tle, kolejka zadań, SignalR | Wydanie jest interaktywne i synchroniczne na stacji |
-| Odnowienia, harmonogramy, skaner wygaśnięć, CRL/OCSP | To robi ADCS i jego polityka |
+| Odnowienia, CRL/OCSP | ADCS / Blinky. BlinkyLite po 1.0 tylko **powiadamia** e-mailem, że certyfikat wygaśnie (0060) |
 | Konsola webowa | Przeglądarka wydań jest w WPF |
 | Zmiana / rotacja PUK, odblokowanie PIN, dalsze życie karty | To robi **Blinky** |
 | Reset PIV, `SET PIN RETRIES` | `ykman` albo Blinky |
@@ -130,7 +130,7 @@ flowchart TB
 |---|---|
 | `Admin` | wszystko: wydanie, przeglądanie, PUK, management key, audyt |
 | `SecurityOfficer` | wydanie, przeglądanie, PUK |
-| `Helpdesk` | przeglądanie, PUK |
+| `Helpdesk` | lista użytkownik — klucz — data; PUK dopiero po wybraniu wpisu (WPF) albo wskazaniu użytkownika/serialu (PowerShell). Bez szczegółów certyfikatu i atestacji, bez weryfikacji karty |
 
 Operator z wieloma grupami dostaje sumę uprawnień. Użytkownik bez żadnej
 z grup nie dostaje tokenu (401 z komunikatem, nie pusty token).
@@ -182,3 +182,6 @@ management key, koperta w bazie jest jego jedyną kopią. Szczegóły w
 | D-11 | MSIX jako instalator (klient bundle x64+ARM64, serwer Windows); moduł PS jako `.nupkg` | decyzja właściciela; moduł nie może żyć w MSIX (poza `PSModulePath`) |
 | D-12 | Języki EN, DE, SV, PL; jeden katalog `.resx`; serwer zwraca kody, klient tłumaczy | decyzja właściciela — [08](08-localization.md) |
 | D-13 | Profile i mapowanie ról w `appsettings.json`, bez edycji w UI | mniej kodu; edycja w UI poza zakresem |
+| D-14 | Helpdesk widzi listę użytkownik — serial — data; PUK tylko po wybraniu jednego wpisu / wskazaniu w PowerShell | decyzja właściciela; osobny DTO listy, brak endpointu z wieloma PUK |
+| D-15 | Tłumaczenia pisze AI razem z kodem, prostym językiem | decyzja właściciela; słowniczek pilnuje spójności terminów |
+| D-16 | Po 1.0: e-mail o wygaśnięciu certyfikatu (0060) | decyzja właściciela; jedyny kod działający bez operatora, tylko informuje |

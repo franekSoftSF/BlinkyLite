@@ -30,9 +30,14 @@
 
 ## Autoryzacja
 
-Polityki ASP.NET Core: `CanIssue` (Admin, SecurityOfficer), `CanView`
-(wszystkie trzy), `CanRevealPuk` (wszystkie trzy), `CanRevealMgmtKey`
-(Admin), `CanAdminister` (Admin). Każdy endpoint ma jawną politykę —
+Polityki ASP.NET Core: `CanIssue` (Admin, SecurityOfficer), `CanList`
+(wszystkie trzy — użytkownik, serial, data, stan), `CanViewDetails` (Admin,
+SecurityOfficer — certyfikat, atestacja, operator, weryfikacja karty),
+`CanRevealPuk` (wszystkie trzy), `CanRevealMgmtKey` (Admin), `CanAudit`
+(Admin). Endpoint listy zwraca inny DTO niż endpoint szczegółów — Helpdesk
+nie dostaje „ukrytych” pól, których klient tylko nie pokazuje. Odsłonięcie
+PUK zawsze dotyczy jednej karty (`/api/cards/{serial}/puk`); nie ma
+endpointu zwracającego wiele PUK naraz. Każdy endpoint ma jawną politykę —
 test przechodzi po wszystkich endpointach i nie dopuszcza braku atrybutu.
 
 Odsłonięcie PUK / MK:
