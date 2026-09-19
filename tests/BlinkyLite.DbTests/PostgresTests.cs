@@ -2,6 +2,7 @@ using Npgsql;
 
 namespace BlinkyLite.DbTests;
 
+[Collection(DatabaseCollection.Name)]
 public sealed class PostgresTests
 {
     [DbFact]
@@ -13,8 +14,8 @@ public sealed class PostgresTests
         await using var command = new NpgsqlCommand("show server_version_num", connection);
         var version = int.Parse((string)(await command.ExecuteScalarAsync())!);
 
-        // 16 is the minimum the README and docs/07 promise; the migrations in
-        // 0002 are written and tested against nothing older.
+        // 16 is the minimum the README and docs/07 promise; the migrations are
+        // written and tested against nothing older.
         Assert.True(version >= 160000, $"PostgreSQL {version} is older than 16.");
     }
 }

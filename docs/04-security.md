@@ -61,7 +61,8 @@ Odsłonięcie PUK / MK:
 - Kopia zapasowa bazy **bez** KEK jest bezużyteczna — i tak ma być. Procedura
   backupu KEK jest częścią instalacji i jest sprawdzana odtworzeniem
   (patch 0053).
-- Baza: rola aplikacji ma tylko `SELECT` i `EXECUTE` na `bl_*`; funkcje
+- Baza: rola aplikacji ma tylko `SELECT` (na `card_secrets` bez kolumn z
+  kopertami) i `EXECUTE` na `bl_*`; funkcje
   `SECURITY DEFINER` ze stałym `search_path` —
   [07](07-database.md#trzy-role-w-bazie).
 

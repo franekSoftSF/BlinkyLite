@@ -29,4 +29,11 @@
     <ProjectReference Include="..\BlinkyLite.Contracts\BlinkyLite.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Embedded, not copied: the Docker image and the MSIX package carry the
+         exact scripts this build was tested with, and nobody can edit one on
+         a server's disk. -->
+    <EmbeddedResource Include="..\..\db\migrations\*.sql" LogicalName="migrations/%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

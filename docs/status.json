@@ -30,7 +30,7 @@
     "phase": 0,
     "phaseTitle": "Fundament",
     "state": "open",
-    "summary": "Szkielet stoi (0001, done-unverified): build bez ostrzeżeń, /health, publikacja x64 i ARM64, moduł w pwsh 7.6. Logiki wydania jeszcze nie ma.",
+    "summary": "Szkielet (0001) i baza (0002) stoją, oba done-unverified: zapis tylko przez bl_* z audytem w tej samej transakcji, PostgreSQL odmawia aplikacji zapisu z pominięciem funkcji i odczytu kopert; 82 testy na PostgreSQL 16. Logiki wydania jeszcze nie ma.",
     "nothingIssuedYet": true
   },
   "stateLegend": {
@@ -104,7 +104,7 @@
   "patches": [
     { "id": "0000", "phase": 0, "title": "Dokumentacja i schemat działania", "state": "done", "owner": "cloud-ai", "proof": "2026-09-19: README, docs/01-08, STATUS.md, status.json i CLAUDE.md; diagramy mermaid (komponenty, sekwencja wydania, maszyna stanów) w 01 i 02. Tego samego dnia uzupełnione o decyzje właściciela: MSIX, NHibernate + procedury SQL, cztery języki, zakres ograniczony do wydania i weryfikacji (zmiana PUK należy do Blinky)." },
     { "id": "0001", "phase": 0, "title": "Szkielet repozytorium", "state": "done-unverified", "owner": "cloud-ai", "proof": "2026-09-19, Windows x64, SDK 10.0.401: dotnet build BlinkyLite.slnx -c Release - 0 ostrzezen; 12 testow jednostkowych przechodzi; DbTests pominiete bez BLINKYLITE_TEST_DB, z PostgreSQL 16 w Dockerze przechodza; publish klienta win-x64 i win-arm64 z polem machine PE 0x8664 i 0xAA64; modul laduje sie w pwsh 7.6.6 bez kopii System.Management.Automation, Windows PowerShell 5.1 odmawia (wymaga 7.6); job Linux odtworzony w kontenerze dotnet/sdk:10.0 przeciw postgres:16 - przechodzi.", "gap": "Workflow CI nie uruchomil sie na GitHub Actions (brak zdalnego repozytorium); klient ARM64 nie startowal na sprzecie ARM64 (0053); DoD sprawdzal autor." },
-    { "id": "0002", "phase": 0, "title": "Baza danych (NHibernate + procedury bl_*)", "state": "open", "owner": "cloud-ai", "proof": null },
+    { "id": "0002", "phase": 0, "title": "Baza danych (NHibernate + procedury bl_*)", "state": "done-unverified", "owner": "cloud-ai", "proof": "2026-09-19: db/init/00_roles.sql, migracje 0001-0004, migrator (--migrate tylko jako blinkylite_owner, blokada doradcza, sumy kontrolne po LF), mapowania FluentNHibernate ReadOnly, Procedures (Npgsql, typowane parametry). 82 testy DbTests na PostgreSQL 16 przechodza z Windows i z kontenera dotnet/sdk:10.0 (Linux): 31 niedozwolonych przejsc -> BL001 bez zmiany i audytu; nieudany audyt cofa zmiane; app i readonly bez INSERT/UPDATE/DELETE/TRUNCATE i bez odczytu kopert (42501); mgmt-key bez Admin -> BL004; 20 rund rownoleglych rezerwacji - zawsze jedna wygrywa; migracje idempotentne; SchemaValidator ok. Serwer: --migrate 4 migracje, drugi raz up to date, jako superuser odmowa (kod 1); start jako app: schema ok + /health; zmieniona suma kontrolna -> odmowa startu (kod 3).", "gap": "DoD sprawdzal autor; job linux CI nie uruchomil sie na GitHub (brak origin)." },
     { "id": "0003", "phase": 0, "title": "Serwer", "state": "open", "owner": "cloud-ai", "proof": null },
     { "id": "0004", "phase": 0, "title": "Języki EN / DE / SV / PL", "state": "open", "owner": "cloud-ai", "proof": null },
     { "id": "0010", "phase": 1, "title": "Import Blinky.Piv", "state": "open", "owner": "cloud-ai", "proof": null },
@@ -124,6 +124,8 @@
   "notVerified": [
     { "what": "0001: workflow CI na GitHub Actions", "why": "brak zdalnego origin; oba joby odtworzone tylko lokalnie", "when": "pierwszy push" },
     { "what": "0001: klient win-arm64 uruchomiony", "why": "poprawny naglowek PE ARM64, ale bez startu na sprzecie ARM64", "when": "0053" },
-    { "what": "0001: import modulu w CI", "why": "windows-latest moze miec pwsh < 7.6; krok wtedy tylko ostrzega", "when": "pierwszy push" }
+    { "what": "0001: import modulu w CI", "why": "windows-latest moze miec pwsh < 7.6; krok wtedy tylko ostrzega", "when": "pierwszy push" },
+    { "what": "0002: testy bazy w CI", "why": "przechodza lokalnie i w kontenerze Linux, job linux nie uruchomil sie na GitHub", "when": "pierwszy push" },
+    { "what": "0002: przeglad funkcji bl_*", "why": "DoD sprawdzal autor", "when": "przeglad przed 0020" }
   ]
 }

@@ -17,8 +17,9 @@ appsettings.*.local.json
 *.key
 certs/
 
-# Runtime data
-data/
+# Runtime data. Rooted: on Windows git ignores case, and a bare data/
+# also swallowed src/BlinkyLite.Server/Data - the whole database layer.
+/data/
 *.log
 
 # APDU transcripts carry the token serial and certificates

@@ -2,9 +2,10 @@
 
 **Ostatnia aktualizacja:** 2026-09-19
 **Faza:** 0 — Fundament
-**Ogólnie:** szkielet stoi (0001): rozwiązanie buduje się bez ostrzeżeń,
-serwer odpowiada na `/health`, klient publikuje się na x64 i ARM64, moduł
-ładuje się w pwsh 7.6; logiki wydania jeszcze nie ma
+**Ogólnie:** szkielet (0001) i baza (0002) stoją: każdy zapis przechodzi
+przez funkcję `bl_*` z audytem w tej samej transakcji, a PostgreSQL sam
+odmawia aplikacji zapisu z pominięciem funkcji i odczytu PUK bez śladu —
+82 testy na prawdziwym PostgreSQL 16; logiki wydania jeszcze nie ma
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
 się zgadzać; `status.json` czyta build albo dashboard. Definicje ukończenia są
@@ -44,8 +45,33 @@ SDK 10.0.401):
 - część linuksowa CI (build serwera + test bazy) odtworzona w kontenerze
   `mcr.microsoft.com/dotnet/sdk:10.0` przeciw PostgreSQL 16 — przechodzi.
 
-Nie istnieje: logika wydania, warstwa PIV, skrypty SQL, logowanie, teksty w
-czterech językach.
+Od 0002 (19 września 2026) istnieje baza według [07](07-database.md):
+`db/init/00_roles.sql` (trzy role), cztery migracje (tabele, funkcje
+`bl_issuance_*`, `bl_secret_disclose`, `bl_mgmt_key_candidates`, `bl_audit`,
+uprawnienia), migrator w serwerze (`--migrate`, tylko jako
+`blinkylite_owner`), mapowania FluentNHibernate tylko do odczytu, klasa
+`Procedures` jako jedyna droga zapisu. Sprawdzone:
+
+- 82 testy w `BlinkyLite.DbTests` przechodzą na PostgreSQL 16 — z Windows i
+  z kontenera `dotnet/sdk:10.0` (Linux, jak w CI). Pokrywają każdy punkt z
+  „Testy bazy” w 07: 31 niedozwolonych przejść → `BL001` bez zmiany i bez
+  audytu; audyt, który się nie zapisał, cofa zmianę; `app` i `readonly` nie
+  mogą `INSERT/UPDATE/DELETE/TRUNCATE` żadnej tabeli ani przeczytać kopert;
+  `mgmt-key` bez `Admin` → `BL004`; 20 rund dwóch równoległych rezerwacji
+  jednej karty — zawsze dokładnie jedna wygrywa; migracje drugi raz nic nie
+  robią; `SchemaValidator` przechodzi;
+- serwer naprawdę: `00_roles.sql` przez `psql`, `--migrate` stosuje 4
+  migracje, drugi raz „up to date”, jako superużytkownik odmawia (kod 1);
+  start jako `blinkylite_app` loguje `schema ok` i odpowiada na `/health`;
+  po ręcznej zmianie sumy kontrolnej odmawia startu z nazwą migracji (kod 3).
+
+Po drodze wyszły dwie rzeczy, których projekt nie przewidział i które są
+teraz zapisane w 07: zwykły `SELECT` na `card_secrets` pozwoliłby czytać PUK
+bez audytu (stąd uprawnienie kolumnowe), a `SchemaValidator` porównuje typy
+z `udt_name` (`int8`, nie `bigint`).
+
+Nie istnieje: logika wydania, warstwa PIV, logowanie, teksty w czterech
+językach.
 
 ## Stany
 
@@ -64,7 +90,7 @@ czterech językach.
 |---|---|---|---|
 | 0000 | 0 | Dokumentacja i schemat działania | `done` |
 | 0001 | 0 | Szkielet repozytorium | `done-unverified` |
-| 0002 | 0 | Baza danych (NHibernate + procedury `bl_*`) | `open` |
+| 0002 | 0 | Baza danych (NHibernate + procedury `bl_*`) | `done-unverified` |
 | 0003 | 0 | Serwer | `open` |
 | 0004 | 0 | Języki EN / DE / SV / PL | `open` |
 | 0010 | 1 | Import `Blinky.Piv` | `open` |
@@ -134,6 +160,8 @@ Zamknięte 2026-09-19, decyzje właściciela:
 | 0001: workflow CI na GitHub Actions | repozytorium nie ma jeszcze zdalnego `origin`; oba joby odtworzone lokalnie, ale żaden nie uruchomił się na runnerze GitHub | pierwszy push |
 | 0001: klient `win-arm64` uruchomiony | binarka ma poprawny nagłówek ARM64, ale nie startowała na maszynie ARM64 | 0053 |
 | 0001: import modułu w CI | `windows-latest` może mieć pwsh starszy niż 7.6 — wtedy krok ostrzega i nie sprawdza importu | pierwszy push |
+| 0002: testy bazy w CI | przechodzą lokalnie i w kontenerze Linux, ale job `linux` nie uruchomił się na GitHub | pierwszy push |
+| 0002: przegląd funkcji `bl_*` | DoD sprawdzał autor; reguły stanów i uprawnień warto, żeby przeczytał ktoś drugi | przegląd przed 0020 |
 
 Rzeczy, których Blinky nie sprawdził, a BlinkyLite będzie musiał:
 [06 — Co przychodzi z Blinky](06-from-blinky.md#czego-blinky-nie-sprawdził-a-blinkylite-potrzebuje).
