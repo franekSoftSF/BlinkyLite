@@ -7,7 +7,7 @@ namespace BlinkyLite.UnitTests;
 /// </summary>
 public sealed class RepositoryConventionTests
 {
-    private static readonly DirectoryInfo Root = FindRoot();
+    internal static readonly DirectoryInfo Root = FindRoot();
 
     public static TheoryData<string> Projects()
     {

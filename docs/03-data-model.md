@@ -65,6 +65,10 @@ sprawdza test (patch 0003).
 | `puk_disclosed_count` | `integer` | ile razy odsłonięto — widoczne w przeglądarce |
 | `created_at` / `activated_at` / `retired_at` | `timestamptz` | |
 
+Kolumn `puk_envelope` i `mgmt_key_envelope` rola aplikacji **nie może
+przeczytać** (uprawnienie kolumnowe, [07](07-database.md#trzy-role-w-bazie)) —
+jedyna droga do nich to `bl_secret_disclose` z audytem.
+
 Jedna karta ma w danej chwili co najwyżej jedną kopertę `Active`. Nowe
 wydanie na znanej karcie przechodzi starą w `Retired` dopiero po
 `/customised` nowej — wcześniej karta wciąż ma stary MK.
@@ -106,7 +110,7 @@ swojego wiersza, więc późniejsza zmiana konfiguracji nie przepisuje historii.
 |---|---|---|
 | `id` | `bigint` identity | |
 | `at` | `timestamptz` | |
-| `actor_upn` / `actor_sid` | `text` | |
+| `actor_upn` / `actor_sid` | `text` | `actor_sid` pusty tylko dla `auth.denied` (złe hasło nie daje SID) |
 | `actor_roles` | `text[]` | |
 | `action` | `text` | kod akcji; wyświetlany jako `audit.<kod>` w języku operatora |
 | `card_serial` / `issuance_id` | null | |

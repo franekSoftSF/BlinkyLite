@@ -36,23 +36,28 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `src/BlinkyLite.Client` | WPF: logowanie, wydanie, przeglądarka |
 | `src/BlinkyLite.PowerShell` | moduł binarny, pwsh 7.6+ — cienka powłoka na silniku |
 | `src/BlinkyLite.Server` | Kestrel: auth AD → JWT, API, koperty sekretów; NHibernate (Fluent) do odczytu, klasa `Procedures` do zapisu |
-| `db/migrations` | numerowane skrypty SQL: schemat, funkcje `bl_*`, uprawnienia — źródło prawdy o bazie |
+| `db/init/00_roles.sql` | role bazy — raz, jako superużytkownik, poza serwerem |
+| `db/migrations` | numerowane skrypty SQL: schemat, funkcje `bl_*`, uprawnienia — źródło prawdy o bazie; osadzone w binarce serwera |
 | `src/BlinkyLite.Contracts/Resources` | `Messages.resx` + `.de`, `.sv`, `.pl` — jedyny katalog tekstów |
 | `tests/BlinkyLite.UnitTests` | xunit, bez sprzętu i bez bazy |
 | `tests/BlinkyLite.DbTests` | xunit na prawdziwym PostgreSQL — funkcje, uprawnienia, migracje |
 | `packaging/` | manifesty MSIX (klient bundle x64+ARM64, serwer z usługą) |
 | `docs/` | numerowane dokumenty + `STATUS.md` i `status.json` |
 
-(Na dziś istnieje szkielet z 0001: projekty, testy, CI — bez logiki
-wydania, bez `db/migrations` i bez `packaging/`. Patrz STATUS.)
+(Na dziś: szkielet z 0001 i baza z 0002 — `db/init`, `db/migrations`,
+`src/BlinkyLite.Server/Data`, testy bazy. Bez logiki wydania, logowania i
+`packaging/`. Patrz STATUS.)
 
 ## Komendy
 
 ```bash
 dotnet build BlinkyLite.slnx       # tylko Windows: WPF + CertEnroll COM
 dotnet test BlinkyLite.slnx        # bez sprzętu; DbTests pomijane bez BLINKYLITE_TEST_DB
-BLINKYLITE_TEST_DB="Host=localhost;..." dotnet test tests/BlinkyLite.DbTests
-dotnet run --project src/BlinkyLite.Server -- --migrate   # konto blinkylite_owner
+# DbTests: connection string SUPERUŻYTKOWNIKA - testy zakładają własną bazę i role
+docker run -d --rm --name blinkylite-test-pg -e POSTGRES_PASSWORD=test -p 55432:5432 postgres:16
+BLINKYLITE_TEST_DB="Host=localhost;Port=55432;Username=postgres;Password=test" dotnet test tests/BlinkyLite.DbTests
+psql -d blinkylite -f db/init/00_roles.sql                # raz, superużytkownik; potem ALTER ROLE ... PASSWORD
+ConnectionStrings__Owner="..." dotnet run --project src/BlinkyLite.Server -- --migrate   # tylko blinkylite_owner
 dotnet publish src/BlinkyLite.Client -c Release -r win-x64
 dotnet publish src/BlinkyLite.Client -c Release -r win-arm64
 docker compose up -d --build       # serwer + postgres
