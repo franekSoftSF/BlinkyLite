@@ -88,9 +88,19 @@ pakowaniu instalatora — patch **0005**, jeszcze w fazie 0.
 Zasady, które z tego wynikają:
 
 - **Serwer nie odczyta sekretu spoza swojego magazynu.** Kolejność źródeł:
-  plik sekretu (ścieżka z konfiguracji albo `/run/secrets`), potem zmienna
-  środowiskowa, a `appsettings.json` **nie jest** źródłem sekretów — wartość
-  wpisana tam wprost zostaje odrzucona przy starcie z nazwą klucza.
+  plik wskazany w `Secrets:Files:<nazwa>`, potem `Secrets:Directory` (domyślnie
+  `/run/secrets`, na Windows `%ProgramData%\BlinkyLite\secrets`) — najpierw
+  `blinkylite-<nazwa>.dpapi`, potem `blinkylite-<nazwa>` — a na końcu zmienna
+  `BLINKYLITE_SECRET_<NAZWA>`. `appsettings.json` **nie jest** źródłem
+  sekretów: wartość wpisana tam wprost zatrzymuje start z nazwą klucza (samej
+  wartości komunikat nie pokazuje).
+- Nazwy sekretów: `jwt-signing-key`, `ldap-service-password`,
+  `db-app-password`, `db-owner-password`, `kek-<wersja>`.
+- **Connection string w konfiguracji nie ma hasła.** Serwer skleja je z
+  sekretem dopiero w pamięci.
+- Plik DPAPI tworzy sam serwer:
+  `BlinkyLite.Server.exe --protect-secret jwt-signing-key` czyta wartość ze
+  standardowego wejścia i zapisuje ją zaszyfrowaną w `Secrets:Directory`.
 - **DPAPI w zakresie maszyny, nie użytkownika:** usługa i tak działa jako
   konto maszynowe, a zakres użytkownika psuje się przy każdej zmianie konta
   usługi (Blinky przerobił to przy imporcie klucza).

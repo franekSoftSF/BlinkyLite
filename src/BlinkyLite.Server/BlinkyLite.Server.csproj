@@ -23,6 +23,7 @@
     <PackageReference Include="NHibernate" />
     <PackageReference Include="FluentNHibernate" />
     <PackageReference Include="Npgsql" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
   </ItemGroup>
 
   <ItemGroup>
