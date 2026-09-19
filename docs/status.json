@@ -304,6 +304,13 @@
       "state": "locked",
       "decidedOn": "2026-09-19",
       "by": "owner"
+    },
+    {
+      "id": "D-20",
+      "choice": "Akcent klienta #1DB954 (zieleń bloga), motyw jasny i ciemny wg ustawienia Windows; tekst akcentu #0E7A38 na jasnym i #3DDB74 na ciemnym, bo #1DB954 ma z bielą tylko 2,6:1",
+      "state": "locked",
+      "decidedOn": "2026-09-19",
+      "by": "owner"
     }
   ],
   "openQuestions": [
@@ -336,14 +343,6 @@
         "0054"
       ],
       "needs": "decyzja właściciela"
-    },
-    {
-      "id": "Q-09",
-      "question": "Jaki dokładnie zielony (hex) ma mieć klient WPF, żeby pasował do bloga?",
-      "blocks": [
-        "0023"
-      ],
-      "needs": "kolor od właściciela"
     }
   ],
   "closedQuestions": [
@@ -374,6 +373,13 @@
       "answer": "bot Microsoft Teams; progi 30 i 7 dni, konfigurowalne",
       "closedOn": "2026-09-19",
       "decision": "D-16"
+    },
+    {
+      "id": "Q-09",
+      "question": "Jaki zielony ma mieć klient WPF?",
+      "answer": "#1DB954, oba motywy",
+      "closedOn": "2026-09-19",
+      "decision": "D-20"
     }
   ],
   "risks": [

@@ -152,6 +152,26 @@ Wzorce z `Blinky.Agent.Ui`: `InvariantGlobalization=false`, motyw jasny/ciemny
 wg rejestru, `Strings` (tu czytające z `.resx` w czterech językach), okno odroczone przez
 `Dispatcher.InvokeAsync(…, ApplicationIdle)`.
 
+### Kolory (D-20)
+
+Akcent to zieleń bloga autora: **`#1DB954`**. Oba motywy, wybierane domyślnie
+według ustawienia Windows (`AppsUseLightTheme`), z ręcznym przełącznikiem.
+
+Ta zieleń ma jasność, która przechodzi tylko w jedną stronę, więc rola koloru
+zależy od motywu — wartości poniżej są policzone (WCAG 2.1, kontrast tekstu
+≥ 4.5:1):
+
+| Zastosowanie | Motyw jasny | Motyw ciemny |
+|---|---|---|
+| Wypełnienie (przycisk główny, pasek postępu) | `#1DB954` z tekstem **czarnym** — 8,1:1 | `#1DB954` — 6,7:1 na `#1A1A1A` |
+| Tekst i linki w kolorze akcentu | **`#0E7A38`** na białym — 5,4:1 | `#3DDB74` na `#1A1A1A` — 9,6:1 |
+| Czego nie robimy | białego tekstu na `#1DB954` (2,6:1) ani `#1DB954` jako tekstu na bieli (2,6:1) | — |
+
+Stan wydania ma kolor **i** kształt: zielony znacznik ✓, czerwony krzyżyk ✗,
+zegar dla oczekiwania. Sam kolor nie może być jedynym nośnikiem informacji —
+w oknie, przy którym stoi użytkownik i operator, ktoś nie odróżnia czerwieni
+od zieleni.
+
 ### PowerShell (`BlinkyLite.PowerShell`)
 
 Moduł binarny na .NET 10, **wymaga pwsh 7.6+**. Ten sam silnik co WPF.

@@ -34,7 +34,7 @@ niezbędne do „wydaj klucz, zapisz PUK, zweryfikuj kto co dostał”, jest
 | 0020 | API wydań | endpointy dla każdego kroku z [02](02-issuance.md) na funkcjach `bl_*`; PUK i MK wygenerowane przed kartą; serwer weryfikuje atestację i przy `/complete` sprawdza SPKI == atestowany klucz oraz SID/UPN == cel; podmieniony CSR odrzucony (test) |
 | 0021 | EOBO | certyfikat EA wykryty i sprawdzony przed kartą; PKCS#10 z karty → CertEnroll CMC z `RequesterName` i podpisem EA → `ICertRequest3.Submit`; certyfikat zapisany na kartę i odczytany. **Dowód:** użytkownik loguje się do Windows w domenie tą kartą, a certyfikat ma jego SID, nie operatora. Jeśli CertEnroll odmówi (Q-01) — builder z Blinky i zapisany powód |
 | 0022 | Odzyskiwanie | każdy wiersz tabeli „Odzyskiwanie” z [02](02-issuance.md#odzyskiwanie) odtworzony przerwaniem procesu w tym miejscu i wznowiony; ponowne wydanie znanej karty |
-| 0023 | Klient WPF — wydanie | logowanie (token tylko w pamięci), wybór użytkownika i profilu, postęp krok po kroku, okno PIN z osobnym przełącznikiem języka, komunikaty z katalogu `Messages` |
+| 0023 | Klient WPF — wydanie | logowanie (token tylko w pamięci), wybór użytkownika i profilu, postęp krok po kroku, okno PIN z osobnym przełącznikiem języka, komunikaty z katalogu `Messages`; motyw jasny i ciemny wg ustawienia Windows z ręcznym przełącznikiem, akcent `#1DB954` wg tabeli w [02](02-issuance.md#kolory-d-20) — **test liczy kontrast** każdej pary kolor/tło z motywów i wymaga ≥ 4.5:1 dla tekstu; stan wydania ma też kształt, nie tylko kolor |
 
 **Brama fazy 2:** kartą wydaną z WPF przez EOBO użytkownik loguje się do
 Windows, a PUK odczytany z bazy odblokowuje jego PIN.

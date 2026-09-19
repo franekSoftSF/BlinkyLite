@@ -162,6 +162,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-17 | Grupy `Admin` i `SecurityOfficer` to grupy Enrollment Agenta na CA |
 | D-18 | Sekrety serwera (KEK, klucz JWT, hasło LDAP, hasło do bazy) tylko z pliku sekretu (Docker secret / DPAPI maszyny) albo zmiennej; wpisane w `appsettings.json` zatrzymują start |
 | D-19 | Dane BlinkyLite dają się wyeksportować do Blinky; sekrety w paczce zaszyfrowane do certyfikatu Blinky |
+| D-20 | Akcent klienta `#1DB954`, oba motywy wg ustawienia Windows; role koloru rozdzielone dla kontrastu |
 
 ## Otwarte pytania
 
@@ -171,10 +172,10 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | Q-02 | Licencja BlinkyLite — Apache-2.0 jak Blinky? | wydanie publiczne |
 | Q-07 | Czy paczka eksportu ma być dodatkowo podpisana (CMS SignedData), nie tylko zaszyfrowana? | 0054 |
 | Q-08 | Czy eksport ma umieć wybrać podzbiór kart, czy zawsze całość? | 0054 |
-| Q-09 | Jaki dokładnie zielony (hex) ma mieć klient WPF, żeby pasował do bloga? | 0023 |
 
 Zamknięte 2026-09-19, decyzje właściciela:
 - Q-06 (kanał powiadomienia) — **bot Microsoft Teams**; progi domyślnie 30 i 7 dni, konfigurowalne (D-16);
+- Q-09 (kolor klienta) — **`#1DB954`, oba motywy** (D-20);
 - Q-03 (format instalatora) — **MSIX** (D-11);
 - Q-04 (co widzi Helpdesk) — **lista użytkownik/klucz, PUK po wybraniu wpisu** (D-14);
 - Q-05 (kto sprawdza DE i SV) — **tłumaczenia automatyczne, prostym językiem** (D-15).
