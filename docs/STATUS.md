@@ -61,7 +61,7 @@ Nie istnieje: rozwiązanie, projekty, kod, skrypty SQL, testy, CI.
 | 0051 | 5 | Serwer Windows — MSIX | `open` |
 | 0052 | 5 | Klient — MSIX | `open` |
 | 0053 | 5 | Test end-to-end | `open` |
-| 0060 | 6 | Powiadomienie o wygaśnięciu certyfikatu (po 1.0) | `open` |
+| 0060 | 6 | Powiadomienie o wygaśnięciu przez bota Teams (po 1.0) | `open` |
 
 ## Zdecydowane
 
@@ -86,7 +86,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-13 | Profile i role w `appsettings.json`, bez ekranu edycji |
 | D-14 | Helpdesk: lista użytkownik — serial — data; PUK tylko po wybraniu jednego wpisu (WPF) lub wskazaniu w PowerShell; bez szczegółów i weryfikacji |
 | D-15 | Tłumaczenia pisze AI razem z kodem, prostym językiem, według słowniczka |
-| D-16 | Po 1.0: e-mail o wygaśnięciu certyfikatu — tylko informacja, bez odnawiania |
+| D-16 | Po 1.0: powiadomienie o wygaśnięciu certyfikatu przez jednokierunkowego bota Teams (progi 30 i 7 dni) — tylko informacja, bez odnawiania |
 
 ## Otwarte pytania
 
@@ -94,9 +94,9 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 |---|---|---|
 | Q-01 | Czy `IX509CertificateRequestCmc.InitializeFromInnerRequest` przyjmie PKCS#10 podpisany na karcie, bez dostępu do klucza prywatnego? | 0021 |
 | Q-02 | Licencja BlinkyLite — Apache-2.0 jak Blinky? | wydanie publiczne |
-| Q-06 | Powiadomienie: e-mail przez firmowy serwer SMTP wystarczy, czy potrzebny inny kanał (Teams)? Ile dni przed wygaśnięciem? | 0060 |
 
 Zamknięte 2026-09-19, decyzje właściciela:
+- Q-06 (kanał powiadomienia) — **bot Microsoft Teams**; progi domyślnie 30 i 7 dni, konfigurowalne (D-16);
 - Q-03 (format instalatora) — **MSIX** (D-11);
 - Q-04 (co widzi Helpdesk) — **lista użytkownik/klucz, PUK po wybraniu wpisu** (D-14);
 - Q-05 (kto sprawdza DE i SV) — **tłumaczenia automatyczne, prostym językiem** (D-15).
@@ -107,6 +107,7 @@ Zamknięte 2026-09-19, decyzje właściciela:
 |---|---|---|
 | R-03 | WinSCard / CertEnroll z .NET 10 na Windows ARM64 nikt nie uruchomił | 0001 publikuje `win-arm64`, 0053 dowodzi na sprzęcie |
 | R-05 | Usługa Windows w MSIX (`desktop6:Service`) na docelowym Windows Server | 0051 z zapisaną rezerwą: skrypt instalacyjny |
+| R-06 | Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na uprawnienia Graph i ruchu wychodzącego z serwera | wymagania spisane w [09](09-expiry-notification.md#co-przygotowuje-administrator-raz); konto bez Entra → audyt, nie awaria |
 
 ## Niezweryfikowane
 

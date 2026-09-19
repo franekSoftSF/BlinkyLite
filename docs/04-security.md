@@ -10,6 +10,7 @@
 | KEK | pamięć serwera; źródło: env / Docker secret / DPAPI | nikt przez API |
 | Klucz podpisu JWT | pamięć serwera; źródło jak KEK | nikt przez API |
 | Klucz certyfikatu EA | magazyn Windows operatora (najlepiej karta) | nikt; BlinkyLite go tylko używa |
+| Certyfikat aplikacji Entra (bot Teams, po 1.0) | `LocalMachine\My` albo Docker secret | nikt przez API; uprawnienia ograniczone do `User.Read.All` i instalacji własnej aplikacji Teams |
 
 ## Logowanie i JWT
 

@@ -10,7 +10,7 @@ temu jednemu celowi, jest poza zakresem:
 |---|---|
 | Wbudowane CA, Samba4, CES/CEP | Tylko ADCS, tylko przez mechanizm Windows |
 | Agent w tle, kolejka zadań, SignalR | Wydanie jest interaktywne i synchroniczne na stacji |
-| Odnowienia, CRL/OCSP | ADCS / Blinky. BlinkyLite po 1.0 tylko **powiadamia** e-mailem, że certyfikat wygaśnie (0060) |
+| Odnowienia, CRL/OCSP | ADCS / Blinky. BlinkyLite po 1.0 tylko **powiadamia** przez bota Teams, że certyfikat wygaśnie (0060, [09](09-expiry-notification.md)) |
 | Konsola webowa | Przeglądarka wydań jest w WPF |
 | Zmiana / rotacja PUK, odblokowanie PIN, dalsze życie karty | To robi **Blinky** |
 | Reset PIV, `SET PIN RETRIES` | `ykman` albo Blinky |
@@ -184,4 +184,4 @@ management key, koperta w bazie jest jego jedyną kopią. Szczegóły w
 | D-13 | Profile i mapowanie ról w `appsettings.json`, bez edycji w UI | mniej kodu; edycja w UI poza zakresem |
 | D-14 | Helpdesk widzi listę użytkownik — serial — data; PUK tylko po wybraniu jednego wpisu / wskazaniu w PowerShell | decyzja właściciela; osobny DTO listy, brak endpointu z wieloma PUK |
 | D-15 | Tłumaczenia pisze AI razem z kodem, prostym językiem | decyzja właściciela; słowniczek pilnuje spójności terminów |
-| D-16 | Po 1.0: e-mail o wygaśnięciu certyfikatu (0060) | decyzja właściciela; jedyny kod działający bez operatora, tylko informuje |
+| D-16 | Po 1.0: powiadomienie o wygaśnięciu certyfikatu przez jednokierunkowego bota Teams (0060) | decyzja właściciela; jedyny kod działający bez operatora, tylko informuje; bez SDK bota i bez endpointu przychodzącego |

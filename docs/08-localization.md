@@ -38,8 +38,9 @@ swoim języku. Dzięki temu:
 Dziennik audytu przechowuje kod akcji (`puk.disclosed`), a przeglądarka
 wyświetla `audit.puk.disclosed` w języku operatora.
 
-**Jeden wyjątek, po 1.0:** e-mail o wygaśnięciu certyfikatu (0060) serwer
-musi napisać sam, bo nie ma przy nim klienta. Wtedy serwer czyta ten sam
+**Jeden wyjątek, po 1.0:** wiadomość bota Teams o wygaśnięciu certyfikatu
+(0060, [09](09-expiry-notification.md)) serwer musi napisać sam, bo nie ma
+przy nim klienta. Język bierze z `preferredLanguage` użytkownika w Entra. Wtedy serwer czyta ten sam
 katalog `Messages` i przechodzi na `InvariantGlobalization=false` — w trybie
 niezmiennym .NET nie utworzy kultur `de`, `sv`, `pl`. Obraz
 `mcr.microsoft.com/dotnet/aspnet` (Debian) ma ICU, więc kontener tego nie

@@ -21,8 +21,9 @@ po niej ślad:
 
 Na tym koniec. Zmiana PUK, odblokowanie PIN, reset i dalsze życie karty to
 zadanie [Blinky](../blinky), nie BlinkyLite. Po wersji 1.0 dochodzi jedna
-rzecz: e-mail do użytkownika, że jego certyfikat wkrótce wygaśnie — tylko
-informacja, bez odnawiania.
+rzecz: wiadomość od bota BlinkyLite w **Microsoft Teams**, że certyfikat
+użytkownika wkrótce wygaśnie — tylko informacja, bez odnawiania
+([docs/09](docs/09-expiry-notification.md)).
 
 BlinkyLite to uproszczone rodzeństwo [Blinky](../blinky). Warstwa PIV,
 weryfikacja atestacji i wiedza o sprzęcie pochodzą z Blinky i zostały tam
@@ -193,6 +194,7 @@ biblioteki pod nim celują w czyste `net10.0` i budują się wszędzie.
 | [06 — Co przychodzi z Blinky](docs/06-from-blinky.md) | Przenoszony kod i reguły z pomiarów na sprzęcie |
 | [07 — Baza danych](docs/07-database.md) | NHibernate do odczytu, funkcje `bl_*` do zapisu, role bazy, migracje, testy |
 | [08 — Języki](docs/08-localization.md) | EN / DE / SV / PL, katalog komunikatów, testy kompletności |
+| [09 — Powiadomienie w Teams](docs/09-expiry-notification.md) | Po 1.0: bot Teams informuje o wygasającym certyfikacie |
 | [Status](docs/STATUS.md) · [status.json](docs/status.json) | Co jest zrobione, co tylko napisane, co zablokowane |
 
 ## Licencja

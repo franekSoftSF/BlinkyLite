@@ -59,15 +59,16 @@ Windows, a PUK odczytany z bazy odblokowuje jego PIN.
 | 0052 | Klient — MSIX | `.msixbundle` z `win-x64` i `win-arm64`, podpisany certyfikatem code signing z firmowego CA; moduł PowerShell jako osobny `.nupkg` (patrz [01](01-architecture.md#instalacja-msix)); instalacja na czystej stacji x64 i ARM64 |
 | 0053 | Test end-to-end | brama fazy 2 powtórzona: stacja ARM64, wydanie z PowerShell, serwer raz w Dockerze i raz z MSIX; procedura kopii KEK opisana i sprawdzona odtworzeniem |
 
-## Faza 6 — Po 1.0: powiadomienie o wygaśnięciu
+## Faza 6 — Po 1.0: powiadomienie o wygaśnięciu (Teams)
 
 | Patch | Tytuł | DoD |
 |---|---|---|
-| 0060 | Powiadomienie o wygaśnięciu certyfikatu | serwer raz dziennie (`PeriodicTimer` w usłudze, bez osobnego procesu) znajduje wydania `Issued`, których certyfikat wygasa za N dni (konfiguracja, np. 30 i 7), i wysyła e-mail (SMTP) do użytkownika — adres `mail` z AD — oraz opcjonalnie kopię na skrzynkę zespołu. Treść w języku z `preferredLanguage` użytkownika w AD albo domyślnym z konfiguracji, z katalogu `Messages`. Każde wysłanie przez funkcję `bl_expiry_notified` — ten sam próg nie idzie drugi raz (test), wpis w audycie. Tylko informacja: nic nie odnawia, nie dotyka karty ani CA |
+| 0060 | Powiadomienie o wygaśnięciu przez bota Teams | wg [09](09-expiry-notification.md): serwer raz dziennie (`PeriodicTimer` w usłudze, bez osobnego procesu) znajduje wydania `Issued` z certyfikatem wygasającym w progu (domyślnie 30 i 7 dni), znajduje użytkownika w Entra po SID i wysyła mu prywatną wiadomość (Adaptive Card w jego języku) od jednokierunkowego bota BlinkyLite. Każdy próg dokładnie raz (`bl_expiry_notified`, test), audyt wysyłki i błędu. **Dowód:** użytkownik testowy dostaje wiadomość w Teams w dwóch językach; drugie uruchomienie niczego nie wysyła; konto bez Entra daje `cert.expiry-notify-failed`. Tylko informacja: nic nie odnawia, nie dotyka karty ani CA |
 
 Powiadomienie to jedyny kod BlinkyLite, który działa sam, bez operatora.
-Nie rozrasta się w CMS: nie odnawia, nie przypomina drugim kanałem, nie ma
-kolejki — odnowienie robi Blinky albo operator nowym wydaniem.
+Nie rozrasta się w CMS: jeden kanał (Teams), nie odnawia, bot nie
+prowadzi rozmowy, nie ma kolejki — odnowienie robi Blinky albo operator
+nowym wydaniem.
 
 ## Poza zakresem
 

@@ -5,8 +5,10 @@ przez Enroll On Behalf Of. .NET 10: klient WPF (`win-x64`, `win-arm64`) i
 moduł PowerShell na wspólnym silniku, serwer Kestrel + PostgreSQL (Docker albo
 usługa Windows), logowanie AD → JWT, role Admin / SecurityOfficer / Helpdesk.
 **Nie jest CMS-em.** Robi dwie rzeczy: **wydaje** klucz i pozwala go
-**zweryfikować** (tylko odczyt). Po 1.0 dochodzi jedna trzecia: e-mail, że
-certyfikat wygaśnie (0060) — tylko informacja, bez odnawiania. Zmiana PUK, odblokowanie PIN, reset, dalsze
+**zweryfikować** (tylko odczyt). Po 1.0 dochodzi jedna trzecia: wiadomość
+od jednokierunkowego bota Teams, że certyfikat wygaśnie (0060,
+[docs/09](docs/09-expiry-notification.md)) — tylko informacja, bez
+odnawiania, bez rozmowy z botem. Zmiana PUK, odblokowanie PIN, reset, dalsze
 życie karty — to robi Blinky, nie BlinkyLite. Lista w „Poza zakresem” w
 [docs/05-roadmap.md](docs/05-roadmap.md).
 
@@ -133,7 +135,7 @@ docker compose up -d --build       # serwer + postgres
 - **`docs/STATUS.md` i `docs/status.json` muszą się zgadzać**, łącznie z
   `status.updated`, przy każdej zmianie stanu patcha.
 - Nowa reguła z pomiaru na sprzęcie trafia do `docs/06-from-blinky.md` (sekcja
-  reguł) albo, jeśli jest nowa dla BlinkyLite, do nowego `docs/09-hardware-notes.md`.
+  reguł) albo, jeśli jest nowa dla BlinkyLite, do nowego `docs/10-hardware-notes.md`.
   Rzecz, która okazała się błędna, jest oznaczana jako błędna, nie cicho
   usuwana.
 

@@ -71,9 +71,12 @@ wydanie na znanej karcie przechodzi starą w `Retired` dopiero po
 
 ### `expiry_notifications` — wysłane powiadomienia (0060, po 1.0)
 
-`issuance_id` FK, `threshold_days` (`smallint`), `recipient` (`text`),
-`sent_at`; klucz unikalny `(issuance_id, threshold_days)` — ten sam próg nie
-wychodzi dwa razy, nawet po restarcie serwera w trakcie wysyłki.
+`issuance_id` FK, `threshold_days` (`smallint`), `channel` (`teams`),
+`outcome` (`sent` / `skipped` / `failed`), `entra_user_id` (`text` null),
+`error` (`text` null), `at`; klucz unikalny `(issuance_id, threshold_days)` —
+ten sam próg nie wychodzi dwa razy, nawet po restarcie serwera. Błąd
+przejściowy (Graph niedostępny) nie tworzy wiersza, żeby próg wrócił przy
+następnym uruchomieniu ([09](09-expiry-notification.md#błędy)).
 
 ### Profile i role — nie w bazie
 

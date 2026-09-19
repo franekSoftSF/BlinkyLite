@@ -53,7 +53,7 @@
     { "id": 3, "title": "Przeglądarka i weryfikacja", "state": "open", "done": false },
     { "id": 4, "title": "PowerShell", "state": "open", "done": false },
     { "id": 5, "title": "Wdrożenie", "state": "open", "done": false, "gate": "brama fazy 2 na stacji ARM64, z PowerShell, z serwerem w Dockerze i z MSIX" },
-    { "id": 6, "title": "Po 1.0: powiadomienie o wygaśnięciu", "state": "open", "done": false }
+    { "id": 6, "title": "Po 1.0: powiadomienie o wygaśnięciu (Teams)", "state": "open", "done": false }
   ],
   "components": [
     { "name": "BlinkyLite.Contracts", "type": "class lib net10.0 (+ Messages.resx en/de/sv/pl)", "phase": 0, "state": "open" },
@@ -81,24 +81,25 @@
     { "id": "D-13", "choice": "Profile i mapowanie ról w appsettings.json, bez ekranu edycji", "state": "locked", "decidedOn": "2026-09-19" },
     { "id": "D-14", "choice": "Helpdesk: lista użytkownik-serial-data; PUK tylko po wybraniu jednego wpisu lub wskazaniu w PowerShell; bez szczegółów i weryfikacji", "state": "locked", "decidedOn": "2026-09-19", "by": "owner" },
     { "id": "D-15", "choice": "Tłumaczenia pisze AI razem z kodem, prostym językiem, według słowniczka", "state": "locked", "decidedOn": "2026-09-19", "by": "owner" },
-    { "id": "D-16", "choice": "Po 1.0: e-mail o wygaśnięciu certyfikatu, tylko informacja", "state": "locked", "decidedOn": "2026-09-19", "by": "owner" }
+    { "id": "D-16", "choice": "Po 1.0: powiadomienie o wygaśnięciu certyfikatu przez jednokierunkowego bota Teams, progi 30 i 7 dni, tylko informacja", "state": "locked", "decidedOn": "2026-09-19", "by": "owner" }
   ],
   "openQuestions": [
     { "id": "Q-01", "question": "Czy IX509CertificateRequestCmc.InitializeFromInnerRequest przyjmie PKCS#10 podpisany na karcie, bez klucza prywatnego?", "blocks": ["0021"], "needs": "próba na stacji w domenie z ADCS" },
-    { "id": "Q-02", "question": "Licencja BlinkyLite — Apache-2.0 jak Blinky?", "blocks": [], "needs": "decyzja właściciela" },
-    { "id": "Q-06", "question": "Powiadomienie: e-mail przez firmowy SMTP wystarczy, czy inny kanał (Teams)? Ile dni przed wygaśnięciem?", "blocks": ["0060"], "needs": "decyzja właściciela" }
+    { "id": "Q-02", "question": "Licencja BlinkyLite — Apache-2.0 jak Blinky?", "blocks": [], "needs": "decyzja właściciela" }
   ],
   "closedQuestions": [
     { "id": "Q-03", "question": "Format paczki klienta: MSIX czy MSI?", "answer": "MSIX", "closedOn": "2026-09-19", "decision": "D-11" },
     { "id": "Q-04", "question": "Czy Helpdesk widzi certyfikat i atestację, czy tylko listę i PUK?", "answer": "lista użytkownik/klucz, PUK po wybraniu wpisu lub wskazaniu w PowerShell", "closedOn": "2026-09-19", "decision": "D-14" },
-    { "id": "Q-05", "question": "Kto przeczyta tłumaczenia DE i SV przed 1.0?", "answer": "tłumaczenia automatyczne (AI), prostym językiem", "closedOn": "2026-09-19", "decision": "D-15" }
+    { "id": "Q-05", "question": "Kto przeczyta tłumaczenia DE i SV przed 1.0?", "answer": "tłumaczenia automatyczne (AI), prostym językiem", "closedOn": "2026-09-19", "decision": "D-15" },
+    { "id": "Q-06", "question": "Kanał powiadomienia o wygaśnięciu i progi", "answer": "bot Microsoft Teams; progi 30 i 7 dni, konfigurowalne", "closedOn": "2026-09-19", "decision": "D-16" }
   ],
   "risks": [
     { "id": "R-01", "impact": "Awaria w połowie wydania zostawia kartę z MK, którego nie ma w bazie", "handling": "D-03 + koperty nieusuwalne + tabela odzyskiwania w 02" },
     { "id": "R-02", "impact": "Minidriver Yubico przejmuje kartę i blokuje PUK", "handling": "D-06, reguła z Blinky 08" },
     { "id": "R-03", "impact": "Nikt nie uruchomił WinSCard/CertEnroll z .NET 10 na Windows ARM64", "handling": "0001 publikuje win-arm64, 0053 dowodzi na sprzęcie" },
     { "id": "R-04", "impact": "Helpdesk hurtowo odczytuje PUK-i", "handling": "powód obowiązkowy, audyt atomowo w bl_secret_disclose, licznik przy karcie" },
-    { "id": "R-05", "impact": "Usługa Windows w MSIX (desktop6:Service) na docelowym Windows Server", "handling": "0051 z zapisaną rezerwą: skrypt instalacyjny" }
+    { "id": "R-05", "impact": "Usługa Windows w MSIX (desktop6:Service) na docelowym Windows Server", "handling": "0051 z zapisaną rezerwą: skrypt instalacyjny" },
+    { "id": "R-06", "impact": "Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na Graph i ruchu wychodzącego z serwera", "handling": "wymagania w docs/09; konto bez Entra -> audyt cert.expiry-notify-failed, nie awaria" }
   ],
   "patches": [
     { "id": "0000", "phase": 0, "title": "Dokumentacja i schemat działania", "state": "done", "owner": "cloud-ai", "proof": "2026-09-19: README, docs/01-08, STATUS.md, status.json i CLAUDE.md; diagramy mermaid (komponenty, sekwencja wydania, maszyna stanów) w 01 i 02. Tego samego dnia uzupełnione o decyzje właściciela: MSIX, NHibernate + procedury SQL, cztery języki, zakres ograniczony do wydania i weryfikacji (zmiana PUK należy do Blinky)." },
@@ -118,7 +119,7 @@
     { "id": "0051", "phase": 5, "title": "Serwer Windows — MSIX", "state": "open", "owner": "cloud-ai", "proof": null },
     { "id": "0052", "phase": 5, "title": "Klient — MSIX", "state": "open", "owner": "cloud-ai", "proof": null },
     { "id": "0053", "phase": 5, "title": "Test end-to-end", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0060", "phase": 6, "title": "Powiadomienie o wygaśnięciu certyfikatu (po 1.0)", "state": "open", "owner": "cloud-ai", "proof": null }
+    { "id": "0060", "phase": 6, "title": "Powiadomienie o wygaśnięciu przez bota Teams (po 1.0)", "state": "open", "owner": "cloud-ai", "proof": null }
   ],
   "notVerified": []
 }
