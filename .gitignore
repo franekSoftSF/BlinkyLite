@@ -1,0 +1,31 @@
+# Build
+bin/
+obj/
+out/
+*.user
+*.suo
+.vs/
+.idea/
+TestResults/
+*.trx
+
+# Local config and secrets
+.env
+appsettings.*.local.json
+*.pfx
+*.p12
+*.key
+certs/
+
+# Runtime data
+data/
+*.log
+
+# APDU transcripts carry the token serial and certificates
+transcripts/
+
+# Build output: installers and published binaries
+artifacts/
+
+# Worktrees for parallel work
+.worktrees/
