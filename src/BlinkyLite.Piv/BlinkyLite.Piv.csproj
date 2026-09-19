@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Filled in 0010 from Blinky.Piv. Plain net10.0 so that the server can
+       re-verify attestation with the same code the workstation uses. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BlinkyLite.UnitTests" />
+  </ItemGroup>
+
+</Project>

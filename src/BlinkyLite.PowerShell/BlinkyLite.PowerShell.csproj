@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <AssemblyName>BlinkyLite.PowerShell</AssemblyName>
+    <!-- Same reason as the client: the module formats dates for de-DE, sv-SE
+         and pl-PL, which invariant mode cannot create. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <!-- A binary module is loaded from its folder with every dependency next
+         to it; pwsh does not read deps.json of an imported assembly. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- pwsh supplies System.Management.Automation at run time; shipping a
+         second copy in the module folder is how binary modules break across
+         PowerShell patch releases. -->
+    <PackageReference Include="System.Management.Automation" PrivateAssets="all" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlinkyLite.Issuance\BlinkyLite.Issuance.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="BlinkyLite.psd1" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

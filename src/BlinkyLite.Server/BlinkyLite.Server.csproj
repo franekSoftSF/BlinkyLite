@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Plain net10.0: it runs in a Linux container as well as a Windows
+       service, and never talks to a card or a CA. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <UserSecretsId>blinkylite-server</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BlinkyLite.UnitTests" />
+    <InternalsVisibleTo Include="BlinkyLite.DbTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="System.DirectoryServices.Protocols" />
+    <PackageReference Include="NHibernate" />
+    <PackageReference Include="FluentNHibernate" />
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlinkyLite.Contracts\BlinkyLite.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

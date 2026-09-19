@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <SelfContained>false</SelfContained>
+
+    <!-- Directory.Build.props turns invariant mode on for the container; WPF
+         asks for the current input language the moment a text box takes
+         focus, and invariant mode rejects any real culture. In Blinky that
+         crash happened exactly when somebody clicked into the PIN box. It is
+         also what lets de-DE, sv-SE and pl-PL formatting exist at all. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlinkyLite.Issuance\BlinkyLite.Issuance.csproj" />
+  </ItemGroup>
+
+</Project>

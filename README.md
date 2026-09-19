@@ -143,7 +143,9 @@ użytkownika. Brak tłumaczenia to czerwony build —
 
 ## Uruchomienie
 
-Kod jeszcze nie istnieje — patrz [docs/STATUS.md](docs/STATUS.md). Docelowo:
+Na dziś istnieje szkielet (patch 0001): serwer odpowiada na `/health`, klient
+otwiera puste okno, moduł PowerShell się ładuje — patrz
+[docs/STATUS.md](docs/STATUS.md). Docelowo:
 
 ```bash
 # serwer w Dockerze

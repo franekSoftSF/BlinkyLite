@@ -43,7 +43,8 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `packaging/` | manifesty MSIX (klient bundle x64+ARM64, serwer z usługą) |
 | `docs/` | numerowane dokumenty + `STATUS.md` i `status.json` |
 
-(Na dziś istnieją tylko `docs/` i pliki konfiguracyjne — patrz STATUS.)
+(Na dziś istnieje szkielet z 0001: projekty, testy, CI — bez logiki
+wydania, bez `db/migrations` i bez `packaging/`. Patrz STATUS.)
 
 ## Komendy
 

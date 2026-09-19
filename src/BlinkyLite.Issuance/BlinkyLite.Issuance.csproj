@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Windows only: CertEnroll and ICertRequest3 are COM, and the one issuance
+       engine is shared by the WPF client and the PowerShell module. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BlinkyLite.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlinkyLite.Contracts\BlinkyLite.Contracts.csproj" />
+    <ProjectReference Include="..\BlinkyLite.Piv\BlinkyLite.Piv.csproj" />
+  </ItemGroup>
+
+</Project>
