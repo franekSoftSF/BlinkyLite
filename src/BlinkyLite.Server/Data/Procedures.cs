@@ -21,7 +21,12 @@ public sealed class DatabaseRuleException(string sqlState, string messageKey, st
     public string? Detail { get; } = detail;
 }
 
+/// <param name="IssuanceId">
+/// Chosen by the server, because the envelopes' AAD contains it and they are
+/// sealed before the reservation exists (D-03, migration 0005).
+/// </param>
 public sealed record IssuanceReservation(
+    Guid IssuanceId,
     long CardSerial,
     string Firmware,
     bool HasPuk,
@@ -78,6 +83,21 @@ public enum AuditAction
     AuthDenied,
 }
 
+/// <summary>The server's only write path; see <see cref="Procedures"/>.</summary>
+public interface IProcedures
+{
+    Task<Guid> ReserveIssuanceAsync(IssuanceReservation r, Actor actor, CancellationToken ct = default);
+    Task MarkCustomisedAsync(Guid issuanceId, Actor actor, CancellationToken ct = default);
+    Task MarkAttestedAsync(Guid issuanceId, AttestationRecord a, Actor actor, CancellationToken ct = default);
+    Task MarkSubmittedAsync(Guid issuanceId, int caRequestId, string eaThumbprint, Actor actor, CancellationToken ct = default);
+    Task MarkPendingAsync(Guid issuanceId, Actor actor, CancellationToken ct = default);
+    Task MarkIssuedAsync(Guid issuanceId, IssuedCertificate c, Actor actor, CancellationToken ct = default);
+    Task MarkFailedAsync(Guid issuanceId, string error, Actor actor, CancellationToken ct = default);
+    Task<SecretEnvelope> DiscloseSecretAsync(long cardSerial, SecretKind kind, string reason, Actor actor, CancellationToken ct = default);
+    Task<IReadOnlyList<ManagementKeyCandidate>> GetManagementKeyCandidatesAsync(long cardSerial, Actor actor, CancellationToken ct = default);
+    Task AuditAsync(AuditAction action, object? data, Actor actor, CancellationToken ct = default);
+}
+
 /// <summary>
 /// The server's only write path: one typed method per bl_* function. Each call
 /// is one statement and therefore one transaction - the function locks, checks,
@@ -87,13 +107,13 @@ public enum AuditAction
 /// Plain Npgsql rather than an NHibernate SQL query: inet, text[], jsonb and
 /// bytea need explicit parameter types, which NHibernate would guess.
 /// </remarks>
-public sealed class Procedures(NpgsqlDataSource dataSource)
+public sealed class Procedures(NpgsqlDataSource dataSource) : IProcedures
 {
     public async Task<Guid> ReserveIssuanceAsync(IssuanceReservation r, Actor actor, CancellationToken ct = default)
     {
         var id = await ScalarAsync("bl_issuance_reserve",
         [
-            Bigint(r.CardSerial), Text(r.Firmware), Bool(r.HasPuk),
+            Uuid(r.IssuanceId), Bigint(r.CardSerial), Text(r.Firmware), Bool(r.HasPuk),
             Text(r.TargetSam), Text(r.TargetUpn), Text(r.TargetSid), Text(r.TargetDisplayName),
             Text(r.ProfileName), Text(r.TemplateName), Text(r.CaConfig),
             Text(r.WindowsIdentity), Text(r.Workstation),

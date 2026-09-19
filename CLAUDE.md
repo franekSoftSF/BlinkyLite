@@ -35,7 +35,7 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `src/BlinkyLite.Issuance` | silnik wydania: personalizacja, atestacja, CertEnroll CMC, `ICertRequest3`, klient API. `net10.0-windows` |
 | `src/BlinkyLite.Client` | WPF: logowanie, wydanie, przeglądarka |
 | `src/BlinkyLite.PowerShell` | moduł binarny, pwsh 7.6+ — cienka powłoka na silniku |
-| `src/BlinkyLite.Server` | Kestrel: auth AD → JWT, API, koperty sekretów; NHibernate (Fluent) do odczytu, klasa `Procedures` do zapisu |
+| `src/BlinkyLite.Server` | Kestrel: `Auth/` (LDAP, JWT, role, polityki), `Api/` (endpointy, ProblemDetails), `Secrets/` (koperty AES-GCM), `Data/` (NHibernate do odczytu, `Procedures` do zapisu), `Startup/` (wiring) |
 | `db/init/00_roles.sql` | role bazy — raz, jako superużytkownik, poza serwerem |
 | `db/migrations` | numerowane skrypty SQL: schemat, funkcje `bl_*`, uprawnienia — źródło prawdy o bazie; osadzone w binarce serwera |
 | `src/BlinkyLite.Contracts/Resources` | `Messages.resx` + `.de`, `.sv`, `.pl` — jedyny katalog tekstów |
@@ -100,6 +100,15 @@ docker compose up -d --build       # serwer + postgres
 - **Helpdesk widzi listę, nie szczegóły.** Lista (użytkownik, serial, data,
   stan) nigdy nie zawiera PUK; PUK zawsze dla jednej wskazanej karty.
   Szczegóły to osobny DTO i osobna polityka — nie ukrywaj pól w kliencie.
+- **Każdy endpoint ma politykę** z `Policies` albo jawne `AllowAnonymous`, a
+  anonimowe są tylko `/health` i `/api/auth/login` — pilnuje tego test
+  chodzący po tablicy tras. Domyślna polityka i tak wymaga tokenu.
+- **Serwer nie tłumaczy.** Błąd wychodzi jako ProblemDetails z `code`
+  (klucz komunikatu z `ErrorCodes`) i `args`; nowy kod = wpis w `ErrorCodes`
+  plus klucz w czterech językach.
+- **Konfiguracja przez `appsettings.Example.json`.** Nowa opcja trafia tam z
+  komentarzem, dlaczego istnieje. Sekrety (klucz JWT, KEK, hasła) tylko ze
+  zmiennych środowiskowych, Docker secrets albo pliku DPAPI — nigdy w git.
 - **Prosto.** BlinkyLite ma być mały. Zanim dodasz ekran, tabelę albo opcję,
   sprawdź, czy nie ma jej w „Poza zakresem” w roadmapie — jeśli jest, nie
   robimy jej. Poza wydaniem BlinkyLite nie pisze na kartę nigdy.

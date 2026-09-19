@@ -2,10 +2,11 @@
 
 **Ostatnia aktualizacja:** 2026-09-19
 **Faza:** 0 — Fundament
-**Ogólnie:** szkielet (0001) i baza (0002) stoją: każdy zapis przechodzi
-przez funkcję `bl_*` z audytem w tej samej transakcji, a PostgreSQL sam
-odmawia aplikacji zapisu z pominięciem funkcji i odczytu PUK bez śladu —
-82 testy na prawdziwym PostgreSQL 16; logiki wydania jeszcze nie ma
+**Ogólnie:** stoją szkielet (0001), baza (0002) i serwer (0003): logowanie z
+AD daje JWT z rolami, każdy endpoint ma politykę, sekrety mają koperty
+AES-256-GCM przywiązane do karty i wydania, a serwer nie wystartuje bez TLS
+ani przy rozjeździe migracji — 112 testów jednostkowych i 84 na PostgreSQL 16.
+Nie ma jeszcze logiki wydania ani kontaktu z prawdziwym AD
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
 się zgadzać; `status.json` czyta build albo dashboard. Definicje ukończenia są
@@ -70,8 +71,28 @@ teraz zapisane w 07: zwykły `SELECT` na `card_secrets` pozwoliłby czytać PUK
 bez audytu (stąd uprawnienie kolumnowe), a `SchemaValidator` porównuje typy
 z `udt_name` (`int8`, nie `bigint`).
 
-Nie istnieje: logika wydania, warstwa PIV, logowanie, teksty w czterech
-językach.
+Od 0003 (19 września 2026) działa serwer: logowanie LDAPS bind → JWT z rolami
+z grup AD, polityki na każdym endpoincie, wyszukiwanie użytkownika, koperty
+sekretów i jednolity format błędów (`code` + `args`, bez tłumaczenia po
+stronie serwera). Sprawdzone:
+
+- 112 testów jednostkowych: każdy endpoint ma politykę albo jest jawnie
+  anonimowy; złe hasło → 401 i `auth.denied` bez SID; dobre hasło bez grupy →
+  403 z SID; puste hasło nie dociera do LDAP; pięć nieudanych prób blokuje
+  konto przed AD; token cudzym kluczem i token wygasły odrzucone; Helpdesk nie
+  przeszuka katalogu; koperta przeniesiona do innego wydania, innej karty albo
+  do kolumny management key **nie otwiera się**, każdy zmieniony bajt jest
+  wykrywany, a po rotacji KEK stare koperty wciąż się otwierają; żaden publiczny
+  typ ani kolumna nie niesie PIN-u;
+- 84 testy bazy (migracja 0005: id wydania nadaje serwer, bo AAD koperty je
+  zawiera) plus test spinający koperty z `bl_secret_disclose`;
+- serwer naprawdę: po HTTPS `/health` odpowiada, `/api/auth/me` bez tokenu daje
+  401 `error.auth.required`, logowanie bez skonfigurowanego LDAP 503
+  `error.directory.unavailable`, a po zwykłym HTTP w Production serwer odmawia
+  startu (kod 4).
+
+Nie istnieje: logika wydania, warstwa PIV, teksty w czterech językach,
+kontakt z prawdziwym AD i CA.
 
 ## Stany
 
@@ -91,7 +112,7 @@ językach.
 | 0000 | 0 | Dokumentacja i schemat działania | `done` |
 | 0001 | 0 | Szkielet repozytorium | `done-unverified` |
 | 0002 | 0 | Baza danych (NHibernate + procedury `bl_*`) | `done-unverified` |
-| 0003 | 0 | Serwer | `open` |
+| 0003 | 0 | Serwer | `done-unverified` |
 | 0004 | 0 | Języki EN / DE / SV / PL | `open` |
 | 0010 | 1 | Import `Blinky.Piv` | `open` |
 | 0011 | 1 | Personalizacja i klucz | `open` |
@@ -131,6 +152,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-14 | Helpdesk: lista użytkownik — serial — data; PUK tylko po wybraniu jednego wpisu (WPF) lub wskazaniu w PowerShell; bez szczegółów i weryfikacji |
 | D-15 | Tłumaczenia pisze AI razem z kodem, prostym językiem, według słowniczka |
 | D-16 | Po 1.0: powiadomienie o wygaśnięciu certyfikatu przez jednokierunkowego bota Teams (progi 30 i 7 dni) — tylko informacja, bez odnawiania |
+| D-17 | Grupy `Admin` i `SecurityOfficer` to grupy Enrollment Agenta na CA |
 
 ## Otwarte pytania
 
@@ -162,6 +184,8 @@ Zamknięte 2026-09-19, decyzje właściciela:
 | 0001: import modułu w CI | `windows-latest` może mieć pwsh starszy niż 7.6 — wtedy krok ostrzega i nie sprawdza importu | pierwszy push |
 | 0002: testy bazy w CI | przechodzą lokalnie i w kontenerze Linux, ale job `linux` nie uruchomił się na GitHub | pierwszy push |
 | 0002: przegląd funkcji `bl_*` | DoD sprawdzał autor; reguły stanów i uprawnień warto, żeby przeczytał ktoś drugi | przegląd przed 0020 |
+| 0003: `LdapDirectory` przeciw prawdziwemu AD | testy używają atrapy katalogu; bind, `tokenGroups`, filtry i LDAPS nie widziały kontrolera domeny | pierwsza stacja w domenie (0021) |
+| 0003: TLS Kestrela z certyfikatem z magazynu Windows | sprawdzony tylko certyfikat deweloperski z pliku | 0051 |
 
 Rzeczy, których Blinky nie sprawdził, a BlinkyLite będzie musiał:
 [06 — Co przychodzi z Blinky](06-from-blinky.md#czego-blinky-nie-sprawdził-a-blinkylite-potrzebuje).

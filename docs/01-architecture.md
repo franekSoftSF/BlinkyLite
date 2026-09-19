@@ -133,7 +133,12 @@ flowchart TB
 | `Helpdesk` | lista użytkownik — klucz — data; PUK dopiero po wybraniu wpisu (WPF) albo wskazaniu użytkownika/serialu (PowerShell). Bez szczegółów certyfikatu i atestacji, bez weryfikacji karty |
 
 Operator z wieloma grupami dostaje sumę uprawnień. Użytkownik bez żadnej
-z grup nie dostaje tokenu (401 z komunikatem, nie pusty token).
+z grup nie dostaje tokenu (403 `error.auth.no-role` — hasło było poprawne,
+więc to nie jest nieudane logowanie).
+
+Grupy `Admin` i `SecurityOfficer` są jednocześnie grupami Enrollment Agenta na
+CA (D-17): jeśli ktoś może wydać kartę w BlinkyLite, to znaczy, że CA też mu
+na to pozwala.
 
 Dwie tożsamości w jednym wydaniu: **JWT** mówi serwerowi, kim jest operator
 w BlinkyLite; **Windows** mówi CA, kto wysyła żądanie EOBO i czyj jest
@@ -185,3 +190,4 @@ management key, koperta w bazie jest jego jedyną kopią. Szczegóły w
 | D-14 | Helpdesk widzi listę użytkownik — serial — data; PUK tylko po wybraniu jednego wpisu / wskazaniu w PowerShell | decyzja właściciela; osobny DTO listy, brak endpointu z wieloma PUK |
 | D-15 | Tłumaczenia pisze AI razem z kodem, prostym językiem | decyzja właściciela; słowniczek pilnuje spójności terminów |
 | D-16 | Po 1.0: powiadomienie o wygaśnięciu certyfikatu przez jednokierunkowego bota Teams (0060) | decyzja właściciela; jedyny kod działający bez operatora, tylko informuje; bez SDK bota i bez endpointu przychodzącego |
+| D-17 | Grupy AD mapowane na `Admin` i `SecurityOfficer` to te same grupy, które mają uprawnienia Enrollment Agenta na CA | decyzja właściciela; jedna lista zamiast dwóch, które można rozjechać — serwer odmawia startu, gdy obie są puste |
