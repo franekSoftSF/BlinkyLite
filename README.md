@@ -200,6 +200,7 @@ biblioteki pod nim celują w czyste `net10.0` i budują się wszędzie.
 | [07 — Baza danych](docs/07-database.md) | NHibernate do odczytu, funkcje `bl_*` do zapisu, role bazy, migracje, testy |
 | [08 — Języki](docs/08-localization.md) | EN / DE / SV / PL, katalog komunikatów, testy kompletności |
 | [09 — Powiadomienie w Teams](docs/09-expiry-notification.md) | Po 1.0: bot Teams informuje o wygasającym certyfikacie |
+| [10 — Eksport do Blinky](docs/10-blinky-export.md) | Jak dane BlinkyLite przechodzą do pełnego CMS, z sekretami zaszyfrowanymi do jego certyfikatu |
 | [Status](docs/STATUS.md) · [status.json](docs/status.json) | Co jest zrobione, co tylko napisane, co zablokowane |
 
 ## Licencja

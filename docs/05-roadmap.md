@@ -4,7 +4,7 @@ Patch jest skończony, kiedy jego **definicję ukończenia (DoD)** może sprawdz
 ktoś, kto go nie pisał — nie wtedy, gdy kod istnieje. Stany patchy są w
 [STATUS.md](STATUS.md) i [status.json](status.json); tu są tylko definicje.
 
-BlinkyLite ma być mały. Do wersji 1.0 roadmapa ma **16 patchy**, po 1.0
+BlinkyLite ma być mały. Do wersji 1.0 roadmapa ma **18 patchy**, po 1.0
 jeden (powiadomienie o wygaśnięciu certyfikatu); wszystko, co nie jest
 niezbędne do „wydaj klucz, zapisz PUK, zweryfikuj kto co dostał”, jest
 „Poza zakresem” na dole. Numeracja: dziesiątki = faza.
@@ -17,6 +17,7 @@ niezbędne do „wydaj klucz, zapisz PUK, zweryfikuj kto co dostał”, jest
 | 0001 | Szkielet repozytorium | `BlinkyLite.slnx` z sześcioma projektami + testy; `dotnet build`/`test` przechodzą na Windows; `dotnet publish` klienta daje `win-x64` **i** `win-arm64`; CI: job Windows (build + testy) i job Linux (serwer + testy bazy na PostgreSQL); wersje pakietów (NHibernate, FluentNHibernate, Npgsql, JwtBearer, PowerShell SDK) z prawdziwego restore |
 | 0002 | Baza danych | migracje SQL, trzy role, wszystkie funkcje `bl_*`, mapowania FluentNHibernate tylko do odczytu, klasa `Procedures`, `SchemaValidator` — wg [07](07-database.md); **każdy punkt z „Testy bazy” w 07 przechodzi** |
 | 0003 | Serwer | Kestrel z TLS, Serilog, `/health`; logowanie LDAPS bind → JWT z rolami z grup AD; polityki na każdym endpoincie (test to wymusza); wyszukiwanie użytkownika; koperty AES-256-GCM (koperta przeniesiona do innego wiersza się nie deszyfruje); błędy jako `code` + `args` |
+| 0005 | Sekrety poza konfiguracją | `ISecretStore`: plik sekretu (Docker `/run/secrets`, Windows plik DPAPI w zakresie maszyny) → zmienna środowiskowa; KEK, klucz JWT, hasło LDAP i hasło do bazy czytane wyłącznie stamtąd. Sekret wpisany wprost do `appsettings.json` **zatrzymuje start** z nazwą klucza (test); zbyt szerokie ACL pliku → ostrzeżenie w logu. Zgodnie z tabelą w [04](04-security.md#sekrety-na-serwerze) |
 | 0004 | Języki | katalog `Messages` EN/DE/SV/PL, `Strings` z przełączaniem na żywo, test kompletności z [08](08-localization.md#testy-kompletności); wszystkie teksty w prostym języku według słowniczka `GLOSSARY.md` |
 
 ## Faza 1 — Karta
@@ -58,6 +59,7 @@ Windows, a PUK odczytany z bazy odblokowuje jego PIN.
 | 0051 | Serwer Windows — MSIX | paczka MSIX z usługą (`desktop6:Service`), konfiguracja i KEK (DPAPI) w `%ProgramData%\BlinkyLite`, migracje; aktualizacja paczki zachowuje konfigurację; odinstalowanie nie rusza bazy. Jeśli usługa w MSIX okaże się niewykonalna na docelowym Windows Server — skrypt instalacyjny i zapisany powód |
 | 0052 | Klient — MSIX | `.msixbundle` z `win-x64` i `win-arm64`, podpisany certyfikatem code signing z firmowego CA; moduł PowerShell jako osobny `.nupkg` (patrz [01](01-architecture.md#instalacja-msix)); instalacja na czystej stacji x64 i ARM64 |
 | 0053 | Test end-to-end | brama fazy 2 powtórzona: stacja ARM64, wydanie z PowerShell, serwer raz w Dockerze i raz z MSIX; procedura kopii KEK opisana i sprawdzona odtworzeniem |
+| 0054 | Eksport do Blinky | wg [10](10-blinky-export.md): `POST /api/export/blinky` (tylko Admin) oddaje ZIP z kartami, wydaniami, certyfikatami i atestacjami oraz `secrets.p7m` — PUK i management key zaszyfrowane **do certyfikatu Blinky** (CMS EnvelopedData). Każda karta przechodzi przez `bl_secret_disclose`, więc zostaje w audycie; plus jedno `export.blinky` z liczbami i odciskiem odbiorcy. **Dowód:** paczka z dwóch kart rozszyfrowana kluczem prywatnym odbiorcy zawiera te same PUK-i, co odsłonięte pojedynczo; bez tego klucza nie da się z niej nic wyjąć |
 
 ## Faza 6 — Po 1.0: powiadomienie o wygaśnięciu (Teams)
 

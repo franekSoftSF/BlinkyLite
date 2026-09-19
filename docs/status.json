@@ -9,12 +9,23 @@
     "sibling": "../blinky",
     "license": "tbd",
     "docsLanguage": "pl",
-    "uiLanguages": ["en", "de", "sv", "pl"],
+    "uiLanguages": [
+      "en",
+      "de",
+      "sv",
+      "pl"
+    ],
     "runtime": ".NET 10",
     "platforms": {
-      "client": ["win-x64", "win-arm64"],
+      "client": [
+        "win-x64",
+        "win-arm64"
+      ],
       "powershell": "pwsh 7.6+",
-      "server": ["docker-linux", "windows-service-msix"],
+      "server": [
+        "docker-linux",
+        "windows-service-msix"
+      ],
       "database": "PostgreSQL 16+"
     },
     "persistence": {
@@ -30,7 +41,7 @@
     "phase": 0,
     "phaseTitle": "Fundament",
     "state": "open",
-    "summary": "Szkielet (0001), baza (0002) i serwer (0003) stoją, wszystkie done-unverified: logowanie AD -> JWT z rolami, polityka na każdym endpoincie, koperty AES-256-GCM przywiązane do karty i wydania, brak startu bez TLS. 112 testów jednostkowych, 84 na PostgreSQL 16. Logiki wydania i kontaktu z AD jeszcze nie ma.",
+    "summary": "Szkielet (0001), baza (0002) i serwer (0003) stoją, wszystkie done-unverified: logowanie AD -> JWT z rolami, polityka na każdym endpoincie, koperty AES-256-GCM przywiązane do karty i wydania, brak startu bez TLS. 112 testów jednostkowych, 84 na PostgreSQL 16. CI na GitHub zielone. Logiki wydania i kontaktu z AD jeszcze nie ma.",
     "nothingIssuedYet": true
   },
   "stateLegend": {
@@ -42,93 +53,546 @@
     "deferred": "świadomie odłożone"
   },
   "roles": [
-    { "role": "Admin", "can": ["issue", "list", "details", "verify", "reveal-puk-single", "reveal-mgmt-key", "audit"] },
-    { "role": "SecurityOfficer", "can": ["issue", "list", "details", "verify", "reveal-puk-single"] },
-    { "role": "Helpdesk", "can": ["list", "reveal-puk-single"] }
+    {
+      "role": "Admin",
+      "can": [
+        "issue",
+        "list",
+        "details",
+        "verify",
+        "reveal-puk-single",
+        "reveal-mgmt-key",
+        "audit"
+      ]
+    },
+    {
+      "role": "SecurityOfficer",
+      "can": [
+        "issue",
+        "list",
+        "details",
+        "verify",
+        "reveal-puk-single"
+      ]
+    },
+    {
+      "role": "Helpdesk",
+      "can": [
+        "list",
+        "reveal-puk-single"
+      ]
+    }
   ],
   "phases": [
-    { "id": 0, "title": "Fundament", "state": "open", "done": false },
-    { "id": 1, "title": "Karta", "state": "open", "done": false },
-    { "id": 2, "title": "Wydanie", "state": "open", "done": false, "gate": "kartą wydaną z WPF przez EOBO użytkownik loguje się do Windows, a PUK z bazy odblokowuje jego PIN" },
-    { "id": 3, "title": "Przeglądarka i weryfikacja", "state": "open", "done": false },
-    { "id": 4, "title": "PowerShell", "state": "open", "done": false },
-    { "id": 5, "title": "Wdrożenie", "state": "open", "done": false, "gate": "brama fazy 2 na stacji ARM64, z PowerShell, z serwerem w Dockerze i z MSIX" },
-    { "id": 6, "title": "Po 1.0: powiadomienie o wygaśnięciu (Teams)", "state": "open", "done": false }
+    {
+      "id": 0,
+      "title": "Fundament",
+      "state": "open",
+      "done": false
+    },
+    {
+      "id": 1,
+      "title": "Karta",
+      "state": "open",
+      "done": false
+    },
+    {
+      "id": 2,
+      "title": "Wydanie",
+      "state": "open",
+      "done": false,
+      "gate": "kartą wydaną z WPF przez EOBO użytkownik loguje się do Windows, a PUK z bazy odblokowuje jego PIN"
+    },
+    {
+      "id": 3,
+      "title": "Przeglądarka i weryfikacja",
+      "state": "open",
+      "done": false
+    },
+    {
+      "id": 4,
+      "title": "PowerShell",
+      "state": "open",
+      "done": false
+    },
+    {
+      "id": 5,
+      "title": "Wdrożenie",
+      "state": "open",
+      "done": false,
+      "gate": "brama fazy 2 na stacji ARM64, z PowerShell, z serwerem w Dockerze i z MSIX"
+    },
+    {
+      "id": 6,
+      "title": "Po 1.0: powiadomienie o wygaśnięciu (Teams)",
+      "state": "open",
+      "done": false
+    }
   ],
   "components": [
-    { "name": "BlinkyLite.Contracts", "type": "class lib net10.0 (+ Messages.resx en/de/sv/pl)", "phase": 0, "state": "open" },
-    { "name": "BlinkyLite.Piv", "type": "class lib net10.0", "phase": 1, "state": "open", "source": "Blinky.Piv" },
-    { "name": "BlinkyLite.Issuance", "type": "class lib net10.0-windows", "phase": 1, "state": "open" },
-    { "name": "BlinkyLite.Client", "type": "WPF net10.0-windows (win-x64, win-arm64), MSIX bundle", "phase": 2, "state": "open" },
-    { "name": "BlinkyLite.PowerShell", "type": "binary module, pwsh 7.6+, nupkg", "phase": 4, "state": "open" },
-    { "name": "BlinkyLite.Server", "type": "ASP.NET Core Kestrel net10.0, NHibernate read + bl_* functions write", "phase": 0, "state": "open" }
+    {
+      "name": "BlinkyLite.Contracts",
+      "type": "class lib net10.0 (+ Messages.resx en/de/sv/pl)",
+      "phase": 0,
+      "state": "open"
+    },
+    {
+      "name": "BlinkyLite.Piv",
+      "type": "class lib net10.0",
+      "phase": 1,
+      "state": "open",
+      "source": "Blinky.Piv"
+    },
+    {
+      "name": "BlinkyLite.Issuance",
+      "type": "class lib net10.0-windows",
+      "phase": 1,
+      "state": "open"
+    },
+    {
+      "name": "BlinkyLite.Client",
+      "type": "WPF net10.0-windows (win-x64, win-arm64), MSIX bundle",
+      "phase": 2,
+      "state": "open"
+    },
+    {
+      "name": "BlinkyLite.PowerShell",
+      "type": "binary module, pwsh 7.6+, nupkg",
+      "phase": 4,
+      "state": "open"
+    },
+    {
+      "name": "BlinkyLite.Server",
+      "type": "ASP.NET Core Kestrel net10.0, NHibernate read + bl_* functions write",
+      "phase": 0,
+      "state": "open"
+    }
   ],
   "decisions": [
-    { "id": "D-01", "choice": ".NET 10; klient win-x64 i win-arm64", "state": "locked", "decidedOn": "2026-09-19" },
-    { "id": "D-02", "choice": "Warstwa PIV z Blinky.Piv, nie Yubico SDK", "state": "locked", "decidedOn": "2026-09-19" },
-    { "id": "D-03", "choice": "Serwer generuje PUK i MK przed dotknięciem karty", "state": "locked", "decidedOn": "2026-09-19" },
-    { "id": "D-04", "choice": "CMC przez CertEnroll; builder z Blinky jako rezerwa", "state": "provisional", "decidedOn": "2026-09-19" },
-    { "id": "D-05", "choice": "Management key losowy i przechowywany (nie wyprowadzany)", "state": "locked", "decidedOn": "2026-09-19" },
-    { "id": "D-06", "choice": "MK także w PRINTED za PIN-em + flaga ADMIN DATA", "state": "locked", "decidedOn": "2026-09-19" },
-    { "id": "D-07", "choice": "NHibernate + FluentNHibernate do odczytu, encje tylko do odczytu", "state": "locked", "decidedOn": "2026-09-19", "by": "owner" },
-    { "id": "D-07a", "choice": "Zapis wyłącznie przez funkcje PL/pgSQL bl_*; rola aplikacji bez INSERT/UPDATE/DELETE", "state": "locked", "decidedOn": "2026-09-19", "by": "owner" },
-    { "id": "D-07b", "choice": "Schemat w numerowanych skryptach SQL, mapowania sprawdzane SchemaValidatorem", "state": "locked", "decidedOn": "2026-09-19" },
-    { "id": "D-08", "choice": "JWT HS256, 30 min, bez refresh tokenu", "state": "provisional", "decidedOn": "2026-09-19" },
-    { "id": "D-09", "choice": "Logowanie przez LDAPS bind z poświadczeniami operatora", "state": "locked", "decidedOn": "2026-09-19" },
-    { "id": "D-10", "choice": "Moduł PowerShell binarny na wspólnym silniku", "state": "locked", "decidedOn": "2026-09-19" },
-    { "id": "D-11", "choice": "MSIX: klient bundle x64+ARM64, serwer Windows z usługą; moduł PS jako nupkg", "state": "locked", "decidedOn": "2026-09-19", "by": "owner" },
-    { "id": "D-12", "choice": "Języki EN, DE, SV, PL; jeden katalog resx; serwer zwraca kody, klient tłumaczy", "state": "locked", "decidedOn": "2026-09-19", "by": "owner" },
-    { "id": "D-13", "choice": "Profile i mapowanie ról w appsettings.json, bez ekranu edycji", "state": "locked", "decidedOn": "2026-09-19" },
-    { "id": "D-14", "choice": "Helpdesk: lista użytkownik-serial-data; PUK tylko po wybraniu jednego wpisu lub wskazaniu w PowerShell; bez szczegółów i weryfikacji", "state": "locked", "decidedOn": "2026-09-19", "by": "owner" },
-    { "id": "D-15", "choice": "Tłumaczenia pisze AI razem z kodem, prostym językiem, według słowniczka", "state": "locked", "decidedOn": "2026-09-19", "by": "owner" },
-    { "id": "D-16", "choice": "Po 1.0: powiadomienie o wygaśnięciu certyfikatu przez jednokierunkowego bota Teams, progi 30 i 7 dni, tylko informacja", "state": "locked", "decidedOn": "2026-09-19", "by": "owner" },
-    { "id": "D-17", "choice": "Grupy AD mapowane na Admin i SecurityOfficer to te same grupy, które mają uprawnienia Enrollment Agenta na CA", "state": "locked", "decidedOn": "2026-09-19", "by": "owner" }
+    {
+      "id": "D-01",
+      "choice": ".NET 10; klient win-x64 i win-arm64",
+      "state": "locked",
+      "decidedOn": "2026-09-19"
+    },
+    {
+      "id": "D-02",
+      "choice": "Warstwa PIV z Blinky.Piv, nie Yubico SDK",
+      "state": "locked",
+      "decidedOn": "2026-09-19"
+    },
+    {
+      "id": "D-03",
+      "choice": "Serwer generuje PUK i MK przed dotknięciem karty",
+      "state": "locked",
+      "decidedOn": "2026-09-19"
+    },
+    {
+      "id": "D-04",
+      "choice": "CMC przez CertEnroll; builder z Blinky jako rezerwa",
+      "state": "provisional",
+      "decidedOn": "2026-09-19"
+    },
+    {
+      "id": "D-05",
+      "choice": "Management key losowy i przechowywany (nie wyprowadzany)",
+      "state": "locked",
+      "decidedOn": "2026-09-19"
+    },
+    {
+      "id": "D-06",
+      "choice": "MK także w PRINTED za PIN-em + flaga ADMIN DATA",
+      "state": "locked",
+      "decidedOn": "2026-09-19"
+    },
+    {
+      "id": "D-07",
+      "choice": "NHibernate + FluentNHibernate do odczytu, encje tylko do odczytu",
+      "state": "locked",
+      "decidedOn": "2026-09-19",
+      "by": "owner"
+    },
+    {
+      "id": "D-07a",
+      "choice": "Zapis wyłącznie przez funkcje PL/pgSQL bl_*; rola aplikacji bez INSERT/UPDATE/DELETE",
+      "state": "locked",
+      "decidedOn": "2026-09-19",
+      "by": "owner"
+    },
+    {
+      "id": "D-07b",
+      "choice": "Schemat w numerowanych skryptach SQL, mapowania sprawdzane SchemaValidatorem",
+      "state": "locked",
+      "decidedOn": "2026-09-19"
+    },
+    {
+      "id": "D-08",
+      "choice": "JWT HS256, 30 min, bez refresh tokenu",
+      "state": "provisional",
+      "decidedOn": "2026-09-19"
+    },
+    {
+      "id": "D-09",
+      "choice": "Logowanie przez LDAPS bind z poświadczeniami operatora",
+      "state": "locked",
+      "decidedOn": "2026-09-19"
+    },
+    {
+      "id": "D-10",
+      "choice": "Moduł PowerShell binarny na wspólnym silniku",
+      "state": "locked",
+      "decidedOn": "2026-09-19"
+    },
+    {
+      "id": "D-11",
+      "choice": "MSIX: klient bundle x64+ARM64, serwer Windows z usługą; moduł PS jako nupkg",
+      "state": "locked",
+      "decidedOn": "2026-09-19",
+      "by": "owner"
+    },
+    {
+      "id": "D-12",
+      "choice": "Języki EN, DE, SV, PL; jeden katalog resx; serwer zwraca kody, klient tłumaczy",
+      "state": "locked",
+      "decidedOn": "2026-09-19",
+      "by": "owner"
+    },
+    {
+      "id": "D-13",
+      "choice": "Profile i mapowanie ról w appsettings.json, bez ekranu edycji",
+      "state": "locked",
+      "decidedOn": "2026-09-19"
+    },
+    {
+      "id": "D-14",
+      "choice": "Helpdesk: lista użytkownik-serial-data; PUK tylko po wybraniu jednego wpisu lub wskazaniu w PowerShell; bez szczegółów i weryfikacji",
+      "state": "locked",
+      "decidedOn": "2026-09-19",
+      "by": "owner"
+    },
+    {
+      "id": "D-15",
+      "choice": "Tłumaczenia pisze AI razem z kodem, prostym językiem, według słowniczka",
+      "state": "locked",
+      "decidedOn": "2026-09-19",
+      "by": "owner"
+    },
+    {
+      "id": "D-16",
+      "choice": "Po 1.0: powiadomienie o wygaśnięciu certyfikatu przez jednokierunkowego bota Teams, progi 30 i 7 dni, tylko informacja",
+      "state": "locked",
+      "decidedOn": "2026-09-19",
+      "by": "owner"
+    },
+    {
+      "id": "D-17",
+      "choice": "Grupy AD mapowane na Admin i SecurityOfficer to te same grupy, które mają uprawnienia Enrollment Agenta na CA",
+      "state": "locked",
+      "decidedOn": "2026-09-19",
+      "by": "owner"
+    },
+    {
+      "id": "D-18",
+      "choice": "Sekrety serwera (KEK, klucz JWT, hasło LDAP, hasło do bazy) tylko z pliku sekretu (Docker secret / DPAPI w zakresie maszyny) albo zmiennej środowiskowej; wpisane w appsettings.json zatrzymują start",
+      "state": "locked",
+      "decidedOn": "2026-09-19",
+      "by": "owner"
+    },
+    {
+      "id": "D-19",
+      "choice": "Dane BlinkyLite dają się wyeksportować do Blinky; sekrety w paczce zaszyfrowane do certyfikatu Blinky (CMS EnvelopedData)",
+      "state": "locked",
+      "decidedOn": "2026-09-19",
+      "by": "owner"
+    }
   ],
   "openQuestions": [
-    { "id": "Q-01", "question": "Czy IX509CertificateRequestCmc.InitializeFromInnerRequest przyjmie PKCS#10 podpisany na karcie, bez klucza prywatnego?", "blocks": ["0021"], "needs": "próba na stacji w domenie z ADCS" },
-    { "id": "Q-02", "question": "Licencja BlinkyLite — Apache-2.0 jak Blinky?", "blocks": [], "needs": "decyzja właściciela" }
+    {
+      "id": "Q-01",
+      "question": "Czy IX509CertificateRequestCmc.InitializeFromInnerRequest przyjmie PKCS#10 podpisany na karcie, bez klucza prywatnego?",
+      "blocks": [
+        "0021"
+      ],
+      "needs": "próba na stacji w domenie z ADCS"
+    },
+    {
+      "id": "Q-02",
+      "question": "Licencja BlinkyLite — Apache-2.0 jak Blinky?",
+      "blocks": [],
+      "needs": "decyzja właściciela"
+    },
+    {
+      "id": "Q-07",
+      "question": "Czy paczka eksportu ma być dodatkowo podpisana (CMS SignedData), nie tylko zaszyfrowana?",
+      "blocks": [
+        "0054"
+      ],
+      "needs": "decyzja właściciela"
+    },
+    {
+      "id": "Q-08",
+      "question": "Czy eksport ma umieć wybrać podzbiór kart, czy zawsze całość?",
+      "blocks": [
+        "0054"
+      ],
+      "needs": "decyzja właściciela"
+    },
+    {
+      "id": "Q-09",
+      "question": "Jaki dokładnie zielony (hex) ma mieć klient WPF, żeby pasował do bloga?",
+      "blocks": [
+        "0023"
+      ],
+      "needs": "kolor od właściciela"
+    }
   ],
   "closedQuestions": [
-    { "id": "Q-03", "question": "Format paczki klienta: MSIX czy MSI?", "answer": "MSIX", "closedOn": "2026-09-19", "decision": "D-11" },
-    { "id": "Q-04", "question": "Czy Helpdesk widzi certyfikat i atestację, czy tylko listę i PUK?", "answer": "lista użytkownik/klucz, PUK po wybraniu wpisu lub wskazaniu w PowerShell", "closedOn": "2026-09-19", "decision": "D-14" },
-    { "id": "Q-05", "question": "Kto przeczyta tłumaczenia DE i SV przed 1.0?", "answer": "tłumaczenia automatyczne (AI), prostym językiem", "closedOn": "2026-09-19", "decision": "D-15" },
-    { "id": "Q-06", "question": "Kanał powiadomienia o wygaśnięciu i progi", "answer": "bot Microsoft Teams; progi 30 i 7 dni, konfigurowalne", "closedOn": "2026-09-19", "decision": "D-16" }
+    {
+      "id": "Q-03",
+      "question": "Format paczki klienta: MSIX czy MSI?",
+      "answer": "MSIX",
+      "closedOn": "2026-09-19",
+      "decision": "D-11"
+    },
+    {
+      "id": "Q-04",
+      "question": "Czy Helpdesk widzi certyfikat i atestację, czy tylko listę i PUK?",
+      "answer": "lista użytkownik/klucz, PUK po wybraniu wpisu lub wskazaniu w PowerShell",
+      "closedOn": "2026-09-19",
+      "decision": "D-14"
+    },
+    {
+      "id": "Q-05",
+      "question": "Kto przeczyta tłumaczenia DE i SV przed 1.0?",
+      "answer": "tłumaczenia automatyczne (AI), prostym językiem",
+      "closedOn": "2026-09-19",
+      "decision": "D-15"
+    },
+    {
+      "id": "Q-06",
+      "question": "Kanał powiadomienia o wygaśnięciu i progi",
+      "answer": "bot Microsoft Teams; progi 30 i 7 dni, konfigurowalne",
+      "closedOn": "2026-09-19",
+      "decision": "D-16"
+    }
   ],
   "risks": [
-    { "id": "R-01", "impact": "Awaria w połowie wydania zostawia kartę z MK, którego nie ma w bazie", "handling": "D-03 + koperty nieusuwalne + tabela odzyskiwania w 02" },
-    { "id": "R-02", "impact": "Minidriver Yubico przejmuje kartę i blokuje PUK", "handling": "D-06, reguła z Blinky 08" },
-    { "id": "R-03", "impact": "Nikt nie uruchomił WinSCard/CertEnroll z .NET 10 na Windows ARM64", "handling": "0001 publikuje win-arm64, 0053 dowodzi na sprzęcie" },
-    { "id": "R-04", "impact": "Helpdesk hurtowo odczytuje PUK-i", "handling": "powód obowiązkowy, audyt atomowo w bl_secret_disclose, licznik przy karcie" },
-    { "id": "R-05", "impact": "Usługa Windows w MSIX (desktop6:Service) na docelowym Windows Server", "handling": "0051 z zapisaną rezerwą: skrypt instalacyjny" },
-    { "id": "R-06", "impact": "Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na Graph i ruchu wychodzącego z serwera", "handling": "wymagania w docs/09; konto bez Entra -> audyt cert.expiry-notify-failed, nie awaria" }
+    {
+      "id": "R-01",
+      "impact": "Awaria w połowie wydania zostawia kartę z MK, którego nie ma w bazie",
+      "handling": "D-03 + koperty nieusuwalne + tabela odzyskiwania w 02"
+    },
+    {
+      "id": "R-02",
+      "impact": "Minidriver Yubico przejmuje kartę i blokuje PUK",
+      "handling": "D-06, reguła z Blinky 08"
+    },
+    {
+      "id": "R-03",
+      "impact": "Nikt nie uruchomił WinSCard/CertEnroll z .NET 10 na Windows ARM64",
+      "handling": "0001 publikuje win-arm64, 0053 dowodzi na sprzęcie"
+    },
+    {
+      "id": "R-04",
+      "impact": "Helpdesk hurtowo odczytuje PUK-i",
+      "handling": "powód obowiązkowy, audyt atomowo w bl_secret_disclose, licznik przy karcie"
+    },
+    {
+      "id": "R-05",
+      "impact": "Usługa Windows w MSIX (desktop6:Service) na docelowym Windows Server",
+      "handling": "0051 z zapisaną rezerwą: skrypt instalacyjny"
+    },
+    {
+      "id": "R-06",
+      "impact": "Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na Graph i ruchu wychodzącego z serwera",
+      "handling": "wymagania w docs/09; konto bez Entra -> audyt cert.expiry-notify-failed, nie awaria"
+    }
   ],
   "patches": [
-    { "id": "0000", "phase": 0, "title": "Dokumentacja i schemat działania", "state": "done", "owner": "cloud-ai", "proof": "2026-09-19: README, docs/01-08, STATUS.md, status.json i CLAUDE.md; diagramy mermaid (komponenty, sekwencja wydania, maszyna stanów) w 01 i 02. Tego samego dnia uzupełnione o decyzje właściciela: MSIX, NHibernate + procedury SQL, cztery języki, zakres ograniczony do wydania i weryfikacji (zmiana PUK należy do Blinky)." },
-    { "id": "0001", "phase": 0, "title": "Szkielet repozytorium", "state": "done-unverified", "owner": "cloud-ai", "proof": "2026-09-19, Windows x64, SDK 10.0.401: dotnet build BlinkyLite.slnx -c Release - 0 ostrzezen; 12 testow jednostkowych przechodzi; DbTests pominiete bez BLINKYLITE_TEST_DB, z PostgreSQL 16 w Dockerze przechodza; publish klienta win-x64 i win-arm64 z polem machine PE 0x8664 i 0xAA64; modul laduje sie w pwsh 7.6.6 bez kopii System.Management.Automation, Windows PowerShell 5.1 odmawia (wymaga 7.6); job Linux odtworzony w kontenerze dotnet/sdk:10.0 przeciw postgres:16 - przechodzi.", "gap": "Workflow CI nie uruchomil sie na GitHub Actions (brak zdalnego repozytorium); klient ARM64 nie startowal na sprzecie ARM64 (0053); DoD sprawdzal autor." },
-    { "id": "0002", "phase": 0, "title": "Baza danych (NHibernate + procedury bl_*)", "state": "done-unverified", "owner": "cloud-ai", "proof": "2026-09-19: db/init/00_roles.sql, migracje 0001-0004, migrator (--migrate tylko jako blinkylite_owner, blokada doradcza, sumy kontrolne po LF), mapowania FluentNHibernate ReadOnly, Procedures (Npgsql, typowane parametry). 82 testy DbTests na PostgreSQL 16 przechodza z Windows i z kontenera dotnet/sdk:10.0 (Linux): 31 niedozwolonych przejsc -> BL001 bez zmiany i audytu; nieudany audyt cofa zmiane; app i readonly bez INSERT/UPDATE/DELETE/TRUNCATE i bez odczytu kopert (42501); mgmt-key bez Admin -> BL004; 20 rund rownoleglych rezerwacji - zawsze jedna wygrywa; migracje idempotentne; SchemaValidator ok. Serwer: --migrate 4 migracje, drugi raz up to date, jako superuser odmowa (kod 1); start jako app: schema ok + /health; zmieniona suma kontrolna -> odmowa startu (kod 3).", "gap": "DoD sprawdzal autor; job linux CI nie uruchomil sie na GitHub (brak origin)." },
-    { "id": "0003", "phase": 0, "title": "Serwer", "state": "done-unverified", "owner": "cloud-ai", "proof": "2026-09-19: logowanie LDAPS bind -> JWT HS256 30 min z rolami z grup AD (po SID), polityki CanIssue/CanList/CanViewDetails/CanRevealPuk/CanRevealMgmtKey/CanAudit, wyszukiwanie uzytkownika kontem serwisowym, koperty AES-256-GCM (HKDF na koperte, AAD kind|serial|issuance_id), bledy jako ProblemDetails code+args. 112 testow jednostkowych: kazdy endpoint z polityka, zle haslo 401 + auth.denied bez SID, brak grupy 403 z SID, puste haslo nie dociera do LDAP, 5 prob blokuje konto przed AD, token cudzym kluczem i wygasly odrzucone, Helpdesk bez katalogu, koperta w innym wierszu sie nie otwiera, zmieniony bajt wykryty, rotacja KEK czyta stare, brak pola i kolumny z PIN. 84 testy bazy z migracja 0005 (id wydania z serwera). Serwer po HTTPS: /health ok, /api/auth/me bez tokenu 401 error.auth.required, logowanie bez LDAP 503, po HTTP w Production odmowa startu (kod 4).", "gap": "LdapDirectory nie widzial prawdziwego AD - testy uzywaja atrapy katalogu; TLS Kestrela sprawdzony tylko certyfikatem deweloperskim; DoD sprawdzal autor, CI nie ruszylo na GitHub." },
-    { "id": "0004", "phase": 0, "title": "Języki EN / DE / SV / PL", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0010", "phase": 1, "title": "Import Blinky.Piv", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0011", "phase": 1, "title": "Personalizacja i klucz", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0020", "phase": 2, "title": "API wydań", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0021", "phase": 2, "title": "EOBO", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0022", "phase": 2, "title": "Odzyskiwanie", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0023", "phase": 2, "title": "Klient WPF — wydanie", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0030", "phase": 3, "title": "Przeglądarka i weryfikacja w WPF", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0040", "phase": 4, "title": "Moduł PowerShell", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0050", "phase": 5, "title": "Docker", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0051", "phase": 5, "title": "Serwer Windows — MSIX", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0052", "phase": 5, "title": "Klient — MSIX", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0053", "phase": 5, "title": "Test end-to-end", "state": "open", "owner": "cloud-ai", "proof": null },
-    { "id": "0060", "phase": 6, "title": "Powiadomienie o wygaśnięciu przez bota Teams (po 1.0)", "state": "open", "owner": "cloud-ai", "proof": null }
+    {
+      "id": "0000",
+      "phase": 0,
+      "title": "Dokumentacja i schemat działania",
+      "state": "done",
+      "owner": "cloud-ai",
+      "proof": "2026-09-19: README, docs/01-08, STATUS.md, status.json i CLAUDE.md; diagramy mermaid (komponenty, sekwencja wydania, maszyna stanów) w 01 i 02. Tego samego dnia uzupełnione o decyzje właściciela: MSIX, NHibernate + procedury SQL, cztery języki, zakres ograniczony do wydania i weryfikacji (zmiana PUK należy do Blinky)."
+    },
+    {
+      "id": "0001",
+      "phase": 0,
+      "title": "Szkielet repozytorium",
+      "state": "done-unverified",
+      "owner": "cloud-ai",
+      "proof": "2026-09-19, Windows x64, SDK 10.0.401: dotnet build BlinkyLite.slnx -c Release - 0 ostrzezen; 12 testow jednostkowych przechodzi; DbTests pominiete bez BLINKYLITE_TEST_DB, z PostgreSQL 16 w Dockerze przechodza; publish klienta win-x64 i win-arm64 z polem machine PE 0x8664 i 0xAA64; modul laduje sie w pwsh 7.6.6 bez kopii System.Management.Automation, Windows PowerShell 5.1 odmawia (wymaga 7.6); job Linux odtworzony w kontenerze dotnet/sdk:10.0 przeciw postgres:16 - przechodzi.",
+      "gap": "Workflow CI nie uruchomil sie na GitHub Actions (brak zdalnego repozytorium); klient ARM64 nie startowal na sprzecie ARM64 (0053); DoD sprawdzal autor."
+    },
+    {
+      "id": "0002",
+      "phase": 0,
+      "title": "Baza danych (NHibernate + procedury bl_*)",
+      "state": "done-unverified",
+      "owner": "cloud-ai",
+      "proof": "2026-09-19: db/init/00_roles.sql, migracje 0001-0004, migrator (--migrate tylko jako blinkylite_owner, blokada doradcza, sumy kontrolne po LF), mapowania FluentNHibernate ReadOnly, Procedures (Npgsql, typowane parametry). 82 testy DbTests na PostgreSQL 16 przechodza z Windows i z kontenera dotnet/sdk:10.0 (Linux): 31 niedozwolonych przejsc -> BL001 bez zmiany i audytu; nieudany audyt cofa zmiane; app i readonly bez INSERT/UPDATE/DELETE/TRUNCATE i bez odczytu kopert (42501); mgmt-key bez Admin -> BL004; 20 rund rownoleglych rezerwacji - zawsze jedna wygrywa; migracje idempotentne; SchemaValidator ok. Serwer: --migrate 4 migracje, drugi raz up to date, jako superuser odmowa (kod 1); start jako app: schema ok + /health; zmieniona suma kontrolna -> odmowa startu (kod 3).",
+      "gap": "DoD sprawdzal autor; job linux CI nie uruchomil sie na GitHub (brak origin)."
+    },
+    {
+      "id": "0003",
+      "phase": 0,
+      "title": "Serwer",
+      "state": "done-unverified",
+      "owner": "cloud-ai",
+      "proof": "2026-09-19: logowanie LDAPS bind -> JWT HS256 30 min z rolami z grup AD (po SID), polityki CanIssue/CanList/CanViewDetails/CanRevealPuk/CanRevealMgmtKey/CanAudit, wyszukiwanie uzytkownika kontem serwisowym, koperty AES-256-GCM (HKDF na koperte, AAD kind|serial|issuance_id), bledy jako ProblemDetails code+args. 112 testow jednostkowych: kazdy endpoint z polityka, zle haslo 401 + auth.denied bez SID, brak grupy 403 z SID, puste haslo nie dociera do LDAP, 5 prob blokuje konto przed AD, token cudzym kluczem i wygasly odrzucone, Helpdesk bez katalogu, koperta w innym wierszu sie nie otwiera, zmieniony bajt wykryty, rotacja KEK czyta stare, brak pola i kolumny z PIN. 84 testy bazy z migracja 0005 (id wydania z serwera). Serwer po HTTPS: /health ok, /api/auth/me bez tokenu 401 error.auth.required, logowanie bez LDAP 503, po HTTP w Production odmowa startu (kod 4).",
+      "gap": "LdapDirectory nie widzial prawdziwego AD - testy uzywaja atrapy katalogu; TLS Kestrela sprawdzony tylko certyfikatem deweloperskim; DoD sprawdzal autor, CI nie ruszylo na GitHub."
+    },
+    {
+      "id": "0004",
+      "phase": 0,
+      "title": "Języki EN / DE / SV / PL",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0005",
+      "phase": 0,
+      "title": "Sekrety poza konfiguracją (DPAPI / Docker secrets)",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0010",
+      "phase": 1,
+      "title": "Import Blinky.Piv",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0011",
+      "phase": 1,
+      "title": "Personalizacja i klucz",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0020",
+      "phase": 2,
+      "title": "API wydań",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0021",
+      "phase": 2,
+      "title": "EOBO",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0022",
+      "phase": 2,
+      "title": "Odzyskiwanie",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0023",
+      "phase": 2,
+      "title": "Klient WPF — wydanie",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0030",
+      "phase": 3,
+      "title": "Przeglądarka i weryfikacja w WPF",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0040",
+      "phase": 4,
+      "title": "Moduł PowerShell",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0050",
+      "phase": 5,
+      "title": "Docker",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0051",
+      "phase": 5,
+      "title": "Serwer Windows — MSIX",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0052",
+      "phase": 5,
+      "title": "Klient — MSIX",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0053",
+      "phase": 5,
+      "title": "Test end-to-end",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0054",
+      "phase": 5,
+      "title": "Eksport do Blinky",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    },
+    {
+      "id": "0060",
+      "phase": 6,
+      "title": "Powiadomienie o wygaśnięciu przez bota Teams (po 1.0)",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
+    }
   ],
   "notVerified": [
-    { "what": "0001: workflow CI na GitHub Actions", "why": "brak zdalnego origin; oba joby odtworzone tylko lokalnie", "when": "pierwszy push" },
-    { "what": "0001: klient win-arm64 uruchomiony", "why": "poprawny naglowek PE ARM64, ale bez startu na sprzecie ARM64", "when": "0053" },
-    { "what": "0001: import modulu w CI", "why": "windows-latest moze miec pwsh < 7.6; krok wtedy tylko ostrzega", "when": "pierwszy push" },
-    { "what": "0002: testy bazy w CI", "why": "przechodza lokalnie i w kontenerze Linux, job linux nie uruchomil sie na GitHub", "when": "pierwszy push" },
-    { "what": "0002: przeglad funkcji bl_*", "why": "DoD sprawdzal autor", "when": "przeglad przed 0020" },
-    { "what": "0003: LdapDirectory przeciw prawdziwemu AD", "why": "testy uzywaja atrapy katalogu; bind, tokenGroups, filtry i LDAPS nie widzialy kontrolera domeny", "when": "pierwsza stacja w domenie (0021)" },
-    { "what": "0003: TLS Kestrela z certyfikatem z magazynu Windows", "why": "sprawdzony tylko certyfikat deweloperski z pliku", "when": "0051" }
+    {
+      "what": "0001: klient win-arm64 uruchomiony",
+      "why": "poprawny naglowek PE ARM64, ale bez startu na sprzecie ARM64",
+      "when": "0053"
+    },
+    {
+      "what": "0002: przeglad funkcji bl_*",
+      "why": "DoD sprawdzal autor",
+      "when": "przeglad przed 0020"
+    },
+    {
+      "what": "0003: LdapDirectory przeciw prawdziwemu AD",
+      "why": "testy uzywaja atrapy katalogu; bind, tokenGroups, filtry i LDAPS nie widzialy kontrolera domeny",
+      "when": "pierwsza stacja w domenie (0021)"
+    },
+    {
+      "what": "0003: TLS Kestrela z certyfikatem z magazynu Windows",
+      "why": "sprawdzony tylko certyfikat deweloperski z pliku",
+      "when": "0051"
+    }
   ]
 }
