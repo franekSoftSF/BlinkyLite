@@ -109,6 +109,12 @@ docker compose up -d --build       # serwer + postgres
 - **Konfiguracja przez `appsettings.Example.json`.** Nowa opcja trafia tam z
   komentarzem, dlaczego istnieje. Sekrety (klucz JWT, KEK, hasła) tylko ze
   zmiennych środowiskowych, Docker secrets albo pliku DPAPI — nigdy w git.
+- **Sekret nigdy nie leży jawnie.** KEK, klucz JWT, hasło LDAP i hasło do
+  bazy czyta się z pliku sekretu (Docker secret albo plik DPAPI w zakresie
+  maszyny) lub ze zmiennej; wartość wpisana w `appsettings.json` zatrzymuje
+  start ([04](docs/04-security.md#sekrety-na-serwerze), D-18).
+- **Dane muszą dać się oddać do Blinky.** Nowa kolumna, która ma wartość po
+  stronie CMS, trafia też do eksportu w [10](docs/10-blinky-export.md) — D-19.
 - **Prosto.** BlinkyLite ma być mały. Zanim dodasz ekran, tabelę albo opcję,
   sprawdź, czy nie ma jej w „Poza zakresem” w roadmapie — jeśli jest, nie
   robimy jej. Poza wydaniem BlinkyLite nie pisze na kartę nigdy.
@@ -150,7 +156,7 @@ docker compose up -d --build       # serwer + postgres
 - **`docs/STATUS.md` i `docs/status.json` muszą się zgadzać**, łącznie z
   `status.updated`, przy każdej zmianie stanu patcha.
 - Nowa reguła z pomiaru na sprzęcie trafia do `docs/06-from-blinky.md` (sekcja
-  reguł) albo, jeśli jest nowa dla BlinkyLite, do nowego `docs/10-hardware-notes.md`.
+  reguł) albo, jeśli jest nowa dla BlinkyLite, do nowego `docs/11-hardware-notes.md`.
   Rzecz, która okazała się błędna, jest oznaczana jako błędna, nie cicho
   usuwana.
 

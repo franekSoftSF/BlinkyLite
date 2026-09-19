@@ -74,12 +74,36 @@ Odsłonięcie PUK / MK:
 
 ## Sekrety na serwerze
 
-- KEK wersjonowany (`kek_version`); nowy KEK szyfruje nowe koperty, stare
-  czytane starym. Rotacja = dodanie wersji + opcjonalne przepisanie kopert
-  narzędziem.
-- Docker: KEK i klucz JWT z Docker secrets (`/run/secrets/…`) albo env.
-- Windows: plik zaszyfrowany DPAPI w zakresie maszyny, ACL tylko dla konta
-  usługi; alternatywnie env.
+Serwer ma cztery sekrety i **żaden z nich nie może leżeć jawnie na dysku**
+(D-18). Dlatego sposób ich przechowywania jest zaplanowany teraz, a nie przy
+pakowaniu instalatora — patch **0005**, jeszcze w fazie 0.
+
+| Sekret | Do czego | Docker | Windows (MSIX) |
+|---|---|---|---|
+| KEK (per wersja) | koperty PUK i management key | Docker secret `/run/secrets/blinkylite-kek-1` | plik zaszyfrowany DPAPI w zakresie **maszyny**, w `%ProgramData%\BlinkyLite\secrets\` |
+| Klucz podpisu JWT | tokeny operatorów | Docker secret | jak wyżej |
+| Hasło konta serwisowego LDAP | wyszukiwanie w AD | Docker secret | jak wyżej |
+| Hasło do bazy (`App`) | połączenie z PostgreSQL | Docker secret | jak wyżej |
+
+Zasady, które z tego wynikają:
+
+- **Serwer nie odczyta sekretu spoza swojego magazynu.** Kolejność źródeł:
+  plik sekretu (ścieżka z konfiguracji albo `/run/secrets`), potem zmienna
+  środowiskowa, a `appsettings.json` **nie jest** źródłem sekretów — wartość
+  wpisana tam wprost zostaje odrzucona przy starcie z nazwą klucza.
+- **DPAPI w zakresie maszyny, nie użytkownika:** usługa i tak działa jako
+  konto maszynowe, a zakres użytkownika psuje się przy każdej zmianie konta
+  usługi (Blinky przerobił to przy imporcie klucza).
+- Plik sekretu ma ACL tylko dla konta usługi i administratorów; instalator to
+  ustawia i sprawdza przy starcie, a przy zbyt szerokich prawach loguje
+  ostrzeżenie.
+- **KEK jest wersjonowany** (`kek_version`); nowy KEK szyfruje nowe koperty,
+  stare czytane starym. Rotacja = dodanie wersji; przepisanie starych kopert
+  to osobne narzędzie, poza zakresem 1.0.
+- Sekret podany z pliku jest czytany raz przy starcie i trzymany w pamięci
+  procesu; nie ma endpointu, który go pokaże, ani logu, który go zapisze.
+- **Kopia zapasowa KEK jest częścią instalacji**: baza bez KEK to baza bez
+  PUK-ów. Procedurę sprawdza się odtworzeniem (patch 0053).
 - Kopia zapasowa bazy **bez** KEK jest bezużyteczna — i tak ma być. Procedura
   backupu KEK jest częścią instalacji i jest sprawdzana odtworzeniem
   (patch 0053).

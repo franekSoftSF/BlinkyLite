@@ -22,7 +22,9 @@ AD i trzema rolami (Admin, SecurityOfficer, Helpdesk).
 Tego samego dnia właściciel ustalił: **MSIX** jako instalator, **NHibernate +
 FluentNHibernate** do odczytu i **zapis wyłącznie przez procedury SQL**,
 interfejs w czterech językach (**EN, DE, SV, PL**), i że projekt ma zostać
-mały. Roadmapa została skrócona z 38 do 16 patchy. Zakres to **wydanie i
+mały. Roadmapa została skrócona z 38 do 16 patchy, a później doszły dwa
+zaplanowane od razu, bo dopisane później byłyby przeróbką: 0005 (sekrety poza
+konfiguracją) i 0054 (eksport do Blinky). Zakres to **wydanie i
 weryfikacja** — zmiana PUK, odblokowanie PIN, reset i dalsze życie karty
 należą do Blinky i są „Poza zakresem” w roadmapie, a nie odłożone na później.
 
@@ -89,7 +91,10 @@ stronie serwera). Sprawdzone:
 - serwer naprawdę: po HTTPS `/health` odpowiada, `/api/auth/me` bez tokenu daje
   401 `error.auth.required`, logowanie bez skonfigurowanego LDAP 503
   `error.directory.unavailable`, a po zwykłym HTTP w Production serwer odmawia
-  startu (kod 4).
+  startu (kod 4);
+- **CI na GitHub przeszło** 19 września 2026 po pierwszym pushu: job Windows
+  (build, testy, publikacja x64 i ARM64, import modułu) i job Linux (serwer i
+  testy bazy na PostgreSQL 16) — oba zielone.
 
 Nie istnieje: logika wydania, warstwa PIV, teksty w czterech językach,
 kontakt z prawdziwym AD i CA.
@@ -114,6 +119,7 @@ kontakt z prawdziwym AD i CA.
 | 0002 | 0 | Baza danych (NHibernate + procedury `bl_*`) | `done-unverified` |
 | 0003 | 0 | Serwer | `done-unverified` |
 | 0004 | 0 | Języki EN / DE / SV / PL | `open` |
+| 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `open` |
 | 0010 | 1 | Import `Blinky.Piv` | `open` |
 | 0011 | 1 | Personalizacja i klucz | `open` |
 | 0020 | 2 | API wydań | `open` |
@@ -126,6 +132,7 @@ kontakt z prawdziwym AD i CA.
 | 0051 | 5 | Serwer Windows — MSIX | `open` |
 | 0052 | 5 | Klient — MSIX | `open` |
 | 0053 | 5 | Test end-to-end | `open` |
+| 0054 | 5 | Eksport do Blinky | `open` |
 | 0060 | 6 | Powiadomienie o wygaśnięciu przez bota Teams (po 1.0) | `open` |
 
 ## Zdecydowane
@@ -153,6 +160,8 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-15 | Tłumaczenia pisze AI razem z kodem, prostym językiem, według słowniczka |
 | D-16 | Po 1.0: powiadomienie o wygaśnięciu certyfikatu przez jednokierunkowego bota Teams (progi 30 i 7 dni) — tylko informacja, bez odnawiania |
 | D-17 | Grupy `Admin` i `SecurityOfficer` to grupy Enrollment Agenta na CA |
+| D-18 | Sekrety serwera (KEK, klucz JWT, hasło LDAP, hasło do bazy) tylko z pliku sekretu (Docker secret / DPAPI maszyny) albo zmiennej; wpisane w `appsettings.json` zatrzymują start |
+| D-19 | Dane BlinkyLite dają się wyeksportować do Blinky; sekrety w paczce zaszyfrowane do certyfikatu Blinky |
 
 ## Otwarte pytania
 
@@ -160,6 +169,9 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 |---|---|---|
 | Q-01 | Czy `IX509CertificateRequestCmc.InitializeFromInnerRequest` przyjmie PKCS#10 podpisany na karcie, bez dostępu do klucza prywatnego? | 0021 |
 | Q-02 | Licencja BlinkyLite — Apache-2.0 jak Blinky? | wydanie publiczne |
+| Q-07 | Czy paczka eksportu ma być dodatkowo podpisana (CMS SignedData), nie tylko zaszyfrowana? | 0054 |
+| Q-08 | Czy eksport ma umieć wybrać podzbiór kart, czy zawsze całość? | 0054 |
+| Q-09 | Jaki dokładnie zielony (hex) ma mieć klient WPF, żeby pasował do bloga? | 0023 |
 
 Zamknięte 2026-09-19, decyzje właściciela:
 - Q-06 (kanał powiadomienia) — **bot Microsoft Teams**; progi domyślnie 30 i 7 dni, konfigurowalne (D-16);
@@ -179,10 +191,7 @@ Zamknięte 2026-09-19, decyzje właściciela:
 
 | Co | Dlaczego niezweryfikowane | Kiedy |
 |---|---|---|
-| 0001: workflow CI na GitHub Actions | repozytorium nie ma jeszcze zdalnego `origin`; oba joby odtworzone lokalnie, ale żaden nie uruchomił się na runnerze GitHub | pierwszy push |
 | 0001: klient `win-arm64` uruchomiony | binarka ma poprawny nagłówek ARM64, ale nie startowała na maszynie ARM64 | 0053 |
-| 0001: import modułu w CI | `windows-latest` może mieć pwsh starszy niż 7.6 — wtedy krok ostrzega i nie sprawdza importu | pierwszy push |
-| 0002: testy bazy w CI | przechodzą lokalnie i w kontenerze Linux, ale job `linux` nie uruchomił się na GitHub | pierwszy push |
 | 0002: przegląd funkcji `bl_*` | DoD sprawdzał autor; reguły stanów i uprawnień warto, żeby przeczytał ktoś drugi | przegląd przed 0020 |
 | 0003: `LdapDirectory` przeciw prawdziwemu AD | testy używają atrapy katalogu; bind, `tokenGroups`, filtry i LDAPS nie widziały kontrolera domeny | pierwsza stacja w domenie (0021) |
 | 0003: TLS Kestrela z certyfikatem z magazynu Windows | sprawdzony tylko certyfikat deweloperski z pliku | 0051 |
