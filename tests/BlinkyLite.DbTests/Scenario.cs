@@ -16,6 +16,7 @@ internal sealed class Scenario(DatabaseFixture db)
     public Procedures Procedures => db.Procedures;
 
     public static IssuanceReservation Reservation(long serial, bool hasPuk = true) => new(
+        IssuanceId: Guid.NewGuid(),
         CardSerial: serial,
         Firmware: "5.7.1",
         HasPuk: hasPuk,

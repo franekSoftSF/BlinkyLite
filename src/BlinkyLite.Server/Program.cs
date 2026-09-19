@@ -1,6 +1,7 @@
 using System.Reflection;
-using BlinkyLite.Contracts;
+using BlinkyLite.Server.Api;
 using BlinkyLite.Server.Data;
+using BlinkyLite.Server.Startup;
 using Npgsql;
 using Serilog;
 
@@ -21,17 +22,25 @@ if (args.Contains("--migrate", StringComparer.Ordinal))
     return await MigrateAsync(builder.Configuration);
 }
 
+builder.Services.AddBlinkyLiteProblems();
+builder.Services.AddBlinkyLiteAuth(builder.Configuration);
+
 var appConnectionString = builder.Configuration.GetConnectionString("App");
 if (!string.IsNullOrWhiteSpace(appConnectionString))
 {
-    builder.Services.AddSingleton(_ => NpgsqlDataSource.Create(appConnectionString));
-    builder.Services.AddSingleton<Procedures>();
-    builder.Services.AddSingleton(_ => ReadSessions.BuildConfiguration(appConnectionString));
-    builder.Services.AddSingleton(services =>
-        ReadSessions.BuildSessionFactory(services.GetRequiredService<NHibernate.Cfg.Configuration>()));
+    builder.Services.AddBlinkyLiteDatabase(appConnectionString);
 }
 
 var app = builder.Build();
+var relaxed = app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing");
+
+if (!relaxed && !ServerSetup.HasHttpsEndpoint(app.Configuration))
+{
+    app.Logger.LogCritical(
+        "No HTTPS endpoint is configured. The operator's AD password and the JWT travel on this connection, " +
+        "so the server refuses to start. Configure Kestrel:Endpoints:Https or ASPNETCORE_URLS.");
+    return ServerSetup.ExitNoTls;
+}
 
 if (!string.IsNullOrWhiteSpace(appConnectionString))
 {
@@ -44,7 +53,7 @@ if (!string.IsNullOrWhiteSpace(appConnectionString))
     catch (MigrationException e)
     {
         app.Logger.LogCritical("Database: {Reason} The server will not start.", e.Message);
-        return 3;
+        return ServerSetup.ExitSchema;
     }
 
     var validation = ReadSessions.Validate(app.Services.GetRequiredService<NHibernate.Cfg.Configuration>());
@@ -57,17 +66,27 @@ if (!string.IsNullOrWhiteSpace(appConnectionString))
         app.Logger.LogError("Database: {Validation}. {Detail}", validation, validation.Detail);
     }
 }
-else
+else if (relaxed)
 {
     app.Logger.LogWarning("ConnectionStrings:App is not set; running without a database.");
 }
+else
+{
+    app.Logger.LogCritical("ConnectionStrings:App is not set; without it nothing can be audited.");
+    return ServerSetup.ExitConfiguration;
+}
 
+app.UseBlinkyLiteExceptions();
+app.UseStatusCodePages();
 app.UseSerilogRequestLogging();
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
 
 var version = typeof(Program).Assembly
     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
 
-app.MapGet("/health", () => Results.Ok(new HealthResponse("ok", version)));
+app.MapBlinkyLiteApi(version);
 
 await app.RunAsync();
 return 0;
@@ -78,7 +97,7 @@ static async Task<int> MigrateAsync(IConfiguration configuration)
     if (string.IsNullOrWhiteSpace(owner))
     {
         Console.Error.WriteLine("--migrate needs ConnectionStrings:Owner (role blinkylite_owner).");
-        return 2;
+        return ServerSetup.ExitConfiguration;
     }
 
     try

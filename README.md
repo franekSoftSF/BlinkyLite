@@ -86,7 +86,10 @@ i trafiają do JWT.
 
 Profile wydania (szablon, CA, algorytm) i mapowanie grup AD na role są w
 `appsettings.json` serwera — edytuje je administrator serwera, nie ma do
-tego ekranu.
+tego ekranu. Grupy podaje się po SID, a grupy ról **Admin** i
+**SecurityOfficer** to te same grupy, które mają uprawnienia Enrollment
+Agenta na CA. Wzór konfiguracji:
+[appsettings.Example.json](src/BlinkyLite.Server/appsettings.Example.json).
 
 Każde odsłonięcie PUK lub management key to zdarzenie audytowe z aktorem,
 powodem i numerem seryjnym klucza. Dziennik audytu nie ma operacji `DELETE`.

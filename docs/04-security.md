@@ -15,19 +15,31 @@
 ## Logowanie i JWT
 
 - `POST /api/auth/login` z loginem i hasłem → LDAPS bind **jako operator**
-  (nie konto serwisowe) → `tokenGroups` → role z sekcji `Roles` w
-  `appsettings.json` (grupy po SID).
-- LDAP tylko po TLS (636 lub StartTLS); zwykłe 389 bez TLS serwer odrzuca na
-  starcie konfiguracji.
+  (nie konto serwisowe) → `tokenGroups` (grupy przechodnie, jednym zapytaniem)
+  → role z sekcji `Roles` w `appsettings.json` (grupy po SID).
+- Login można podać jako `jkowalski`, `CORP\jkowalski` albo UPN. Inna domena
+  przed `\` jest ignorowana — serwer obsługuje jedną domenę i nie uwierzytelni
+  nikogo przez relację zaufania przez przypadek.
+- **Puste hasło nigdy nie trafia do LDAP.** Bind z pustym hasłem to
+  „unauthenticated bind” (RFC 4513) i wiele serwerów odpowiada na niego
+  sukcesem. Sprawdzane w endpoincie i drugi raz w warstwie LDAP.
+- LDAP tylko po TLS (LDAPS 636 albo StartTLS); nie ma opcji bez TLS. Zaufanie
+  do certyfikatu DC bierze się z systemu (Linux: magazyn CA albo
+  `LDAPTLS_CACERT`).
 - JWT HS256, klucz ≥ 32 bajty, `iss`/`aud` = BlinkyLite, ważność 30 min,
-  claimy: `sub` (objectSid), `upn`, `name`, `role` (wielokrotny). Brak
-  refresh tokenu — po wygaśnięciu ponowne logowanie; wydanie w toku prosi o
-  nie, zanim wyśle kolejny krok.
+  tolerancja zegara 30 s, claimy: `sub` (objectSid), `upn`, `name`, `role`
+  (wielokrotny). Brak refresh tokenu — po wygaśnięciu ponowne logowanie;
+  wydanie w toku prosi o nie, zanim wyśle kolejny krok.
 - Hasło nie jest nigdzie zapisywane ani logowane; klient trzyma tylko token.
-- Limit prób logowania per konto i per IP (blokada w AD i tak obowiązuje,
-  ale serwer nie może być wyrocznią do jej wyczerpywania).
+- **Limit prób:** 10 logowań na minutę z jednego adresu IP (429) oraz 5
+  nieudanych prób na konto w 15 minut — po nich serwer odmawia sam, także przy
+  poprawnym haśle. Blokada w AD i tak obowiązuje, ale BlinkyLite nie może być
+  narzędziem do jej wyczerpywania. Każda odmowa to `auth.denied` z powodem
+  (`invalid-credentials`, `no-role`, `locked-out`).
 - Konto serwisowe do wyszukiwania użytkowników: tylko odczyt, bez prawa
   bindowania interaktywnego.
+- **Serwer nie wystartuje bez HTTPS** poza środowiskiem deweloperskim (kod
+  wyjścia 4), bez połączenia do bazy (2) ani przy rozjeździe migracji (3).
 
 ## Autoryzacja
 
@@ -35,7 +47,17 @@ Polityki ASP.NET Core: `CanIssue` (Admin, SecurityOfficer), `CanList`
 (wszystkie trzy — użytkownik, serial, data, stan), `CanViewDetails` (Admin,
 SecurityOfficer — certyfikat, atestacja, operator, weryfikacja karty),
 `CanRevealPuk` (wszystkie trzy), `CanRevealMgmtKey` (Admin), `CanAudit`
-(Admin). Endpoint listy zwraca inny DTO niż endpoint szczegółów — Helpdesk
+(Admin).
+
+**Grupy wydawania = grupy Enrollment Agenta (D-17).** Grupy AD mapowane na
+`Admin` i `SecurityOfficer` to te same grupy, które mają prawo Enroll na
+szablonie Enrollment Agent i są wpisane jako Restricted Enrollment Agents na
+CA. Dzięki temu „kto może wydać” jest jedną listą, a nie dwiema, które można
+rozjechać. Serwer odmawia startu, jeśli obie te role nie mają żadnej grupy.
+
+Nieuwierzytelnione są tylko `/health` i `/api/auth/login`; reszta ma politykę,
+a domyślna polityka i tak wymaga tokenu. Endpoint listy zwraca inny DTO niż
+endpoint szczegółów — Helpdesk
 nie dostaje „ukrytych” pól, których klient tylko nie pokazuje. Odsłonięcie
 PUK zawsze dotyczy jednej karty (`/api/cards/{serial}/puk`); nie ma
 endpointu zwracającego wiele PUK naraz. Każdy endpoint ma jawną politykę —

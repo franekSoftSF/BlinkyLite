@@ -59,7 +59,7 @@ Każda przyjmuje aktora: `p_actor_upn`, `p_actor_sid`, `p_actor_roles text[]`,
 
 | Funkcja | Zwraca | Stan przed → po | Audyt |
 |---|---|---|---|
-| `bl_issuance_reserve(serial, firmware, has_puk, cel…, profil…, windows_identity, workstation, puk_env, mk_env, mk_alg, kek_version, aktor)` | `uuid` wydania | — → `Reserved`; upsert `cards`; koperty `Reserved` | `issuance.reserved` |
+| `bl_issuance_reserve(id, serial, firmware, has_puk, cel…, profil…, windows_identity, workstation, puk_env, mk_env, mk_alg, kek_version, aktor)` — `id` nadaje serwer (migracja 0005), bo AAD kopert je zawiera, a koperty powstają przed rezerwacją | `uuid` wydania | — → `Reserved`; upsert `cards`; koperty `Reserved` | `issuance.reserved` |
 | `bl_issuance_customised(id, aktor)` | — | `Reserved` → `Customised`; koperty → `Active`, poprzednie `Active` karty → `Retired` | `issuance.customised` |
 | `bl_issuance_attested(id, attestation, intermediate, csr, key_alg, pin_policy, touch_policy, form_factor, aktor)` | — | `Customised`/`Attested` → `Attested` (wznowienie generuje klucz od nowa i musi zapisać nowy dowód) | `issuance.attested` |
 | `bl_issuance_submitted(id, ca_request_id, ea_thumbprint, aktor)` | — | `Attested` → `Attested` (zapis `ca_request_id`) | `issuance.submitted` |
@@ -154,6 +154,7 @@ db/
     0002_functions_issuance.sql     ← _bl_* pomocnicze + bl_issuance_*
     0003_functions_secrets_audit.sql← bl_secret_disclose, bl_mgmt_key_candidates, bl_audit
     0004_grants.sql                 ← uprawnienia app/readonly
+    0005_reserve_takes_issuance_id.sql ← id wydania z serwera (AAD kopert)
 ```
 
 - Serwer z `--migrate` (connection string `Owner`) zakłada schemat
