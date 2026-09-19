@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- net10.0-windows so that the issuance engine (CertEnroll, COM) is testable
+       at all; no hardware and no database here. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <PackageReference Include="coverlet.collector" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BlinkyLite.Contracts\BlinkyLite.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\BlinkyLite.Piv\BlinkyLite.Piv.csproj" />
+    <ProjectReference Include="..\..\src\BlinkyLite.Issuance\BlinkyLite.Issuance.csproj" />
+    <ProjectReference Include="..\..\src\BlinkyLite.Server\BlinkyLite.Server.csproj" />
+  </ItemGroup>
+
+</Project>

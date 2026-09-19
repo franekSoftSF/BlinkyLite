@@ -2,8 +2,9 @@
 
 **Ostatnia aktualizacja:** 2026-09-19
 **Faza:** 0 — Fundament
-**Ogólnie:** projekt założony; jest dokumentacja i schemat działania, nie ma
-jeszcze ani linii kodu produktu
+**Ogólnie:** szkielet stoi (0001): rozwiązanie buduje się bez ostrzeżeń,
+serwer odpowiada na `/health`, klient publikuje się na x64 i ARM64, moduł
+ładuje się w pwsh 7.6; logiki wydania jeszcze nie ma
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
 się zgadzać; `status.json` czyta build albo dashboard. Definicje ukończenia są
@@ -23,11 +24,28 @@ mały. Roadmapa została skrócona z 38 do 16 patchy. Zakres to **wydanie i
 weryfikacja** — zmiana PUK, odblokowanie PIN, reset i dalsze życie karty
 należą do Blinky i są „Poza zakresem” w roadmapie, a nie odłożone na później.
 
-Istnieją: README, osiem dokumentów projektowych z diagramami, roadmapa z
-definicjami ukończenia, te pliki statusu, `CLAUDE.md` oraz bazowa
-konfiguracja buildu przeniesiona z Blinky (`global.json`,
-`Directory.Build.props`, `Directory.Packages.props`, `.editorconfig`).
-Nie istnieje: rozwiązanie, projekty, kod, skrypty SQL, testy, CI.
+Istnieją: README, dziewięć dokumentów projektowych z diagramami, roadmapa z
+definicjami ukończenia, te pliki statusu i `CLAUDE.md`.
+
+Od 0001 (19 września 2026) istnieje też szkielet: `BlinkyLite.slnx` z sześcioma
+projektami i dwoma projektami testów, wersje pakietów sprawdzone restore'em,
+workflow CI z jobem Windows i Linux. Sprawdzone na tej maszynie (Windows x64,
+SDK 10.0.401):
+
+- `dotnet build BlinkyLite.slnx -c Release` — 0 ostrzeżeń, 0 błędów;
+- `dotnet test` — 12 testów jednostkowych przechodzi; test bazy pominięty z
+  powodem, gdy nie ma `BLINKYLITE_TEST_DB`, a z PostgreSQL 16 w Dockerze
+  przechodzi;
+- `dotnet publish` klienta dla `win-x64` i `win-arm64` — pole *machine* w
+  nagłówku PE to `0x8664` i `0xAA64`, czyli naprawdę dwie architektury;
+- moduł PowerShell ładuje się w pwsh 7.6.6, nie niesie własnej kopii
+  `System.Management.Automation`, a Windows PowerShell 5.1 odmawia go
+  czytelnym komunikatem o wymaganej wersji 7.6;
+- część linuksowa CI (build serwera + test bazy) odtworzona w kontenerze
+  `mcr.microsoft.com/dotnet/sdk:10.0` przeciw PostgreSQL 16 — przechodzi.
+
+Nie istnieje: logika wydania, warstwa PIV, skrypty SQL, logowanie, teksty w
+czterech językach.
 
 ## Stany
 
@@ -45,7 +63,7 @@ Nie istnieje: rozwiązanie, projekty, kod, skrypty SQL, testy, CI.
 | Patch | Faza | Tytuł | Stan |
 |---|---|---|---|
 | 0000 | 0 | Dokumentacja i schemat działania | `done` |
-| 0001 | 0 | Szkielet repozytorium | `open` |
+| 0001 | 0 | Szkielet repozytorium | `done-unverified` |
 | 0002 | 0 | Baza danych (NHibernate + procedury `bl_*`) | `open` |
 | 0003 | 0 | Serwer | `open` |
 | 0004 | 0 | Języki EN / DE / SV / PL | `open` |
@@ -111,6 +129,11 @@ Zamknięte 2026-09-19, decyzje właściciela:
 
 ## Niezweryfikowane
 
-Nic nie zostało jeszcze napisane, więc nic nie jest `done-unverified`.
+| Co | Dlaczego niezweryfikowane | Kiedy |
+|---|---|---|
+| 0001: workflow CI na GitHub Actions | repozytorium nie ma jeszcze zdalnego `origin`; oba joby odtworzone lokalnie, ale żaden nie uruchomił się na runnerze GitHub | pierwszy push |
+| 0001: klient `win-arm64` uruchomiony | binarka ma poprawny nagłówek ARM64, ale nie startowała na maszynie ARM64 | 0053 |
+| 0001: import modułu w CI | `windows-latest` może mieć pwsh starszy niż 7.6 — wtedy krok ostrzega i nie sprawdza importu | pierwszy push |
+
 Rzeczy, których Blinky nie sprawdził, a BlinkyLite będzie musiał:
 [06 — Co przychodzi z Blinky](06-from-blinky.md#czego-blinky-nie-sprawdził-a-blinkylite-potrzebuje).

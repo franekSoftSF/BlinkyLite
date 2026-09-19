@@ -1,0 +1,77 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # The whole solution: WPF and CertEnroll exist only on Windows.
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - run: dotnet restore BlinkyLite.slnx
+      - run: dotnet build BlinkyLite.slnx -c Release --no-restore
+      # DbTests report themselves as skipped here: no PostgreSQL on this runner.
+      - run: dotnet test BlinkyLite.slnx -c Release --no-build
+
+      - name: Publish client for x64 and ARM64
+        shell: pwsh
+        run: |
+          foreach ($rid in 'win-x64', 'win-arm64') {
+              dotnet publish src/BlinkyLite.Client -c Release -r $rid -o "artifacts/client-$rid"
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          # A publish that silently produced the wrong architecture would only
+          # show up on an ARM64 laptop, so read the PE machine field here.
+          $expected = @{ 'win-x64' = 0x8664; 'win-arm64' = 0xAA64 }
+          foreach ($rid in $expected.Keys) {
+              $bytes = [IO.File]::ReadAllBytes("artifacts/client-$rid/BlinkyLite.Client.exe")
+              $pe = [BitConverter]::ToInt32($bytes, 0x3C)
+              $machine = [BitConverter]::ToUInt16($bytes, $pe + 4)
+              if ($machine -ne $expected[$rid]) { throw "$rid produced machine 0x$('{0:X4}' -f $machine)" }
+          }
+
+      - name: Module loads in pwsh 7.6+
+        shell: pwsh
+        run: |
+          dotnet build src/BlinkyLite.PowerShell -c Release -o artifacts/module/BlinkyLite
+          if ($PSVersionTable.PSVersion -lt [version]'7.6') {
+              Write-Warning "Runner has pwsh $($PSVersionTable.PSVersion); the module needs 7.6, import not checked."
+              exit 0
+          }
+          Import-Module ./artifacts/module/BlinkyLite/BlinkyLite.psd1 -ErrorAction Stop
+
+  # The server and the database tests are plain net10.0, and only a Linux
+  # runner can host the PostgreSQL service container.
+  linux:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: blinkylite
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d blinkylite"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      BLINKYLITE_TEST_DB: Host=localhost;Port=5432;Database=blinkylite;Username=postgres;Password=test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - run: dotnet build src/BlinkyLite.Server -c Release
+      - run: dotnet test tests/BlinkyLite.DbTests -c Release
