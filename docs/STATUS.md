@@ -5,7 +5,7 @@
 **Ogólnie:** stoją szkielet (0001), baza (0002) i serwer (0003): logowanie z
 AD daje JWT z rolami, każdy endpoint ma politykę, sekrety mają koperty
 AES-256-GCM przywiązane do karty i wydania, a serwer nie wystartuje bez TLS
-ani przy rozjeździe migracji — 112 testów jednostkowych i 84 na PostgreSQL 16.
+ani przy rozjeździe migracji — 136 testów jednostkowych i 84 na PostgreSQL 16.
 Nie ma jeszcze logiki wydania ani kontaktu z prawdziwym AD
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
@@ -96,8 +96,16 @@ stronie serwera). Sprawdzone:
   (build, testy, publikacja x64 i ARM64, import modułu) i job Linux (serwer i
   testy bazy na PostgreSQL 16) — oba zielone.
 
-Nie istnieje: logika wydania, warstwa PIV, teksty w czterech językach,
-kontakt z prawdziwym AD i CA.
+Od 0004 (19 września 2026) jest katalog komunikatów: 59 kluczy w czterech
+językach (EN, DE, SV, PL) w `BlinkyLite.Contracts/Resources`, klasa `Strings`
+z przełączaniem języka na żywo i słowniczek terminów. Testy wymagają, żeby
+każdy język miał każdy klucz i te same parametry, żeby każdy kod błędu i
+**każda akcja audytu wyczytana z migracji** miały tekst, żeby satelity
+językowe naprawdę się zbudowały i żeby w XAML nie było tekstu dla człowieka.
+To jedyny patch w stanie `done`: cała jego definicja ukończenia jest
+sprawdzana maszynowo, a CI robi to niezależnie ode mnie.
+
+Nie istnieje: logika wydania, warstwa PIV, kontakt z prawdziwym AD i CA.
 
 ## Stany
 
@@ -118,7 +126,7 @@ kontakt z prawdziwym AD i CA.
 | 0001 | 0 | Szkielet repozytorium | `done-unverified` |
 | 0002 | 0 | Baza danych (NHibernate + procedury `bl_*`) | `done-unverified` |
 | 0003 | 0 | Serwer | `done-unverified` |
-| 0004 | 0 | Języki EN / DE / SV / PL | `open` |
+| 0004 | 0 | Języki EN / DE / SV / PL | `done` |
 | 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `open` |
 | 0010 | 1 | Import `Blinky.Piv` | `open` |
 | 0011 | 1 | Personalizacja i klucz | `open` |

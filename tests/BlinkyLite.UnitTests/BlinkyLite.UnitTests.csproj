@@ -5,6 +5,10 @@
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
     <IsPackable>false</IsPackable>
+    <!-- The message catalogue is tested in four languages; in invariant mode
+         .NET refuses to create de-AT or pl-PL at all, so every culture test
+         would fail for a reason that has nothing to do with the catalogue. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>

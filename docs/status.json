@@ -41,7 +41,7 @@
     "phase": 0,
     "phaseTitle": "Fundament",
     "state": "open",
-    "summary": "Szkielet (0001), baza (0002) i serwer (0003) stoją, wszystkie done-unverified: logowanie AD -> JWT z rolami, polityka na każdym endpoincie, koperty AES-256-GCM przywiązane do karty i wydania, brak startu bez TLS. 112 testów jednostkowych, 84 na PostgreSQL 16. CI na GitHub zielone. Logiki wydania i kontaktu z AD jeszcze nie ma.",
+    "summary": "Szkielet (0001), baza (0002) i serwer (0003) stoją, wszystkie done-unverified: logowanie AD -> JWT z rolami, polityka na każdym endpoincie, koperty AES-256-GCM przywiązane do karty i wydania, brak startu bez TLS. 136 testów jednostkowych, 84 na PostgreSQL 16. CI na GitHub zielone. Logiki wydania i kontaktu z AD jeszcze nie ma.",
     "nothingIssuedYet": true
   },
   "stateLegend": {
@@ -454,9 +454,9 @@
       "id": "0004",
       "phase": 0,
       "title": "Języki EN / DE / SV / PL",
-      "state": "open",
+      "state": "done",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-19: Messages.resx + .de/.sv/.pl (59 kluczy), klasa Strings (indeksator z INotifyPropertyChanged, Format, Audit, fallback do en), Resources/GLOSSARY.md. Testy: kazdy jezyk ma kazdy klucz i te same parametry; kazdy ErrorCodes i kazda akcja audytu wyczytana z migracji ma tekst; satelity jezykowe naprawdę sie buduja (tekst rozny w kazdym jezyku); zmiana Culture wywoluje PropertyChanged Item[]; jezyk spoza czworki cofa sie do en; w XAML nie ma tekstu dla czlowieka. 136 testow jednostkowych zielonych, CI to powtarza."
     },
     {
       "id": "0005",

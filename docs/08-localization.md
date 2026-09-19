@@ -18,6 +18,16 @@ Wszystkie teksty żyją w `BlinkyLite.Contracts/Resources/Messages.resx`
 WPF, moduł PowerShell i silnik wydania korzystają z tego samego katalogu —
 nie ma drugiej kopii tłumaczeń w żadnej powłoce.
 
+Dostęp daje klasa `Strings` (patch 0004): indeksator `Strings.Current["klucz"]`
+z `INotifyPropertyChanged`, `Format(klucz, parametry…)` i `Audit(kod)`.
+Nieznany klucz zwraca sam siebie — pudło widać, zamiast pustego miejsca.
+Ustawienie `Culture` na język spoza czwórki cofa się do angielskiego.
+
+**Serwer zostaje w trybie niezmiennej kultury** (`InvariantGlobalization`), bo
+nie tłumaczy; w tym trybie .NET nie utworzy kultury `de-AT`, więc `Strings`
+jest używane tylko przez klienta, moduł PowerShell i testy (te mają tryb
+niezmienny wyłączony, tak jak WPF).
+
 Klucze są kropkowane i stabilne: `issuance.step.generate-key`,
 `error.issuance.invalid-state`, `audit.puk.disclosed`, `pin.rule.too-short`.
 Parametry numerowane `{0}`, `{1}`, bez sklejania zdań z kawałków (szyk zdania
@@ -66,15 +76,21 @@ w trybie niezmiennym .NET nie utworzy tych kultur.
 
 ## Testy kompletności
 
-Test jednostkowy przechodzi po `Messages.resx` i wymaga, żeby:
+Testy (`MessageCatalogueTests`, `NoHardCodedTextTests`) przechodzą po
+`Messages.resx` i po źródłach, i wymagają, żeby:
 
 1. każdy klucz istniał we wszystkich czterech plikach i nie był pusty,
 2. liczba i numery parametrów `{n}` były takie same w każdym języku,
-3. każdy kod błędu z tabeli SQLSTATE w [07](07-database.md#błędy) i każda
-   akcja audytu miała swój klucz,
-4. w XAML i w kodzie cmdletów nie było literałów tekstowych widocznych dla
-   człowieka (skan `Text="…"`, `Content="…"`, `WriteWarning("…")` poza
-   katalogiem zasobów).
+3. każdy kod błędu z `ErrorCodes` miał swój klucz,
+4. **każda akcja audytu wyczytana z migracji** (`_bl_write_audit('…')`, plus
+   dwie dynamiczne i lista `bl_audit`) miała klucz `audit.<kod>` — lista
+   trzymana ręcznie rozjechałaby się przy pierwszej nowej funkcji,
+5. w XAML nie było tekstu dla człowieka (`Text=`, `Content=`, `Header=`,
+   `Title=`, `ToolTip=`) poza nazwą produktu,
+6. satelity językowe naprawdę się zbudowały — inaczej każdy język po cichu
+   zwracałby angielski,
+7. zmiana `Culture` wywoływała `PropertyChanged` dla `Item[]`, czyli okno
+   przemalowywało się bez przebudowy.
 
 Brakujące tłumaczenie to czerwony build, a nie angielski tekst w niemieckim
 oknie.

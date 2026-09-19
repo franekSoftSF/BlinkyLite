@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="error.internal" xml:space="preserve">
+    <value>Auf dem Server ist ein Fehler aufgetreten.</value>
+  </data>
+  <data name="error.bad-request" xml:space="preserve">
+    <value>Die Anfrage war nicht korrekt.</value>
+  </data>
+  <data name="error.not-found" xml:space="preserve">
+    <value>Nicht gefunden.</value>
+  </data>
+  <data name="error.forbidden" xml:space="preserve">
+    <value>Ihre Rolle erlaubt das nicht.</value>
+  </data>
+  <data name="error.auth.required" xml:space="preserve">
+    <value>Melden Sie sich zuerst an.</value>
+  </data>
+  <data name="error.auth.invalid-credentials" xml:space="preserve">
+    <value>Falscher Benutzername oder falsches Kennwort.</value>
+  </data>
+  <data name="error.auth.no-role" xml:space="preserve">
+    <value>Ihr Konto hat keine Rolle in BlinkyLite. Fragen Sie einen Administrator.</value>
+  </data>
+  <data name="error.rate-limited" xml:space="preserve">
+    <value>Zu viele Versuche. Warten Sie einen Moment und versuchen Sie es erneut.</value>
+  </data>
+  <data name="error.directory.unavailable" xml:space="preserve">
+    <value>Active Directory ist nicht erreichbar.</value>
+  </data>
+  <data name="error.query.too-short" xml:space="preserve">
+    <value>Geben Sie mindestens {0} Zeichen ein.</value>
+  </data>
+  <data name="error.issuance.invalid-state" xml:space="preserve">
+    <value>Dieser Schritt ist jetzt nicht möglich.</value>
+  </data>
+  <data name="error.card.reserved-elsewhere" xml:space="preserve">
+    <value>Für diesen Schlüssel läuft noch eine andere Ausstellung.</value>
+  </data>
+  <data name="error.reason.required" xml:space="preserve">
+    <value>Geben Sie einen Grund mit mindestens 5 Zeichen an.</value>
+  </data>
+  <data name="audit.auth.login" xml:space="preserve">
+    <value>Angemeldet</value>
+  </data>
+  <data name="audit.auth.denied" xml:space="preserve">
+    <value>Anmeldung abgelehnt</value>
+  </data>
+  <data name="audit.issuance.reserved" xml:space="preserve">
+    <value>Ausstellung gestartet</value>
+  </data>
+  <data name="audit.issuance.customised" xml:space="preserve">
+    <value>Schlüssel personalisiert</value>
+  </data>
+  <data name="audit.issuance.attested" xml:space="preserve">
+    <value>Schlüssel attestiert</value>
+  </data>
+  <data name="audit.issuance.submitted" xml:space="preserve">
+    <value>Anfrage an die CA gesendet</value>
+  </data>
+  <data name="audit.issuance.pending" xml:space="preserve">
+    <value>Warten auf die CA</value>
+  </data>
+  <data name="audit.issuance.issued" xml:space="preserve">
+    <value>Zertifikat ausgestellt</value>
+  </data>
+  <data name="audit.issuance.failed" xml:space="preserve">
+    <value>Ausstellung fehlgeschlagen</value>
+  </data>
+  <data name="audit.issuance.superseded" xml:space="preserve">
+    <value>Durch eine neuere Ausstellung ersetzt</value>
+  </data>
+  <data name="audit.puk.disclosed" xml:space="preserve">
+    <value>PUK angezeigt</value>
+  </data>
+  <data name="audit.mgmt-key.disclosed" xml:space="preserve">
+    <value>Management key angezeigt</value>
+  </data>
+  <data name="audit.mgmt-key.used" xml:space="preserve">
+    <value>Management key an eine Arbeitsstation gesendet</value>
+  </data>
+  <data name="issuance.step.check-agent" xml:space="preserve">
+    <value>Enrollment-Agent-Zertifikat wird geprüft</value>
+  </data>
+  <data name="issuance.step.read-card" xml:space="preserve">
+    <value>Schlüssel wird gelesen</value>
+  </data>
+  <data name="issuance.step.reserve" xml:space="preserve">
+    <value>PUK und Management key werden vorbereitet</value>
+  </data>
+  <data name="issuance.step.personalise" xml:space="preserve">
+    <value>PUK und Management key werden auf den Schlüssel geschrieben</value>
+  </data>
+  <data name="issuance.step.pin" xml:space="preserve">
+    <value>Warten auf die PIN des Benutzers</value>
+  </data>
+  <data name="issuance.step.generate-key" xml:space="preserve">
+    <value>Schlüsselpaar wird auf dem Token erzeugt</value>
+  </data>
+  <data name="issuance.step.attest" xml:space="preserve">
+    <value>Yubico-Attestierung wird geprüft</value>
+  </data>
+  <data name="issuance.step.sign-request" xml:space="preserve">
+    <value>Der Token signiert die Anfrage</value>
+  </data>
+  <data name="issuance.step.submit" xml:space="preserve">
+    <value>Anfrage wird an die CA gesendet</value>
+  </data>
+  <data name="issuance.step.write-certificate" xml:space="preserve">
+    <value>Zertifikat wird auf den Schlüssel geschrieben</value>
+  </data>
+  <data name="issuance.step.done" xml:space="preserve">
+    <value>Fertig. Der Schlüssel ist bereit.</value>
+  </data>
+  <data name="issuance.step.failed" xml:space="preserve">
+    <value>Abgebrochen: {0}</value>
+  </data>
+  <data name="pin.title" xml:space="preserve">
+    <value>Legen Sie Ihre PIN fest</value>
+  </data>
+  <data name="pin.explain" xml:space="preserve">
+    <value>Sie geben diese PIN bei jeder Nutzung des Schlüssels ein. Niemand sonst sieht sie.</value>
+  </data>
+  <data name="pin.new" xml:space="preserve">
+    <value>Neue PIN</value>
+  </data>
+  <data name="pin.repeat" xml:space="preserve">
+    <value>PIN wiederholen</value>
+  </data>
+  <data name="pin.rule.length" xml:space="preserve">
+    <value>Die PIN muss 6 bis 8 Ziffern haben.</value>
+  </data>
+  <data name="pin.rule.digits" xml:space="preserve">
+    <value>Verwenden Sie nur Ziffern.</value>
+  </data>
+  <data name="pin.rule.too-simple" xml:space="preserve">
+    <value>Diese PIN ist zu leicht zu erraten.</value>
+  </data>
+  <data name="pin.rule.mismatch" xml:space="preserve">
+    <value>Die beiden PINs sind nicht gleich.</value>
+  </data>
+  <data name="pin.attempts-left" xml:space="preserve">
+    <value>Noch {0} Versuche</value>
+  </data>
+  <data name="common.ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="common.cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="common.close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="common.search" xml:space="preserve">
+    <value>Suchen</value>
+  </data>
+  <data name="common.reason" xml:space="preserve">
+    <value>Grund</value>
+  </data>
+  <data name="common.user" xml:space="preserve">
+    <value>Benutzer</value>
+  </data>
+  <data name="common.key-serial" xml:space="preserve">
+    <value>Seriennummer des Schlüssels</value>
+  </data>
+  <data name="common.issued-on" xml:space="preserve">
+    <value>Ausgestellt am</value>
+  </data>
+  <data name="common.show-puk" xml:space="preserve">
+    <value>PUK anzeigen</value>
+  </data>
+  <data name="common.show-mgmt-key" xml:space="preserve">
+    <value>Management key anzeigen</value>
+  </data>
+  <data name="common.sign-in" xml:space="preserve">
+    <value>Anmelden</value>
+  </data>
+  <data name="common.language" xml:space="preserve">
+    <value>Sprache</value>
+  </data>
+</root>

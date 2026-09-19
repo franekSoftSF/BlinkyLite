@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="error.internal" xml:space="preserve">
+    <value>Något gick fel på servern.</value>
+  </data>
+  <data name="error.bad-request" xml:space="preserve">
+    <value>Begäran var inte korrekt.</value>
+  </data>
+  <data name="error.not-found" xml:space="preserve">
+    <value>Hittades inte.</value>
+  </data>
+  <data name="error.forbidden" xml:space="preserve">
+    <value>Din roll tillåter inte detta.</value>
+  </data>
+  <data name="error.auth.required" xml:space="preserve">
+    <value>Logga in först.</value>
+  </data>
+  <data name="error.auth.invalid-credentials" xml:space="preserve">
+    <value>Fel användarnamn eller lösenord.</value>
+  </data>
+  <data name="error.auth.no-role" xml:space="preserve">
+    <value>Ditt konto har ingen roll i BlinkyLite. Fråga en administratör.</value>
+  </data>
+  <data name="error.rate-limited" xml:space="preserve">
+    <value>För många försök. Vänta en stund och försök igen.</value>
+  </data>
+  <data name="error.directory.unavailable" xml:space="preserve">
+    <value>Active Directory kan inte nås.</value>
+  </data>
+  <data name="error.query.too-short" xml:space="preserve">
+    <value>Skriv minst {0} tecken.</value>
+  </data>
+  <data name="error.issuance.invalid-state" xml:space="preserve">
+    <value>Det här steget går inte att göra nu.</value>
+  </data>
+  <data name="error.card.reserved-elsewhere" xml:space="preserve">
+    <value>En annan utfärdning för den här nyckeln pågår fortfarande.</value>
+  </data>
+  <data name="error.reason.required" xml:space="preserve">
+    <value>Ange ett skäl på minst 5 tecken.</value>
+  </data>
+  <data name="audit.auth.login" xml:space="preserve">
+    <value>Inloggad</value>
+  </data>
+  <data name="audit.auth.denied" xml:space="preserve">
+    <value>Inloggning nekad</value>
+  </data>
+  <data name="audit.issuance.reserved" xml:space="preserve">
+    <value>Utfärdning startad</value>
+  </data>
+  <data name="audit.issuance.customised" xml:space="preserve">
+    <value>Nyckel personaliserad</value>
+  </data>
+  <data name="audit.issuance.attested" xml:space="preserve">
+    <value>Nyckel attesterad</value>
+  </data>
+  <data name="audit.issuance.submitted" xml:space="preserve">
+    <value>Begäran skickad till CA</value>
+  </data>
+  <data name="audit.issuance.pending" xml:space="preserve">
+    <value>Väntar på CA</value>
+  </data>
+  <data name="audit.issuance.issued" xml:space="preserve">
+    <value>Certifikat utfärdat</value>
+  </data>
+  <data name="audit.issuance.failed" xml:space="preserve">
+    <value>Utfärdningen misslyckades</value>
+  </data>
+  <data name="audit.issuance.superseded" xml:space="preserve">
+    <value>Ersatt av en nyare utfärdning</value>
+  </data>
+  <data name="audit.puk.disclosed" xml:space="preserve">
+    <value>PUK visad</value>
+  </data>
+  <data name="audit.mgmt-key.disclosed" xml:space="preserve">
+    <value>Management key visad</value>
+  </data>
+  <data name="audit.mgmt-key.used" xml:space="preserve">
+    <value>Management key skickad till en arbetsstation</value>
+  </data>
+  <data name="issuance.step.check-agent" xml:space="preserve">
+    <value>Kontrollerar enrollment agent-certifikatet</value>
+  </data>
+  <data name="issuance.step.read-card" xml:space="preserve">
+    <value>Läser nyckeln</value>
+  </data>
+  <data name="issuance.step.reserve" xml:space="preserve">
+    <value>Förbereder PUK och management key</value>
+  </data>
+  <data name="issuance.step.personalise" xml:space="preserve">
+    <value>Skriver PUK och management key till nyckeln</value>
+  </data>
+  <data name="issuance.step.pin" xml:space="preserve">
+    <value>Väntar på att användaren anger en PIN-kod</value>
+  </data>
+  <data name="issuance.step.generate-key" xml:space="preserve">
+    <value>Skapar nyckelparet på tokenen</value>
+  </data>
+  <data name="issuance.step.attest" xml:space="preserve">
+    <value>Kontrollerar Yubico-attesteringen</value>
+  </data>
+  <data name="issuance.step.sign-request" xml:space="preserve">
+    <value>Tokenen signerar begäran</value>
+  </data>
+  <data name="issuance.step.submit" xml:space="preserve">
+    <value>Skickar begäran till CA</value>
+  </data>
+  <data name="issuance.step.write-certificate" xml:space="preserve">
+    <value>Skriver certifikatet till nyckeln</value>
+  </data>
+  <data name="issuance.step.done" xml:space="preserve">
+    <value>Klart. Nyckeln är klar.</value>
+  </data>
+  <data name="issuance.step.failed" xml:space="preserve">
+    <value>Stoppad: {0}</value>
+  </data>
+  <data name="pin.title" xml:space="preserve">
+    <value>Ange din PIN-kod</value>
+  </data>
+  <data name="pin.explain" xml:space="preserve">
+    <value>Du anger den här PIN-koden varje gång du använder nyckeln. Ingen annan ser den.</value>
+  </data>
+  <data name="pin.new" xml:space="preserve">
+    <value>Ny PIN-kod</value>
+  </data>
+  <data name="pin.repeat" xml:space="preserve">
+    <value>Upprepa PIN-koden</value>
+  </data>
+  <data name="pin.rule.length" xml:space="preserve">
+    <value>PIN-koden måste ha 6 till 8 siffror.</value>
+  </data>
+  <data name="pin.rule.digits" xml:space="preserve">
+    <value>Använd bara siffror.</value>
+  </data>
+  <data name="pin.rule.too-simple" xml:space="preserve">
+    <value>Den här PIN-koden är för lätt att gissa.</value>
+  </data>
+  <data name="pin.rule.mismatch" xml:space="preserve">
+    <value>De två PIN-koderna är inte lika.</value>
+  </data>
+  <data name="pin.attempts-left" xml:space="preserve">
+    <value>{0} försök kvar</value>
+  </data>
+  <data name="common.ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="common.cancel" xml:space="preserve">
+    <value>Avbryt</value>
+  </data>
+  <data name="common.close" xml:space="preserve">
+    <value>Stäng</value>
+  </data>
+  <data name="common.search" xml:space="preserve">
+    <value>Sök</value>
+  </data>
+  <data name="common.reason" xml:space="preserve">
+    <value>Skäl</value>
+  </data>
+  <data name="common.user" xml:space="preserve">
+    <value>Användare</value>
+  </data>
+  <data name="common.key-serial" xml:space="preserve">
+    <value>Nyckelns serienummer</value>
+  </data>
+  <data name="common.issued-on" xml:space="preserve">
+    <value>Utfärdad</value>
+  </data>
+  <data name="common.show-puk" xml:space="preserve">
+    <value>Visa PUK</value>
+  </data>
+  <data name="common.show-mgmt-key" xml:space="preserve">
+    <value>Visa management key</value>
+  </data>
+  <data name="common.sign-in" xml:space="preserve">
+    <value>Logga in</value>
+  </data>
+  <data name="common.language" xml:space="preserve">
+    <value>Språk</value>
+  </data>
+</root>
