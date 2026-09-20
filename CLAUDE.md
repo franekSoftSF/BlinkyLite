@@ -45,11 +45,11 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `packaging/` | manifesty MSIX (klient bundle x64+ARM64, serwer z usługą) |
 | `docs/` | numerowane dokumenty + `STATUS.md` i `status.json` |
 
-(Na dziś: 0001–0005, 0010 i część 0011 — szkielet, baza, serwer z logowaniem
-AD, cztery języki, sekrety poza konfiguracją, warstwa PIV z Blinky i silnik
-personalizacji, który na prawdziwej karcie sprawdzono dotąd tylko przez
-odmowę. Nie ma jeszcze wysyłki do CA, klienta, modułu PowerShell ani
-`packaging/`. Patrz STATUS.)
+(Na dziś: 0001–0005, 0010 i 0011 — szkielet, baza, serwer z logowaniem AD,
+cztery języki, sekrety poza konfiguracją, warstwa PIV z Blinky i silnik
+personalizacji sprawdzony na dwóch fabrycznych kluczach, 5.4.3 i 5.8.0. Nie ma
+jeszcze wysyłki do CA, klienta, modułu PowerShell ani `packaging/`. Patrz
+STATUS.)
 
 ## Komendy
 

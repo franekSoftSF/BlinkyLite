@@ -1,16 +1,17 @@
 # Status projektu — BlinkyLite
 
 **Ostatnia aktualizacja:** 2026-09-20
-**Faza:** 1 — Karta
+**Faza:** 2 — Wydanie
 **Ogólnie:** stoi fundament (0001–0005) i warstwa PIV z Blinky (0010):
 logowanie z AD daje JWT z rolami, każdy endpoint ma politykę, sekrety są poza
 konfiguracją i w kopertach AES-256-GCM przywiązanych do karty i wydania, a
 kod rozmawiający z kluczem jest w repozytorium i przechodzi testy na zapisach
 z prawdziwych tokenów — 359 testów jednostkowych i 84 na PostgreSQL 16, CI
 zielone. **Serwer wstaje jednym `docker compose up`** (0050), razem z bazą i
-migracjami, i **loguje z prawdziwej domeny**. **Personalizacja przeszła na
-dwóch fabrycznych kluczach** — 5.4.3 (3DES) i 5.8.0 (AES-192) — z kompletem
-sprawdzeń odczytanych z karty (0011). Nie ma jeszcze kontaktu z CA.
+migracjami, i **loguje z prawdziwej domeny**. **Faza 1 jest zamknięta:**
+personalizacja przeszła na dwóch fabrycznych kluczach — 5.4.3 (3DES) i 5.8.0
+(AES-192) — a `ykman piv info` potwierdził na obu, że management key stoi za
+PIN-em (0011). Nie ma jeszcze kontaktu z CA: żadna karta nie ma certyfikatu.
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
 się zgadzać; `status.json` czyta build albo dashboard. Definicje ukończenia są
@@ -235,13 +236,17 @@ zablokowany, w 9A certyfikat z „Blinky Issuing CA”) dostała
 `error.card.not-factory`, a jej stan po próbie był identyczny, bo ten warunek
 stoi przed transakcją.
 
-Czego brakuje do `done`: **`ykman piv info` nie potwierdził tego niezależnie**
-— na stacji nie ma zainstalowanego ykman, więc raport nie ma tej sekcji.
-Flagę ADMIN DATA czyta na razie tylko nasz własny kod, a definicja ukończenia
-prosi o świadka spoza tego repozytorium. Jedno uruchomienie `ykman piv info`
-na którejkolwiek z tych kart zamyka patch.
+**Potwierdzone kodem spoza tego repozytorium.** Definicja ukończenia prosi o
+świadka, którego nie pisaliśmy, bo flagę ADMIN DATA czytał dotąd wyłącznie
+nasz własny kod. `ykman piv info` Yubico powiedział na obu kartach dokładnie
+to zdanie — *„Management key is stored on the YubiKey, protected by PIN."* —
+a przy okazji `Management key algorithm: TDES` na 5.4.3 i `AES192` na 5.8.0
+(czyli algorytm naprawdę czytany z karty, nie zgadywany z firmware), PIN i
+PUK po 3/3 próby, obecne CHUID i CCC oraz `Slot 9A (AUTHENTICATION): Private
+key type: RSA2048`. 0011 jest `done`, a z nim faza 1.
 
-Nie istnieje: wysyłka do CA, klient WPF, moduł PowerShell.
+Nie istnieje: wysyłka do CA, klient WPF, moduł PowerShell. **Żadna karta nie
+ma jeszcze certyfikatu** — to faza 2.
 
 ## Stany
 
@@ -265,7 +270,7 @@ Nie istnieje: wysyłka do CA, klient WPF, moduł PowerShell.
 | 0004 | 0 | Języki EN / DE / SV / PL | `done` |
 | 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `partly-done` |
 | 0010 | 1 | Import `Blinky.Piv` | `done` |
-| 0011 | 1 | Personalizacja i klucz | `partly-done` |
+| 0011 | 1 | Personalizacja i klucz | `done` |
 | 0020 | 2 | API wydań | `open` |
 | 0021 | 2 | EOBO | `open` |
 | 0022 | 2 | Odzyskiwanie | `open` |
