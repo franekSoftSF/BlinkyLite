@@ -11,7 +11,14 @@
     # confusing assembly-load error into a clear refusal at Import-Module.
     PowerShellVersion    = '7.6'
     CompatiblePSEditions = @('Core')
-    CmdletsToExport      = @()
+    CmdletsToExport      = @(
+        'Connect-BlinkyLite',
+        'Disconnect-BlinkyLite',
+        'Get-BlinkyLiteCard',
+        'Get-BlinkyLiteProfile',
+        'Find-BlinkyLiteUser',
+        'New-BlinkyLiteIssuance'
+    )
     FunctionsToExport    = @()
     AliasesToExport      = @()
     VariablesToExport    = @()

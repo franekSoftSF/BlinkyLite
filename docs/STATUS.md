@@ -328,7 +328,7 @@ Nie istnieje: klient WPF, moduł PowerShell, przeglądarka i weryfikacja.
 | 0025 | 2 | Logowanie zintegrowane (Negotiate/Kerberos) | `open` |
 | 0023 | 2 | Klient WPF — wydanie | `partly-done` |
 | 0030 | 3 | Przeglądarka i weryfikacja w WPF | `open` |
-| 0040 | 4 | Moduł PowerShell | `open` |
+| 0040 | 4 | Moduł PowerShell | `partly-done` |
 | 0050 | 5 | Docker | `done` |
 | 0051 | 5 | Serwer Windows — MSIX | `open` |
 | 0052 | 5 | Klient — MSIX | `open` |

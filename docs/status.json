@@ -567,9 +567,10 @@
       "id": "0040",
       "phase": 4,
       "title": "Moduł PowerShell",
-      "state": "open",
+      "state": "partly-done",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-21: modul binarny na tym samym silniku co WPF. Connect-BlinkyLite (token w sesji, haslo pytane przez host gdy nie ma -Credential), Disconnect-BlinkyLite, Get-BlinkyLiteCard, Get-BlinkyLiteProfile, Find-BlinkyLiteUser, New-BlinkyLiteIssuance z SupportsShouldProcess i ConfirmImpact.High. PIN-u nie da sie podac parametrem - jest czytany przez ReadLineAsSecureString, dwa razy, w chwili gdy karta go potrzebuje. Niejednoznaczne -User to odmowa z lista kandydatow, nigdy zgadywanie. Sprawdzone w pwsh 7.6.6 na tej maszynie: modul laduje sie, szesc cmdletow widocznych, Get-BlinkyLiteCard odczytal prawdziwa karte 39721373, a New-BlinkyLiteIssuance bez polaczenia odmawia zdaniem, a nie wyjatkiem. Test pilnuje, ze manifest eksportuje dokladnie te cmdlety, ktore sa w kodzie.",
+      "gap": "Zadne wydanie nie przeszlo jeszcze przez modul - tylko przez wiersz polecen narzedzia stacji. Brakuje Resume-BlinkyLiteIssuance (0022) i cmdletow przegladarki (0030). Nie uruchamiany na ARM64."
     },
     {
       "id": "0050",
