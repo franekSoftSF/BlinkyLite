@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using BlinkyLite.Contracts;
 using BlinkyLite.Issuance;
 
@@ -7,16 +9,32 @@ namespace BlinkyLite.CardLab;
 internal sealed record Options(
     string Subject,
     string? Reader,
-    string? Out,
+    string OutDirectory,
+    string? Language,
     bool Yes,
-    bool PinFromStdin)
+    bool PinFromStdin,
+    bool NoYkman)
 {
     public static Options Parse(string[] args) => new(
         Subject: Value(args, "--subject") ?? "CN=BlinkyLite bench",
         Reader: Value(args, "--reader"),
-        Out: Value(args, "--out"),
+        OutDirectory: Value(args, "--out") ?? Directory.GetCurrentDirectory(),
+        Language: Value(args, "--lang"),
         Yes: args.Contains("--yes", StringComparer.Ordinal),
-        PinFromStdin: args.Contains("--pin-from-stdin", StringComparer.Ordinal));
+        PinFromStdin: args.Contains("--pin-from-stdin", StringComparer.Ordinal),
+        NoYkman: args.Contains("--no-ykman", StringComparer.Ordinal));
+
+    /// <summary>
+    /// The station speaks its own language unless told otherwise, because the
+    /// person typing the PIN is standing at it.
+    /// </summary>
+    public void ApplyLanguage()
+    {
+        if (Language is { } wanted)
+        {
+            Strings.Current.Culture = Strings.Pick(CultureInfo.GetCultureInfo(wanted));
+        }
+    }
 
     private static string? Value(string[] args, string name)
     {
@@ -29,27 +47,40 @@ internal sealed record Options(
 /// The PIN, typed by the person the key is for, without echo and twice.
 /// This is what the WPF window will do in 0023; here it is a console.
 /// </summary>
+/// <remarks>
+/// The words come from the message catalogue, not from this file: the person
+/// at the bench reads the same sentences the client will show them, so a bad
+/// sentence is found here rather than after the client is written.
+/// </remarks>
 internal sealed class ConsolePinPrompt : IPinPrompt
 {
+    private const int Attempts = 3;
+
     public Task<string?> AskAsync(PinPromptContext context, CancellationToken ct = default)
     {
-        if (context.RefusalKey is { } refusal)
-        {
-            Console.WriteLine($"  that PIN was refused: {refusal}");
-        }
+        var strings = Strings.Current;
 
         Console.WriteLine();
-        Console.WriteLine($"Set a PIN for token {context.Serial}. "
-                          + $"{context.Policy.MinimumLength}-{context.Policy.MaximumLength} digits, "
-                          + "and you will type it every time you use the key.");
 
-        var first = Read("PIN: ");
+        if (context.RefusalKey is { } refusal)
+        {
+            Console.WriteLine($"  {strings[refusal]}");
+            Console.WriteLine($"  {strings.Format("pin.attempts-left", Attempts - context.Attempt + 1)}");
+        }
+        else
+        {
+            Console.WriteLine($"{strings["pin.title"]} ({context.Serial})");
+            Console.WriteLine(strings["pin.explain"]);
+            Console.WriteLine(strings["pin.rule.length"]);
+        }
+
+        var first = Read($"{strings["pin.new"]}: ");
         if (first is null)
         {
             return Task.FromResult<string?>(null);
         }
 
-        var again = Read("PIN again: ");
+        var again = Read($"{strings["pin.repeat"]}: ");
         if (again is null)
         {
             return Task.FromResult<string?>(null);
@@ -57,8 +88,10 @@ internal sealed class ConsolePinPrompt : IPinPrompt
 
         if (!string.Equals(first, again, StringComparison.Ordinal))
         {
-            Console.WriteLine("  the two PINs are not the same");
-            return AskAsync(context with { Attempt = context.Attempt + 1, RefusalKey = "pin.rule.mismatch" }, ct);
+            // Not an attempt as the engine counts them: the engine judges PINs,
+            // and it never saw one here.
+            Console.WriteLine($"  {strings["pin.rule.mismatch"]}");
+            return AskAsync(context, ct);
         }
 
         return Task.FromResult<string?>(first);
@@ -67,7 +100,7 @@ internal sealed class ConsolePinPrompt : IPinPrompt
     private static string? Read(string label)
     {
         Console.Write(label);
-        var typed = new System.Text.StringBuilder();
+        var typed = new StringBuilder();
 
         while (true)
         {
@@ -112,7 +145,7 @@ internal sealed class StdinPinPrompt : IPinPrompt
     {
         if (context.RefusalKey is { } refusal)
         {
-            Console.Error.WriteLine($"the PIN from standard input was refused: {refusal}");
+            Console.Error.WriteLine(Strings.Current[refusal]);
             return Task.FromResult<string?>(null);
         }
 

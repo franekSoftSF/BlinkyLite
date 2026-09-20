@@ -41,7 +41,7 @@
     "phase": 1,
     "phaseTitle": "Karta",
     "state": "open",
-    "summary": "Fundament (0001-0005), warstwa PIV (0010) i wdrozenie w Dockerze (0050). Serwer dziala na prawdziwej domenie: logowanie AD -> JWT z rolami potwierdzone na kontenerze LXC. 347 testow jednostkowych, 84 na PostgreSQL 16, CI zielone. Nie ma jeszcze silnika wydania ani kontaktu z CA i karta.",
+    "summary": "Fundament (0001-0005), warstwa PIV (0010) i wdrozenie w Dockerze (0050). Serwer dziala na prawdziwej domenie: logowanie AD -> JWT z rolami potwierdzone na kontenerze LXC. Silnik personalizacji istnieje i na prawdziwej karcie ODMOWIL zgodnie z regulami (0011, partly-done); karta fabryczna jeszcze go nie spotkala. 359 testow jednostkowych, 84 na PostgreSQL 16, CI zielone. Nie ma jeszcze kontaktu z CA.",
     "nothingIssuedYet": true
   },
   "stateLegend": {
@@ -480,9 +480,10 @@
       "id": "0011",
       "phase": 1,
       "title": "Personalizacja i klucz",
-      "state": "open",
+      "state": "partly-done",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-20: CardPersonaliser (MK do PRINTED z flaga ADMIN DATA i SET MANAGEMENT KEY, PUK przed PIN-em, CHUID i CCC, klucz 9A, atestacja na przypietych rootach Yubico, CSR podpisany na karcie, wszystko w jednej transakcji PC/SC), PIN przez IPinPrompt i PinRules, zerowany po uzyciu. Po zapisie silnik ODCZYTUJE z karty: MK wraca z PRINTED taki sam (ManagementKey.Matches), flaga ADMIN DATA mowi 'za PIN-em' (PivSession.IsManagementKeyBehindPin - to samo, co czyta ykman piv info), podpis CSR sprawdzony przez ponowne wczytanie, stan PIN i PUK, metadane slotu 9A (Origin=Generated). tools/BlinkyLite.CardLab to narzedzie stacji testowej: inventory (tylko odczyt), personalise --yes, raport do odeslania bez PIN-u, PUK-u i MK oraz osobny plik sekretow, ktory zostaje na stacji; wybor czytnika po SELECT, nie po nazwie. Na podlaczonym kluczu (5.4.3, serial 23673995, karta laboratoryjna Blinky) silnik odmowil: error.card.not-factory, stan karty po probie identyczny. 359 testow jednostkowych.",
+      "gap": "Zadna karta FABRYCZNA jeszcze tego nie przeszla. Brakuje przebiegu na 5.4.x (3DES) i na 5.7+ (AES-192) z potwierdzeniem, ze ykman piv info pokazuje 'Management key is stored on the YubiKey, protected by PIN', a PIN i PUK nie sa fabryczne. Narzedzie spakowane dla stacji testowej (artifacts/BlinkyLite-CardLab-win-x64.zip, self-contained, bez instalacji .NET); czeka na fabryczny klucz."
     },
     {
       "id": "0020",
@@ -596,6 +597,11 @@
       "what": "0003: TLS Kestrela z certyfikatem z magazynu Windows",
       "why": "sprawdzony tylko certyfikat deweloperski z pliku",
       "when": "0051"
+    },
+    {
+      "what": "0011: personalizacja fabrycznej karty",
+      "why": "na sprzecie sprawdzona tylko odmowa (karta nie byla fabryczna); zapis MK, PUK, PIN i klucza 9A nie spotkal jeszcze zadnego fabrycznego tokenu",
+      "when": "0011 - przebieg na stacji testowej, 5.4.x i 5.7+"
     }
   ]
 }

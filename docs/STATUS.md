@@ -6,10 +6,11 @@
 logowanie z AD daje JWT z rolami, każdy endpoint ma politykę, sekrety są poza
 konfiguracją i w kopertach AES-256-GCM przywiązanych do karty i wydania, a
 kod rozmawiający z kluczem jest w repozytorium i przechodzi testy na zapisach
-z prawdziwych tokenów — 347 testów jednostkowych i 84 na PostgreSQL 16, CI
+z prawdziwych tokenów — 359 testów jednostkowych i 84 na PostgreSQL 16, CI
 zielone. **Serwer wstaje jednym `docker compose up`** (0050), razem z bazą i
-migracjami. Nie ma jeszcze silnika wydania ani kontaktu z prawdziwym AD, CA i
-kartą
+migracjami, i **loguje z prawdziwej domeny**. Silnik personalizacji istnieje i
+na prawdziwej karcie odmówił dokładnie tam, gdzie miał (0011) — ale fabryczny
+klucz jeszcze go nie spotkał. Nie ma jeszcze kontaktu z CA.
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
 się zgadzać; `status.json` czyta build albo dashboard. Definicje ukończenia są
@@ -185,8 +186,39 @@ może przeczytać koperty z pominięciem funkcji. To domyka „działające
 logowanie” z definicji ukończenia 0050 i zarazem lukę 0003, która mówiła, że
 warstwa LDAP nie widziała prawdziwego AD.
 
-Nie istnieje: silnik wydania, klient WPF, moduł PowerShell, kontakt z
-prawdziwym AD, CA i kartą.
+Od 0011 (20 września 2026) istnieje **silnik personalizacji**
+(`BlinkyLite.Issuance`): management key do PRINTED z flagą w ADMIN DATA i
+dopiero potem `SET MANAGEMENT KEY`, PUK przed PIN-em, CHUID i CCC zanim
+Windows zostanie poproszony o logowanie, klucz w 9A, atestacja zweryfikowana
+przypiętymi rootami Yubico i żądanie podpisane przez kartę — wszystko w jednej
+transakcji PC/SC. PIN wpisuje człowiek przez `IPinPrompt`, reguły sprawdza
+`PinRules` przeniesione z Blinky, a po użyciu PIN jest zerowany; nie ma go w
+wyniku, w logu ani w pliku.
+
+Po zapisie silnik **odczytuje kartę zamiast zakładać**: czy management key
+wraca z PRINTED taki sam, czy flaga ADMIN DATA mówi „za PIN-em” (to samo, co
+czyta `ykman piv info`), czy podpis CSR daje się sprawdzić ponownym wczytaniem
+żądania, jaki jest stan PIN-u i PUK-u i czy klucz w 9A został **wygenerowany**,
+a nie wgrany. Komplet tych odpowiedzi to definicja ukończenia 0011 zapisana w
+kodzie (`PersonalisationChecks.Passed`).
+
+`tools/BlinkyLite.CardLab` to narzędzie **stacji testowej**, nie część
+produktu: `inventory` tylko czyta, `personalise` wymaga `--yes` i karty
+fabrycznej, a po przebiegu zostawia dwa pliki — raport do odesłania (bez
+PIN-u, PUK-u i management key) i osobny plik z PUK i management key, który ma
+zostać na stacji. Czytnik wybiera po odpowiedzi na `SELECT`, a nie po nazwie,
+bo ten sam token w czytniku OMNIKEY nie nazywa się „YubiKey”. Spakowane
+samodzielnie (`artifacts/BlinkyLite-CardLab-win-x64.zip`, bez instalowania
+.NET) razem z instrukcją po polsku.
+
+**Na sprzęcie sprawdzona jest na razie odmowa**: podłączony klucz (5.4.3,
+serial 23673995) okazał się kartą z laboratorium Blinky — management key
+ustawiony, PUK zablokowany, w 9A certyfikat z „Blinky Issuing CA”. Silnik
+odmówił z `error.card.not-factory`, a stan karty po próbie był identyczny, bo
+ten warunek stoi przed transakcją. Czego brakuje do `done`: przebiegu na
+**fabrycznym** kluczu, osobno 5.4.x (3DES) i 5.7+ (AES-192).
+
+Nie istnieje: wysyłka do CA, klient WPF, moduł PowerShell.
 
 ## Stany
 
@@ -210,7 +242,7 @@ prawdziwym AD, CA i kartą.
 | 0004 | 0 | Języki EN / DE / SV / PL | `done` |
 | 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `partly-done` |
 | 0010 | 1 | Import `Blinky.Piv` | `done` |
-| 0011 | 1 | Personalizacja i klucz | `open` |
+| 0011 | 1 | Personalizacja i klucz | `partly-done` |
 | 0020 | 2 | API wydań | `open` |
 | 0021 | 2 | EOBO | `open` |
 | 0022 | 2 | Odzyskiwanie | `open` |

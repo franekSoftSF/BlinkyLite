@@ -1,65 +1,44 @@
 using System.Security.Cryptography;
-using System.Text.Json;
 using BlinkyLite.CardLab;
 using BlinkyLite.Contracts;
 using BlinkyLite.Issuance;
 using BlinkyLite.Piv;
 using BlinkyLite.Piv.Pcsc;
 
-// The bench tool for the issuance engine. Two commands:
+// The tool for the test station. Two commands:
 //
 //   inventory                        reads a token and prints what is on it
 //   personalise --subject "CN=..."   writes: management key, PUK, PIN, key 9A
 //
 // "personalise" changes a token in ways nothing can undo, so it refuses to run
-// without --yes and refuses any token that is not in its factory state.
+// without --yes and refuses any token that is not in its factory state. Every
+// run leaves a report to send back and, when it wrote anything, a second file
+// with that token's PUK and management key, which does not travel.
 return await Run(args);
 
 static async Task<int> Run(string[] args)
 {
+    var command = args.FirstOrDefault() ?? "help";
+    if (command is "help" or "--help" or "-h" or "/?")
+    {
+        return Help();
+    }
+
     if (!PcscContext.IsSupported)
     {
         Console.Error.WriteLine("This tool speaks to readers through winscard.dll and is Windows-only.");
         return 2;
     }
 
-    var command = args.FirstOrDefault() ?? "help";
     var options = Options.Parse(args);
+    options.ApplyLanguage();
 
-    using var context = PcscContext.Establish();
-    var readers = context.ListReaders();
-    if (readers.Count == 0)
-    {
-        Console.Error.WriteLine("No readers. Is the token plugged in?");
-        return 3;
-    }
-
-    var reader = options.Reader is { } wanted
-        ? readers.FirstOrDefault(r => r.Contains(wanted, StringComparison.OrdinalIgnoreCase))
-        : readers.FirstOrDefault(r => r.Contains("yubikey", StringComparison.OrdinalIgnoreCase));
-
-    if (reader is null)
-    {
-        Console.Error.WriteLine($"No matching reader. Readers: {string.Join(", ", readers)}");
-        return 3;
-    }
-
-    Console.WriteLine($"reader: {reader}");
-
-    using var transport = context.Connect(reader);
-    if (transport is null)
-    {
-        Console.Error.WriteLine("The reader has no card.");
-        return 3;
-    }
-
-    using var connection = new PivConnection(transport);
-    var session = new PivSession(connection);
+    Directory.CreateDirectory(options.OutDirectory);
 
     return command switch
     {
-        "inventory" => Inventory(session),
-        "personalise" => await Personalise(session, options),
+        "inventory" => Inventory(options),
+        "personalise" => await Personalise(options),
         _ => Help(),
     };
 }
@@ -67,54 +46,77 @@ static async Task<int> Run(string[] args)
 static int Help()
 {
     Console.WriteLine("""
-        BlinkyLite.CardLab
+        BlinkyLite CardLab - narzedzie stacji testowej
 
-          inventory                      read a token, write nothing
-          personalise --yes              personalise a FACTORY token:
-            --subject "CN=Jan Kowalski"    subject of the request the card signs
-            --reader <part of name>        which reader, if there are several
-            --out <file>                   where to save PUK, management key,
-                                           attestation and request (lab only)
-            --pin-from-stdin               read the PIN from standard input
-                                           instead of asking for it
+          inventory                      czyta klucz, nic nie zapisuje
+          personalise --yes              personalizuje FABRYCZNY klucz:
+            --subject "CN=Jan Kowalski"    podmiot zadania, ktore podpisze karta
+            --reader <czesc nazwy>         ktory czytnik, gdy jest ich kilka
+            --out <katalog>                gdzie zapisac raport i sekrety
+            --lang en|de|sv|pl             jezyk komunikatow dla uzytkownika
+            --no-ykman                     nie wolaj ykman piv info do raportu
+            --pin-from-stdin               czytaj PIN ze standardowego wejscia
+                                           zamiast pytac o niego
+
+        Raport (raport-<serial>.txt) mozna odeslac. Plik sekretow
+        (sekrety-<serial>.json) otwiera te karte i zostaje na stacji.
         """);
     return 0;
 }
 
-static int Inventory(PivSession session)
+static int Inventory(Options options)
 {
-    if (!session.Select())
+    var log = new Transcript();
+
+    using var card = CardScope.Open(options, log);
+    if (card is null)
     {
-        Console.Error.WriteLine("The card does not answer to the PIV applet.");
         return 3;
     }
 
-    var inventory = session.ReadInventory();
+    if (!card.Session.Select())
+    {
+        log.Problem("Karta nie odpowiada apletowi PIV.");
+        return 3;
+    }
 
-    Console.WriteLine($"serial:        {inventory.SerialNumber?.ToString() ?? "none (not a YubiKey)"}");
-    Console.WriteLine($"firmware:      {inventory.Firmware}");
-    Console.WriteLine($"management:    {inventory.ManagementKey?.Algorithm} "
-                      + $"{(inventory.ManagementKey?.IsDefault == true ? "FACTORY" : "set")}");
-    Console.WriteLine($"PIN:           {inventory.Pin.State}, {inventory.Pin.RemainingRetries}/{inventory.Pin.TotalRetries} left");
-    Console.WriteLine($"PUK:           {inventory.Puk.State}, {inventory.Puk.RemainingRetries}/{inventory.Puk.TotalRetries} left");
-    Console.WriteLine($"biometrics:    {(inventory.IsBiometric ? "yes" : "no")}");
+    var inventory = card.Session.ReadInventory();
+
+    log.Say($"serial:       {inventory.SerialNumber?.ToString() ?? "brak (to nie YubiKey)"}");
+    log.Say($"firmware:     {inventory.Firmware}");
+    log.Say($"management:   {inventory.ManagementKey?.Algorithm.ToString() ?? "?"} "
+            + $"{(inventory.ManagementKey?.IsDefault == true ? "FABRYCZNY" : "ustawiony")}");
+    log.Say($"PIN:          {inventory.Pin.State}, prob {inventory.Pin.RemainingRetries}/{inventory.Pin.TotalRetries}");
+    log.Say($"PUK:          {inventory.Puk.State}, prob {inventory.Puk.RemainingRetries}/{inventory.Puk.TotalRetries}");
+    log.Say($"biometria:    {(inventory.IsBiometric ? "tak" : "nie")}");
 
     foreach (var slot in inventory.Slots)
     {
-        Console.WriteLine($"slot {slot.Slot}:       "
-                          + (slot.IsEmpty ? "empty" : $"key {slot.Metadata?.Algorithm}, certificate: {slot.HasCertificate}"));
+        log.Say($"slot {slot.Slot}:     "
+                + (slot.IsEmpty
+                    ? "pusty"
+                    : $"klucz {slot.Metadata?.Algorithm}, certyfikat: {slot.HasCertificate}"));
     }
+
+    var ready = inventory.ManagementKey?.IsDefault == true
+                && inventory.Slots.First(s => s.Slot == PivSlot.Authentication).IsEmpty;
+
+    log.Say(string.Empty);
+    log.Say(ready
+        ? "Ten klucz wyglada na fabryczny - personalizacja powinna przejsc."
+        : "Ten klucz nie jest fabryczny - personalizacja go odmowi i nic nie zapisze.");
 
     return 0;
 }
 
-static async Task<int> Personalise(PivSession session, Options options)
+static async Task<int> Personalise(Options options)
 {
+    var log = new Transcript();
+
     if (!options.Yes)
     {
-        Console.Error.WriteLine(
-            "personalise writes a new management key, PUK and PIN and generates a key in 9A. "
-            + "Nothing here can be undone. Pass --yes when the token is a test one.");
+        log.Problem("personalise zapisuje nowy management key, PUK i PIN oraz generuje klucz w slocie 9A. "
+                    + "Tego nie da sie cofnac. Dodaj --yes, gdy klucz jest testowy.");
         return 2;
     }
 
@@ -123,47 +125,80 @@ static async Task<int> Personalise(PivSession session, Options options)
     // file, because there is nowhere else to keep them yet.
     var managementKey = RandomNumberGenerator.GetBytes(24);
     var puk = string.Concat(Enumerable.Range(0, 8).Select(_ => RandomNumberGenerator.GetInt32(0, 10)));
-
     var request = new PersonalisationRequest(managementKey, puk);
-    IPinPrompt prompt = options.PinFromStdin ? new StdinPinPrompt() : new ConsolePinPrompt();
-    var progress = new Progress<string>(step => Console.WriteLine($"  {step}"));
 
-    try
+    TokenInventory? before = null;
+    PersonalisationResult? result = null;
+    string? refusal = null;
+    string reader;
+
+    // The card is held only for as long as the work takes: the report is
+    // written afterwards, and ykman needs the reader back.
+    using (var card = CardScope.Open(options, log))
     {
-        var result = await new CardPersonaliser().PersonaliseAsync(
-            session, request, prompt, options.Subject, progress);
-
-        Console.WriteLine();
-        Console.WriteLine($"serial:        {result.Serial}");
-        Console.WriteLine($"firmware:      {result.Firmware}");
-        Console.WriteLine($"management:    {result.ManagementKeyAlgorithm} (also in PRINTED, behind the PIN)");
-        Console.WriteLine($"wrote CHUID:   {result.WroteChuid}   CCC: {result.WroteCcc}");
-        Console.WriteLine($"attestation:   firmware {result.Attestation.Firmware}, "
-                          + $"form factor {result.Attestation.FormFactor}, "
-                          + $"PIN policy {result.Attestation.PinPolicy}, touch {result.Attestation.TouchPolicy}");
-        Console.WriteLine($"request:       {result.CsrDer.Length} bytes, signed by the card");
-
-        var file = options.Out ?? $"cardlab-{result.Serial}.json";
-        await File.WriteAllTextAsync(file, JsonSerializer.Serialize(new
+        if (card is null)
         {
-            serial = result.Serial,
-            firmware = result.Firmware.ToString(),
-            puk,
-            managementKey = Convert.ToBase64String(managementKey),
-            managementKeyAlgorithm = result.ManagementKeyAlgorithm.ToString(),
-            attestation = Convert.ToBase64String(result.AttestationDer),
-            intermediate = Convert.ToBase64String(result.IntermediateDer),
-            csr = Convert.ToBase64String(result.CsrDer),
-        }, new JsonSerializerOptions { WriteIndented = true }));
+            return 3;
+        }
 
-        Console.WriteLine($"saved:         {file}");
-        Console.WriteLine("That file holds the PUK and the management key of this token in the clear.");
-        Console.WriteLine("It exists because there is no server in this patch yet - keep it out of the repository.");
-        return 0;
+        reader = card.Reader;
+
+        if (!card.Session.Select())
+        {
+            log.Problem("Karta nie odpowiada apletowi PIV.");
+            return 3;
+        }
+
+        before = card.Session.ReadInventory();
+
+        IPinPrompt prompt = options.PinFromStdin ? new StdinPinPrompt() : new ConsolePinPrompt();
+        var progress = new Progress<string>(log.Key);
+
+        try
+        {
+            result = await new CardPersonaliser().PersonaliseAsync(
+                card.Session, request, prompt, options.Subject, progress);
+        }
+        catch (PersonalisationRefusedException e)
+        {
+            // The message key is what the client will show; the detail is for
+            // whoever reads the report.
+            refusal = $"{Strings.Current[e.MessageKey]}  ({e.Message})";
+            log.Problem(refusal);
+        }
+        catch (PivException e)
+        {
+            refusal = $"{Strings.Current["issuance.step.failed"]} {e.Message}";
+            log.Problem(refusal);
+        }
     }
-    catch (PersonalisationRefusedException e)
+
+    var ykman = options.NoYkman ? null : Report.Ykman();
+
+    var serial = result?.Serial ?? before?.SerialNumber ?? 0;
+    var reportPath = await Report.WriteAsync(
+        Path.Combine(options.OutDirectory, $"raport-{serial}.txt"),
+        log, reader, before, result, refusal, ykman);
+
+    Console.WriteLine();
+    Console.WriteLine($"raport:       {reportPath}");
+    Console.WriteLine("              Ten plik mozna odeslac - nie ma w nim PIN-u, PUK-u ani management key.");
+
+    if (result is null)
     {
-        Console.Error.WriteLine($"refused: {e.Message}");
         return 4;
     }
+
+    var secretsPath = await Report.WriteSecretsAsync(
+        Path.Combine(options.OutDirectory, $"sekrety-{result.Serial}.json"),
+        result.Serial, puk, managementKey, result.ManagementKeyAlgorithm);
+
+    Console.WriteLine($"sekrety:      {secretsPath}");
+    Console.WriteLine("              PUK i management key tej karty, jawnie. Nie wysylaj, skasuj po tescie.");
+    Console.WriteLine();
+    Console.WriteLine(result.Checks.Passed
+        ? "Sprawdzenia po zapisie: OK."
+        : "Sprawdzenia po zapisie: COS SIE NIE ZGADZA - patrz raport.");
+
+    return result.Checks.Passed ? 0 : 5;
 }

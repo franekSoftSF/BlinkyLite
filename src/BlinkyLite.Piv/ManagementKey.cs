@@ -124,6 +124,19 @@ public sealed class ManagementKey
         return new ManagementKey(secret[..needed].ToArray(), algorithm);
     }
 
+    /// <summary>
+    /// True when this key is the same bytes as <paramref name="candidate"/>.
+    /// </summary>
+    /// <remarks>
+    /// Comparison lives here because the bytes do not leave the class: the one
+    /// caller that needs this is the check after personalisation, which reads
+    /// the key back out of PRINTED and asks whether the card really kept what
+    /// it was given. Handing it the bytes to compare itself would put a
+    /// management key in a caller's variable for no other reason.
+    /// </remarks>
+    public bool Matches(ReadOnlySpan<byte> candidate) =>
+        CryptographicOperations.FixedTimeEquals(key, candidate);
+
     internal byte[] SetCommandData()
     {
         var data = new byte[3 + key.Length];

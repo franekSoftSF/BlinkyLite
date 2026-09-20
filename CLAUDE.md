@@ -45,10 +45,11 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `packaging/` | manifesty MSIX (klient bundle x64+ARM64, serwer z usługą) |
 | `docs/` | numerowane dokumenty + `STATUS.md` i `status.json` |
 
-(Na dziś: 0001–0005 i 0010 — szkielet, baza, serwer z logowaniem AD, cztery
-języki, sekrety poza konfiguracją i warstwa PIV z Blinky. Nie ma jeszcze
-`BlinkyLite.Issuance`, klienta, modułu PowerShell ani `packaging/`. Patrz
-STATUS.)
+(Na dziś: 0001–0005, 0010 i część 0011 — szkielet, baza, serwer z logowaniem
+AD, cztery języki, sekrety poza konfiguracją, warstwa PIV z Blinky i silnik
+personalizacji, który na prawdziwej karcie sprawdzono dotąd tylko przez
+odmowę. Nie ma jeszcze wysyłki do CA, klienta, modułu PowerShell ani
+`packaging/`. Patrz STATUS.)
 
 ## Komendy
 
@@ -66,6 +67,8 @@ dotnet publish src/BlinkyLite.Client -c Release -r win-arm64
 docker compose up -d --build       # serwer + postgres
 dotnet run --project tools/BlinkyLite.CardLab -- inventory          # czyta kartę, nic nie pisze
 dotnet run --project tools/BlinkyLite.CardLab -- personalise --yes  # PISZE na karcie (0011)
+# paczka na stację testową: jeden .exe, bez instalowania .NET
+dotnet publish tools/BlinkyLite.CardLab -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o artifacts/cardlab-win-x64
 ```
 
 ## Konwencje nie do negocjacji

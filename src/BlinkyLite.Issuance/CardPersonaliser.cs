@@ -37,6 +37,29 @@ public sealed record PersonalisationRequest(
     public PinComplexityPolicy Complexity => PinComplexity ?? PinComplexityPolicy.Default;
 }
 
+/// <summary>
+/// What the card says about itself once it has been personalised, read back
+/// rather than assumed. These are the same facts <c>ykman piv info</c> prints,
+/// so a bench run can be checked without Yubico's tools installed.
+/// </summary>
+public sealed record PersonalisationChecks(
+    bool ManagementKeyReadsBack,
+    bool ManagementKeyBehindPin,
+    bool RequestSignatureValid,
+    PinState Pin,
+    PinState Puk,
+    PivAlgorithm SlotAlgorithm,
+    PinPolicy SlotPinPolicy,
+    TouchPolicy SlotTouchPolicy,
+    KeyOrigin SlotOrigin)
+{
+    /// <summary>Everything the definition of done for 0011 asks a card to show.</summary>
+    public bool Passed =>
+        ManagementKeyReadsBack && ManagementKeyBehindPin && RequestSignatureValid
+        && Pin == PinState.Set && Puk == PinState.Set
+        && SlotOrigin == KeyOrigin.Generated;
+}
+
 /// <summary>What the card produced; everything here goes to the server.</summary>
 public sealed record PersonalisationResult(
     uint Serial,
@@ -47,7 +70,8 @@ public sealed record PersonalisationResult(
     byte[] CsrDer,
     YubicoAttestation Attestation,
     bool WroteChuid,
-    bool WroteCcc);
+    bool WroteCcc,
+    PersonalisationChecks Checks);
 
 /// <summary>The card cannot be personalised, and why - before anything was written.</summary>
 public sealed class PersonalisationRefusedException(string messageKey, string detail)
@@ -166,17 +190,58 @@ public sealed class CardPersonaliser(AttestationVerifier? verifier = null)
             progress?.Report("issuance.step.sign-request");
             var csr = SignRequest(session, publicKey, subject, pin);
 
+            // Read back rather than assume. The PIN is still verified here and
+            // nowhere later, so this is the only moment the key behind it can
+            // be checked at all.
+            var checks = Check(session, request, management.Algorithm, csr);
+
             progress?.Report("issuance.step.done");
             return new PersonalisationResult(
                 serial, firmware, management.Algorithm,
                 leaf.RawData, intermediate.RawData, csr, verdict.Attestation!,
-                identity.Chuid, identity.CapabilityContainer);
+                identity.Chuid, identity.CapabilityContainer, checks);
         }
         finally
         {
             // The PIN existed in this process for as long as the card needed it
             // and not one step longer.
             pin.AsSpan().Clear();
+        }
+    }
+
+    private static PersonalisationChecks Check(
+        PivSession session, PersonalisationRequest request, PivAlgorithm algorithm, byte[] csr)
+    {
+        var stored = session.ReadProtectedManagementKey(algorithm);
+
+        var slot = session.GetSlotMetadata(PivSlot.Authentication);
+
+        return new PersonalisationChecks(
+            ManagementKeyReadsBack: stored?.Matches(request.ManagementKey) == true,
+            ManagementKeyBehindPin: session.IsManagementKeyBehindPin(),
+            RequestSignatureValid: SignatureVerifies(csr),
+            Pin: session.GetPinMetadata().State,
+            Puk: session.GetPukMetadata().State,
+            SlotAlgorithm: slot?.Algorithm ?? PivAlgorithm.Unknown,
+            SlotPinPolicy: slot?.PinPolicy ?? PinPolicy.Unknown,
+            SlotTouchPolicy: slot?.TouchPolicy ?? TouchPolicy.Unknown,
+            SlotOrigin: slot?.Origin ?? KeyOrigin.Unknown);
+    }
+
+    /// <summary>
+    /// Loads the request back: .NET checks the signature while it parses, so a
+    /// request the card did not really sign fails here rather than at the CA.
+    /// </summary>
+    private static bool SignatureVerifies(byte[] csr)
+    {
+        try
+        {
+            CertificateRequest.LoadSigningRequest(csr, HashAlgorithmName.SHA256);
+            return true;
+        }
+        catch (CryptographicException)
+        {
+            return false;
         }
     }
 
