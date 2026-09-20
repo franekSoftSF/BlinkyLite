@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Filled in 0010 from Blinky.Piv. Plain net10.0 so that the server can
-       re-verify attestation with the same code the workstation uses. -->
+  <!-- Brought over from Blinky.Piv in 0010 (docs/06-from-blinky.md). Plain
+       net10.0 so that the server can re-verify attestation with the same code
+       the workstation uses. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -9,6 +10,14 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="BlinkyLite.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Yubico's attestation roots, pinned by fingerprint at load. Embedded so
+         that a deployment cannot quietly swap the trust anchor for a file. -->
+    <EmbeddedResource Include="Attestation\yubico-piv-attestation-root.pem" />
+    <EmbeddedResource Include="Attestation\yubico-attestation-root-1.pem" />
+    <EmbeddedResource Include="Attestation\yubico-piv-attestation-intermediates.pem" />
   </ItemGroup>
 
 </Project>

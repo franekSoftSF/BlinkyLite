@@ -44,9 +44,10 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `packaging/` | manifesty MSIX (klient bundle x64+ARM64, serwer z usługą) |
 | `docs/` | numerowane dokumenty + `STATUS.md` i `status.json` |
 
-(Na dziś: szkielet z 0001 i baza z 0002 — `db/init`, `db/migrations`,
-`src/BlinkyLite.Server/Data`, testy bazy. Bez logiki wydania, logowania i
-`packaging/`. Patrz STATUS.)
+(Na dziś: 0001–0005 i 0010 — szkielet, baza, serwer z logowaniem AD, cztery
+języki, sekrety poza konfiguracją i warstwa PIV z Blinky. Nie ma jeszcze
+`BlinkyLite.Issuance`, klienta, modułu PowerShell ani `packaging/`. Patrz
+STATUS.)
 
 ## Komendy
 
