@@ -223,11 +223,14 @@ public sealed class NewBlinkyLiteIssuanceCommand : PSCmdlet
 
             using var card = CardAccess.Open(Reader);
 
-            var progress = new Progress<string>(key => WriteVerbose(Strings.Current[key]));
-            var outcome = new IssuanceRunner(client).RunAsync(
-                    card.Session, target, profile, agent,
-                    new HostPinPrompt(Host), Environment.MachineName, progress)
-                .GetAwaiter().GetResult();
+            // Steps are queued by the engine and written here, because only
+            // this thread may write to a pipeline.
+            var steps = new StepQueue();
+            var work = new IssuanceRunner(client).RunAsync(
+                card.Session, target, profile, agent,
+                new HostPinPrompt(Host), Environment.MachineName, steps);
+
+            var outcome = steps.Pump(work, step => WriteVerbose(Strings.Current[step]));
 
             WriteObject(outcome);
         }

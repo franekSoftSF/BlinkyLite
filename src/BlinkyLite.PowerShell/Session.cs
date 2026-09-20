@@ -55,6 +55,55 @@ internal static class Session
     }
 }
 
+/// <summary>
+/// Collects the engine's steps so the cmdlet can write them from its own
+/// thread.
+/// </summary>
+/// <remarks>
+/// <see cref="Progress{T}"/> cannot be used here. It posts to the captured
+/// synchronization context, and a PowerShell pipeline has none, so the
+/// callback lands on a thread-pool thread - where <c>WriteVerbose</c> throws
+/// <c>PSInvalidOperationException</c> and takes the whole process with it.
+/// WPF has a context and hid this; the first run in pwsh did not.
+/// </remarks>
+internal sealed class StepQueue : IProgress<string>
+{
+    private readonly System.Collections.Concurrent.ConcurrentQueue<string> steps = new();
+
+    public void Report(string value) => steps.Enqueue(value);
+
+    /// <summary>Everything reported so far, in order, for the caller to write.</summary>
+    public IEnumerable<string> Drain()
+    {
+        while (steps.TryDequeue(out var step))
+        {
+            yield return step;
+        }
+    }
+
+    /// <summary>
+    /// Waits for the work, writing steps as they arrive - on this thread,
+    /// which is the only one allowed to write.
+    /// </summary>
+    public T Pump<T>(Task<T> work, Action<string> write)
+    {
+        while (!work.Wait(TimeSpan.FromMilliseconds(100)))
+        {
+            foreach (var step in Drain())
+            {
+                write(step);
+            }
+        }
+
+        foreach (var step in Drain())
+        {
+            write(step);
+        }
+
+        return work.GetAwaiter().GetResult();
+    }
+}
+
 /// <summary>Turns what the engine throws into something a shell can show.</summary>
 internal static class Problems
 {
