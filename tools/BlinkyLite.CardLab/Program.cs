@@ -33,6 +33,19 @@ static async Task<int> Run(string[] args)
     var options = Options.Parse(args);
     options.ApplyLanguage();
 
+    // Said before anything happens, and fatal for the command that writes: a
+    // mistyped option here was read as "the card is at fault".
+    if (options.Unrecognised.Count > 0)
+    {
+        Console.Error.WriteLine($"Nie rozpoznaje: {string.Join(", ", options.Unrecognised)}. "
+                                + "Uruchom bez argumentow, zeby zobaczyc liste opcji.");
+
+        if (command == "personalise")
+        {
+            return 2;
+        }
+    }
+
     Directory.CreateDirectory(options.OutDirectory);
 
     return command switch
@@ -116,7 +129,7 @@ static async Task<int> Personalise(Options options)
     if (!options.Yes)
     {
         log.Problem("personalise zapisuje nowy management key, PUK i PIN oraz generuje klucz w slocie 9A. "
-                    + "Tego nie da sie cofnac. Dodaj --yes, gdy klucz jest testowy.");
+                    + "Tego nie da sie cofnac. Dodaj --yes (dwa myslniki), gdy klucz jest testowy.");
         return 2;
     }
 

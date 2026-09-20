@@ -13,16 +13,42 @@ internal sealed record Options(
     string? Language,
     bool Yes,
     bool PinFromStdin,
-    bool NoYkman)
+    bool NoYkman,
+    IReadOnlyList<string> Unrecognised)
 {
-    public static Options Parse(string[] args) => new(
-        Subject: Value(args, "--subject") ?? "CN=BlinkyLite bench",
-        Reader: Value(args, "--reader"),
-        OutDirectory: Value(args, "--out") ?? Directory.GetCurrentDirectory(),
-        Language: Value(args, "--lang"),
-        Yes: args.Contains("--yes", StringComparer.Ordinal),
-        PinFromStdin: args.Contains("--pin-from-stdin", StringComparer.Ordinal),
-        NoYkman: args.Contains("--no-ykman", StringComparer.Ordinal));
+    public static Options Parse(string[] raw)
+    {
+        var args = Normalise(raw);
+
+        var subject = "CN=BlinkyLite bench";
+        string? reader = null;
+        var outDirectory = Directory.GetCurrentDirectory();
+        string? language = null;
+        var yes = false;
+        var pinFromStdin = false;
+        var noYkman = false;
+        var unrecognised = new List<string>();
+
+        // From index 1: index 0 is the command. Walked rather than searched,
+        // because a value must not be mistaken for an option and an option
+        // nobody recognises has to be said out loud, not ignored.
+        for (var i = 1; i < args.Length; i++)
+        {
+            switch (args[i])
+            {
+                case "--subject": subject = Next(args, ref i) ?? subject; break;
+                case "--reader": reader = Next(args, ref i) ?? reader; break;
+                case "--out": outDirectory = Next(args, ref i) ?? outDirectory; break;
+                case "--lang": language = Next(args, ref i) ?? language; break;
+                case "--yes": yes = true; break;
+                case "--pin-from-stdin": pinFromStdin = true; break;
+                case "--no-ykman": noYkman = true; break;
+                default: unrecognised.Add(raw[i]); break;
+            }
+        }
+
+        return new Options(subject, reader, outDirectory, language, yes, pinFromStdin, noYkman, unrecognised);
+    }
 
     /// <summary>
     /// The station speaks its own language unless told otherwise, because the
@@ -36,11 +62,35 @@ internal sealed record Options(
         }
     }
 
-    private static string? Value(string[] args, string name)
+    /// <summary>
+    /// Repairs the dashes of an option name, and only of an option name.
+    /// </summary>
+    /// <remarks>
+    /// <c>-yes</c> cost a run at the bench: one hyphen instead of two, the tool
+    /// refused, and the refusal read as if the card were at fault. A pasted
+    /// command loses a hyphen the same way, or arrives with an en dash from
+    /// something that thought it was typography. Nothing else is touched: a
+    /// subject or a path keeps every character the operator typed.
+    /// </remarks>
+    private static string[] Normalise(string[] args)
     {
-        var index = Array.IndexOf(args, name);
-        return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
+        string[] names =
+        [
+            "subject", "reader", "out", "lang", "yes", "pin-from-stdin", "no-ykman",
+        ];
+
+        return [.. args.Select(argument =>
+        {
+            var name = argument.TrimStart('-', '‐', '‑', '‒', '–', '—', '―', '−');
+
+            return name.Length < argument.Length && names.Contains(name, StringComparer.OrdinalIgnoreCase)
+                ? $"--{name.ToLowerInvariant()}"
+                : argument;
+        })];
     }
+
+    private static string? Next(string[] args, ref int index) =>
+        index + 1 < args.Length ? args[++index] : null;
 }
 
 /// <summary>
