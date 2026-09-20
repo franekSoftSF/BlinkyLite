@@ -61,12 +61,29 @@ docelowym — najlepiej przez osobną grupę, a nie przez `Domain Users`, żeby
 kończy się `0x80094012 CERTSRV_E_TEMPLATE_DENIED`, a komunikat mówi o „bieżącym
 użytkowniku”, czyli wygląda na problem z operatorem.
 
+### TLS: PEM z całym łańcuchem działa
+
+Kestrel czyta parę PEM (`Certificate:Path` + `KeyPath`) i **wysyła cały
+łańcuch z pliku**, jeśli certyfikat pośredni jest w tym samym pliku co liść.
+Sprawdzone `openssl s_client`: serwer podaje liść i Sub-CA, root zostaje u
+klienta jako kotwica zaufania — tak ma być. Klucz może być w formacie PKCS#1
+(`BEGIN RSA PRIVATE KEY`) albo PKCS#8; oba się wczytują.
+
+Certyfikat jest publiczny i leży w `./certs`, **klucz jest sekretem** i jedzie
+do kontenera jako Docker secret (`blinkylite-tls-key`, `0400`, uid 1654).
+Podmiana certyfikatu to podmiana pliku i `docker compose up -d
+--force-recreate api` — serwer czyta go tylko przy starcie.
+
 ### Zmierzone w labie EMSDEMOLAB (20 września 2026)
 
 Szablon docelowy jest jeden dla wszystkich i osobny dla BlinkyLite: nazwa
 `EMSDEMOLABYubicoSmartcardLogon` (wyświetlana: *EMSDEMOLAB Yubico Smartcard
 Logon*). **Nazwa bez spacji jest tą, która idzie do `Issuance:Profiles` i do
 atrybutu `CertificateTemplate:` przy `Submit`** — nazwa wyświetlana nie działa.
+
+Serwer stoi na `blinkylite.ems-ad.emsdemolab.pl` (rekord A → `10.0.20.89`), z
+certyfikatem z `EMSDEMOLAB-Sub-CA` ważnym do 20 września 2028. `/health`
+odpowiada 200 przy pełnej weryfikacji łańcucha, bez `-k`.
 
 `certutil -v -template` potwierdził na nim:
 
