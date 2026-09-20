@@ -420,8 +420,8 @@
     },
     {
       "id": "R-07",
-      "impact": "Pierwsze wydanie konczy sie 0x80094012 CERTSRV_E_TEMPLATE_DENIED, bo przy EOBO CA sprawdza uprawnienia posiadacza karty (RequesterName), a nie operatora - a na szablonie Enroll maja tylko grupy operatorow",
-      "handling": "docs/11: posiadacze kart dostaja Enroll przez osobna grupe; 0021 pokazuje ten kod bledu jako 'to nie operator, to posiadacz' zamiast surowego HRESULT-u"
+      "impact": "Niepewnosc, czyje uprawnienia na szablonie sprawdza CA przy EOBO. Wlasciciel: zadanie wysyla enrollment agent i to jego prawa licza sie dla CA, a te szablon juz daje grupom BlinkyLiteAdmin i BlinkyLiteSecurityOfficer - tak tez mowi wskazowka Microsoftu dla stacji wydawania kart. Moje wczesniejsze zdanie, ze potrzebny jest Enroll dla posiadacza karty, bylo niepewne i zostalo wycofane",
+      "handling": "Rozstrzyga pierwszy Submit w 0021: 0x80094012 CERTSRV_E_TEMPLATE_DENIED oznaczaloby, ze jednak sprawdzany jest posiadacz, i wtedy Enroll nadaje sie osobnej grupie posiadaczy. 0021 tlumaczy ten kod na zdanie o uprawnieniach na szablonie, zamiast pokazywac surowy HRESULT"
     }
   ],
   "patches": [

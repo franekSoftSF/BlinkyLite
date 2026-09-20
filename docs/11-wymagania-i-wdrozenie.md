@@ -52,14 +52,18 @@ Get-ADGroup 'BlinkyLite-SecurityOfficers' | Select-Object -ExpandProperty SID
 | Nazwa konfiguracji CA | `HOST\CA CN`, np. `SUBCA\Corp Issuing CA` |
 | Konfiguracja profili | **na serwerze**, w `appsettings.json` (`Issuance:Profiles`, D-21) — stacje nie mają nazw szablonów i nie trzeba ich obchodzić przy zmianie |
 
-### Wnioskodawcą jest posiadacz karty, nie operator
+### Uprawnienia na szablonie: agent, nie posiadacz
 
-Przy EOBO CA sprawdza uprawnienia **osoby z `RequesterName`**, a nie operatora,
-który wysyła żądanie. Posiadacze kart muszą więc mieć `Enroll` na szablonie
-docelowym — najlepiej przez osobną grupę, a nie przez `Domain Users`, żeby
-*Restricted Enrollment Agents* na CA miało czego pilnować. Bez tego `Submit`
-kończy się `0x80094012 CERTSRV_E_TEMPLATE_DENIED`, a komunikat mówi o „bieżącym
-użytkowniku”, czyli wygląda na problem z operatorem.
+Żądanie wysyła **enrollment agent** i to jego prawa na szablonie liczy CA —
+dlatego `Enroll` mają grupy operatorów (`BlinkyLiteAdmin`,
+`BlinkyLiteSecurityOfficer`), a posiadacz karty nie musi mieć tam nic. Tak też
+brzmi wskazówka Microsoftu dla stacji wydawania kart: agent potrzebuje `Read` i
+`Enroll` na szablonie docelowym.
+
+Gdyby pierwszy `Submit` wrócił z `0x80094012 CERTSRV_E_TEMPLATE_DENIED`,
+znaczyłoby to, że w tej konfiguracji CA sprawdza jednak posiadacza — wtedy
+`Enroll` nadaje się osobnej grupie posiadaczy kart, nie `Domain Users`, żeby
+*Restricted Enrollment Agents* miało czego pilnować.
 
 ### TLS: PEM z całym łańcuchem działa
 
