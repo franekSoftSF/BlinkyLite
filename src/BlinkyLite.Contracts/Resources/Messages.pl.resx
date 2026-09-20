@@ -103,6 +103,21 @@
   <data name="error.certificate.target-mismatch" xml:space="preserve">
     <value>Certyfikat wskazuje inną osobę niż to wydanie.</value>
   </data>
+  <data name="error.ca.cmc-failed" xml:space="preserve">
+    <value>Windows nie zbudował żądania do urzędu certyfikacji.</value>
+  </data>
+  <data name="error.ca.refused" xml:space="preserve">
+    <value>Urząd certyfikacji odrzucił żądanie.</value>
+  </data>
+  <data name="error.ca.pending" xml:space="preserve">
+    <value>Urząd certyfikacji czeka na zatwierdzenie przez menedżera.</value>
+  </data>
+  <data name="error.card.certificate-not-written" xml:space="preserve">
+    <value>Certyfikat nie trafił na klucz.</value>
+  </data>
+  <data name="error.agent.missing" xml:space="preserve">
+    <value>Ta stacja nie ma użytecznego certyfikatu Enrollment Agenta.</value>
+  </data>
   <data name="error.issuance.invalid-state" xml:space="preserve">
     <value>Tego kroku nie można teraz wykonać.</value>
   </data>

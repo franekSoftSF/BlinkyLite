@@ -19,6 +19,10 @@ internal sealed record Options(
     string? Agent,
     string? Template,
     string? Cmc,
+    string? Server,
+    string? Operator,
+    string? Target,
+    string? ProfileName,
     IReadOnlyList<string> Unrecognised)
 {
     public static Options Parse(string[] raw)
@@ -37,6 +41,10 @@ internal sealed record Options(
         string? agent = null;
         string? template = null;
         string? cmc = null;
+        string? server = null;
+        string? operatorName = null;
+        string? target = null;
+        string? profileName = null;
         var unrecognised = new List<string>();
 
         // From index 1: index 0 is the command. Walked rather than searched,
@@ -58,12 +66,16 @@ internal sealed record Options(
                 case "--agent": agent = Next(args, ref i) ?? agent; break;
                 case "--template": template = Next(args, ref i) ?? template; break;
                 case "--cmc": cmc = Next(args, ref i) ?? cmc; break;
+                case "--server": server = Next(args, ref i) ?? server; break;
+                case "--operator": operatorName = Next(args, ref i) ?? operatorName; break;
+                case "--target": target = Next(args, ref i) ?? target; break;
+                case "--profile": profileName = Next(args, ref i) ?? profileName; break;
                 default: unrecognised.Add(raw[i]); break;
             }
         }
 
         return new Options(subject, reader, outDirectory, language, yes, pinFromStdin, noYkman,
-            csr, requester, agent, template, cmc, unrecognised);
+            csr, requester, agent, template, cmc, server, operatorName, target, profileName, unrecognised);
     }
 
     /// <summary>
@@ -94,6 +106,7 @@ internal sealed record Options(
         [
             "subject", "reader", "out", "lang", "yes", "pin-from-stdin", "no-ykman",
             "csr", "requester", "agent", "template", "cmc",
+            "server", "operator", "target", "profile",
         ];
 
         return [.. args.Select(argument =>
@@ -163,6 +176,13 @@ internal sealed class ConsolePinPrompt : IPinPrompt
 
         return Task.FromResult<string?>(first);
     }
+
+    /// <summary>
+    /// A masked read of one line. Public because the operator's own password is
+    /// typed the same way - and through the same code, so there is one place
+    /// where characters are not echoed rather than two.
+    /// </summary>
+    public static string? ReadHidden(string label) => Read(label);
 
     private static string? Read(string label)
     {

@@ -103,6 +103,21 @@
   <data name="error.certificate.target-mismatch" xml:space="preserve">
     <value>Certifikatet namnger en annan person än den här utfärdningen.</value>
   </data>
+  <data name="error.ca.cmc-failed" xml:space="preserve">
+    <value>Windows kunde inte bygga begäran till certifikatutfärdaren.</value>
+  </data>
+  <data name="error.ca.refused" xml:space="preserve">
+    <value>Certifikatutfärdaren avvisade begäran.</value>
+  </data>
+  <data name="error.ca.pending" xml:space="preserve">
+    <value>Certifikatutfärdaren väntar på godkännande av en förvaltare.</value>
+  </data>
+  <data name="error.card.certificate-not-written" xml:space="preserve">
+    <value>Certifikatet kom inte fram till nyckeln.</value>
+  </data>
+  <data name="error.agent.missing" xml:space="preserve">
+    <value>Den här stationen har inget användbart registreringsombudscertifikat.</value>
+  </data>
   <data name="error.issuance.invalid-state" xml:space="preserve">
     <value>Det här steget går inte att göra nu.</value>
   </data>

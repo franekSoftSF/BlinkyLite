@@ -103,6 +103,21 @@
   <data name="error.certificate.target-mismatch" xml:space="preserve">
     <value>Das Zertifikat nennt eine andere Person als diese Ausgabe.</value>
   </data>
+  <data name="error.ca.cmc-failed" xml:space="preserve">
+    <value>Windows konnte die Anfrage an die Zertifizierungsstelle nicht erstellen.</value>
+  </data>
+  <data name="error.ca.refused" xml:space="preserve">
+    <value>Die Zertifizierungsstelle hat die Anfrage abgelehnt.</value>
+  </data>
+  <data name="error.ca.pending" xml:space="preserve">
+    <value>Die Zertifizierungsstelle wartet auf die Freigabe durch einen Verwalter.</value>
+  </data>
+  <data name="error.card.certificate-not-written" xml:space="preserve">
+    <value>Das Zertifikat ist nicht auf den Schlüssel gelangt.</value>
+  </data>
+  <data name="error.agent.missing" xml:space="preserve">
+    <value>Diese Station hat kein nutzbares Registrierungsagent-Zertifikat.</value>
+  </data>
   <data name="error.issuance.invalid-state" xml:space="preserve">
     <value>Dieser Schritt ist jetzt nicht möglich.</value>
   </data>

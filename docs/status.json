@@ -318,6 +318,13 @@
       "state": "locked",
       "decidedOn": "2026-09-20",
       "by": "owner"
+    },
+    {
+      "id": "D-22",
+      "choice": "Reset karty do stanu fabrycznego ISTNIEJE, ale tylko w narzedziu stacji testowej (tools/BlinkyLite.CardLab reset --yes), nie w kliencie WPF ani w module PowerShell. Zakres produktu bez zmian: BlinkyLite wydaje i weryfikuje, reszta zycia karty nalezy do Blinky. Powod wyjatku: token testowy musi wracac do stanu fabrycznego miedzy przebiegami, a odsylanie po to do innego narzedzia konczy sie karta w polowie sprowizjonowana",
+      "state": "locked",
+      "decidedOn": "2026-09-20",
+      "by": "owner"
     }
   ],
   "openQuestions": [

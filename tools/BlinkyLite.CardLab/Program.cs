@@ -48,7 +48,7 @@ static async Task<int> Run(string[] args)
             log.Problem($"Nie rozpoznaje: {string.Join(", ", options.Unrecognised)}. "
                         + "Uruchom bez argumentow, zeby zobaczyc liste opcji.");
 
-            if (command is "personalise" or "eobo-probe")
+            if (command is "personalise" or "eobo-probe" or "issue" or "reset")
             {
                 return 2;
             }
@@ -60,6 +60,8 @@ static async Task<int> Run(string[] args)
             "personalise" => await Personalise(options, log),
             "eobo-probe" => await EoboProbe.RunAsync(options, log),
             "cmc-inspect" => await EoboProbe.InspectAsync(options, log),
+            "issue" => await Issue.RunAsync(options, log),
+            "reset" => Reset(options, log),
             _ => Help(),
         };
     }
@@ -99,6 +101,18 @@ static int Help()
             --requester DOMENA\uzytkownik  dla kogo ma byc certyfikat
             --agent <odcisk>               ktory certyfikat EA, gdy jest kilka
             --template <nazwa>             tylko do wypisania w raporcie
+          issue                          PELNE WYDANIE: rezerwacja na serwerze,
+                                         personalizacja karty, CMC, CA i zapis
+                                         certyfikatu na karte:
+            --server https://host:8443     serwer BlinkyLite
+            --operator DOMENA\uzytkownik   kto wydaje (haslo AD zapyta)
+            --target <fragment nazwy>      dla kogo jest karta
+            --profile <nazwa>              gdy serwer ma wiecej niz jeden
+            --agent <odcisk>               ktory certyfikat EA, gdy jest kilka
+            --yes                          nie pytaj przed zapisem na karte
+          reset --yes                    KASUJE cala czesc PIV karty: klucze,
+                                         certyfikaty, PIN i PUK. Karta wraca
+                                         do stanu fabrycznego. Nie do cofniecia
           cmc-inspect --cmc <plik>       mowi, co jest w gotowym CMC. Nie
                                          potrzebuje ani karty, ani domeny:
             --requester DOMENA\uzytkownik  sprawdz przy okazji, czy to ta osoba
@@ -160,6 +174,68 @@ static void Describe(TokenInventory inventory, Transcript log)
 
         log.Detail("slot {Slot}: metadane {Metadata}, certyfikat {Bytes} bajtow",
             slot.Slot, slot.Metadata, slot.CertificateDer?.Length ?? 0);
+    }
+}
+
+/// <summary>
+/// Wipes the PIV applet: keys, certificates, PIN and PUK.
+/// </summary>
+/// <remarks>
+/// Here and not in the product: BlinkyLite issues and verifies, and the rest of
+/// a card's life belongs to Blinky (D-22). A bench token still has to become
+/// factory again between runs, and sending somebody to another tool for that is
+/// how a lab card ends up half-provisioned.
+/// </remarks>
+static int Reset(Options options, Transcript log)
+{
+    if (!options.Yes)
+    {
+        log.Problem("reset kasuje klucze, certyfikaty, PIN i PUK tej karty. Tego nie da sie cofnac. "
+                    + "Dodaj --yes, gdy karta jest testowa.");
+        return 2;
+    }
+
+    using var card = CardScope.Open(options, log);
+    if (card is null)
+    {
+        return 3;
+    }
+
+    var before = card.Session.ReadInventory();
+    Describe(before, log);
+    log.Say(string.Empty);
+
+    if (before.SerialNumber is { } serial)
+    {
+        log.Say($"Kasuje czesc PIV karty {serial}. To jest ostatni moment, w ktorym cokolwiek na niej jest.");
+    }
+
+    try
+    {
+        // Blocking both counters is what the applet demands before it will
+        // reset; it is also why this is loud rather than quiet.
+        var report = card.Session.FactoryReset();
+        log.Detail("reset: {Report}", report.ToString());
+
+        var after = card.Session.ReadInventory();
+        log.Say(string.Empty);
+        Describe(after, log);
+
+        var factory = after.ManagementKey?.IsDefault == true
+                      && after.Pin.State == PinState.Default
+                      && after.Puk.State == PinState.Default;
+
+        log.Say(string.Empty);
+        log.Say(factory
+            ? "Karta jest z powrotem fabryczna."
+            : "Reset przeszedl, ale karta nie wyglada fabrycznie - patrz wyzej.");
+
+        return factory ? 0 : 5;
+    }
+    catch (PivException e)
+    {
+        log.Problem($"Reset nie przeszedl: {e.Message}", e);
+        return 4;
     }
 }
 

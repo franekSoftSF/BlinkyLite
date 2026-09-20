@@ -1,5 +1,3 @@
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 
 namespace BlinkyLite.Issuance.Eobo;
@@ -102,24 +100,24 @@ public static class CertEnrollCmc
 
         try
         {
-            inner = Create("X509Enrollment.CX509CertificateRequestPkcs10");
-            Invoke(inner, "InitializeDecode", Convert.ToBase64String(pkcs10), Base64);
+            inner = Com.Create("X509Enrollment.CX509CertificateRequestPkcs10");
+            Com.Invoke(inner, "InitializeDecode", Convert.ToBase64String(pkcs10), Base64);
             innerOk = true;
 
-            cmc = Create("X509Enrollment.CX509CertificateRequestCmc");
-            Invoke(cmc, "InitializeFromInnerRequest", inner);
+            cmc = Com.Create("X509Enrollment.CX509CertificateRequestCmc");
+            Com.Invoke(cmc, "InitializeFromInnerRequest", inner);
 
-            Set(cmc, "RequesterName", requesterName);
+            Com.Set(cmc, "RequesterName", requesterName);
             nameOk = true;
 
-            signer = Create("X509Enrollment.CSignerCertificate");
-            Invoke(signer, "Initialize",
+            signer = Com.Create("X509Enrollment.CSignerCertificate");
+            Com.Invoke(signer, "Initialize",
                 UserContext, VerifyAllowUi, Base64, Convert.ToBase64String(agent.RawData));
-            Set(cmc, "SignerCertificate", signer);
+            Com.Set(cmc, "SignerCertificate", signer);
             signerOk = true;
 
-            Invoke(cmc, "Encode");
-            var encoded = (string)Get(cmc, "RawData", Base64)!;
+            Com.Invoke(cmc, "Encode");
+            var encoded = (string)Com.Get(cmc, "RawData", Base64)!;
 
             return new Attempt(true, true, true, true, encoded, null);
         }
@@ -129,71 +127,9 @@ public static class CertEnrollCmc
         }
         finally
         {
-            Release(signer);
-            Release(cmc);
-            Release(inner);
-        }
-    }
-
-    private static object Create(string progId)
-    {
-        var type = Type.GetTypeFromProgID(progId)
-            ?? throw new CertEnrollException(progId,
-                "not registered on this machine - CertEnroll is part of Windows, so this is not a Windows with it", 0);
-
-        return Activator.CreateInstance(type)
-            ?? throw new CertEnrollException(progId, "the object could not be created", 0);
-    }
-
-    private static object? Invoke(object target, string member, params object?[] args) =>
-        Call(member, () => target.GetType().InvokeMember(
-            member, BindingFlags.InvokeMethod, binder: null, target, args));
-
-    private static void Set(object target, string member, object value) =>
-        Call(member, () => target.GetType().InvokeMember(
-            member, BindingFlags.SetProperty, binder: null, target, [value]));
-
-    private static object? Get(object target, string member, params object?[] args) =>
-        Call(member, () => target.GetType().InvokeMember(
-            member, BindingFlags.GetProperty, binder: null, target, args));
-
-    /// <summary>
-    /// Runs one COM call and unwraps what late binding does to its failure.
-    /// </summary>
-    /// <remarks>
-    /// <c>InvokeMember</c> wraps everything in <see cref="TargetInvocationException"/>,
-    /// so the HRESULT - the only part of a CertEnroll failure that says
-    /// anything - is two levels down. The lab errors worth recognising are
-    /// 0x800706BA (no domain identity), 0x80070005 (no rights) and 0x80070002
-    /// (no CA).
-    /// </remarks>
-    private static object? Call(string step, Func<object?> call)
-    {
-        try
-        {
-            return call();
-        }
-        catch (TargetInvocationException e) when (e.InnerException is not null)
-        {
-            var inner = e.InnerException;
-            throw new CertEnrollException(step, inner.Message,
-                inner is COMException com ? com.HResult : 0);
-        }
-        catch (COMException e)
-        {
-            throw new CertEnrollException(step, e.Message, e.HResult);
-        }
-        catch (Exception e) when (e is MissingMethodException or MissingMemberException or InvalidCastException)
-        {
-            throw new CertEnrollException(step, e.Message, 0);
-        }
-    }
-
-    private static void Release(object? com)
-    {
-        if (com is not null && Marshal.IsComObject(com))
-        {
-            Marshal.FinalReleaseComObject(com);
+            Com.Release(signer);
+            Com.Release(cmc);
+            Com.Release(inner);
         }
     }
 }

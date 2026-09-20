@@ -38,6 +38,13 @@ public static class ErrorCodes
     public const string CertificateKeyMismatch = "error.certificate.key-mismatch";
     public const string CertificateTargetMismatch = "error.certificate.target-mismatch";
 
+    // Enrol on behalf of (0021).
+    public const string AgentMissing = "error.agent.missing";
+    public const string CaCmcFailed = "error.ca.cmc-failed";
+    public const string CaRefused = "error.ca.refused";
+    public const string CaPending = "error.ca.pending";
+    public const string CertificateNotWritten = "error.card.certificate-not-written";
+
     // From the bl_* functions (docs/07-database.md#błędy).
     public const string IssuanceInvalidState = "error.issuance.invalid-state";
     public const string CardReservedElsewhere = "error.card.reserved-elsewhere";

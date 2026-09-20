@@ -103,6 +103,21 @@
   <data name="error.certificate.target-mismatch" xml:space="preserve">
     <value>The certificate names a different person than this issuance.</value>
   </data>
+  <data name="error.ca.cmc-failed" xml:space="preserve">
+    <value>Windows could not build the request for the CA.</value>
+  </data>
+  <data name="error.ca.refused" xml:space="preserve">
+    <value>The certification authority refused the request.</value>
+  </data>
+  <data name="error.ca.pending" xml:space="preserve">
+    <value>The certification authority left the request for a manager to approve.</value>
+  </data>
+  <data name="error.card.certificate-not-written" xml:space="preserve">
+    <value>The certificate did not reach the key.</value>
+  </data>
+  <data name="error.agent.missing" xml:space="preserve">
+    <value>This station has no usable enrolment agent certificate.</value>
+  </data>
   <data name="error.issuance.invalid-state" xml:space="preserve">
     <value>This step cannot be done now.</value>
   </data>

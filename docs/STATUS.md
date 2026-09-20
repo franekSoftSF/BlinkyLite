@@ -338,6 +338,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-18 | Sekrety serwera (KEK, klucz JWT, hasło LDAP, hasło do bazy) tylko z pliku sekretu (Docker secret / DPAPI maszyny) albo zmiennej; wpisane w `appsettings.json` zatrzymują start |
 | D-19 | Dane BlinkyLite dają się wyeksportować do Blinky; sekrety w paczce zaszyfrowane do certyfikatu Blinky |
 | D-20 | Akcent klienta `#1DB954`, oba motywy wg ustawienia Windows; role koloru rozdzielone dla kontrastu |
+| D-22 | Reset karty do stanu fabrycznego **tylko w narzędziu stacji testowej** (`CardLab reset --yes`), nie w kliencie ani w module PowerShell; zakres produktu bez zmian |
 | D-21 | Profile konfiguruje odgórnie admin na **serwerze**, klient dostaje je przez `GET /api/profiles` i podaje nazwę profilu; szablon do wiersza wpisuje serwer ze swojej konfiguracji; jeden profil = brak pytania |
 
 ## Otwarte pytania

@@ -80,7 +80,7 @@ poniższe nie jest odłożone na później, tylko nie należy do tego narzędzia
 | Rzecz | Kto to robi |
 |---|---|
 | Zmiana / rotacja PUK, odblokowanie PIN, dalsze życie karty | **Blinky** |
-| Reset PIV, `SET PIN RETRIES` | `ykman` albo Blinky |
+| Reset PIV **w produkcie**, `SET PIN RETRIES` | Blinky; w BlinkyLite reset istnieje wyłącznie w narzędziu stacji testowej (`CardLab reset --yes`, D-22) i nie wchodzi do klienta ani do modułu |
 | Odnowienia, unieważnienia, CRL | ADCS / Blinky |
 | Negotiate / Kerberos SSO | — (LDAPS bind wystarcza) |
 | Ekrany edycji profili i ról | `appsettings.json` serwera |

@@ -125,7 +125,9 @@ dotnet publish tools/BlinkyLite.CardLab -c Release -r win-x64 --self-contained t
   stronie CMS, trafia też do eksportu w [10](docs/10-blinky-export.md) — D-19.
 - **Prosto.** BlinkyLite ma być mały. Zanim dodasz ekran, tabelę albo opcję,
   sprawdź, czy nie ma jej w „Poza zakresem” w roadmapie — jeśli jest, nie
-  robimy jej. Poza wydaniem BlinkyLite nie pisze na kartę nigdy.
+  robimy jej. Poza wydaniem BlinkyLite nie pisze na kartę nigdy — **jedyny
+  wyjątek to `reset` w `tools/BlinkyLite.CardLab`** (D-22), narzędziu, które nie
+  wchodzi do żadnego instalatora.
 - **Serilog** wszędzie. LF, UTF-8, 4 spacje (2 dla json/yml/xml/props/csproj)
   — `.editorconfig` rozstrzyga.
 - **Komentarze mówią dlaczego, nie co.** Jak w Blinky: powód, zwykle dlatego,
