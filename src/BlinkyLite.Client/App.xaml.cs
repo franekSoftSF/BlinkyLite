@@ -9,21 +9,34 @@ using Serilog;
 namespace BlinkyLite.Client;
 
 /// <summary>
-/// Starts the client in the operator's language and the machine's theme.
+/// Starts the client in the language and theme it was left in.
 /// </summary>
 /// <remarks>
-/// Both can be changed in the window. Neither is remembered anywhere: this
-/// client keeps no settings file, because the only state worth keeping is on
-/// the server and on the card.
+/// Both come from <see cref="ClientSettings"/> when they were chosen before,
+/// and from Windows when they were not. Nothing secret is remembered: the
+/// settings file holds an address, a login, a language and a theme.
 /// </remarks>
 public partial class App : Application
 {
+    /// <summary>What was remembered from last time; the window updates it.</summary>
+    public static ClientSettings Settings { get; set; } = new();
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        Strings.Current.Culture = Strings.Pick(CultureInfo.CurrentUICulture);
-        ThemeManager.Apply(ThemeManager.FromWindows());
+        Settings = ClientSettings.Load();
+
+        Strings.Current.Culture = Settings.Language is { } language
+            ? CultureInfo.GetCultureInfo(language)
+            : Strings.Pick(CultureInfo.CurrentUICulture);
+
+        ThemeManager.Apply(Settings.Theme switch
+        {
+            "light" => Theme.Palette.Light,
+            "dark" => Theme.Palette.Dark,
+            _ => ThemeManager.FromWindows(),
+        });
 
         // Under the operator's own profile, so no installer and no rights are
         // needed for a log to exist at all.

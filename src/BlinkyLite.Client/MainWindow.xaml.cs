@@ -57,8 +57,9 @@ public partial class MainWindow : Window
             .ToList()
             .IndexOf(Strings.Current.Culture.TwoLetterISOLanguageName);
 
-        ServerBox.Text = "https://";
-        UserBox.Text = Environment.UserDomainName + "\\" + Environment.UserName;
+        ServerBox.Text = App.Settings.Server ?? "https://";
+        UserBox.Text = App.Settings.Username
+                       ?? Environment.UserDomainName + "\\" + Environment.UserName;
     }
 
     private async void SignedIn(object sender, RoutedEventArgs e)
@@ -82,6 +83,10 @@ public partial class MainWindow : Window
 
             server = client;
             Who.Text = $"{user.Upn} — {string.Join(", ", user.Roles)}";
+
+            // Remembered only once it is known to work: an address that failed
+            // is not worth offering again tomorrow.
+            Remember(App.Settings with { Server = ServerBox.Text.Trim(), Username = UserBox.Text.Trim() });
             SignIn.Visibility = Visibility.Collapsed;
             Issuing.Visibility = Visibility.Visible;
             SignOutButton.Visibility = Visibility.Visible;
@@ -234,7 +239,8 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ThemeToggled(object sender, RoutedEventArgs e) => ThemeManager.Toggle();
+    private void ThemeToggled(object sender, RoutedEventArgs e) =>
+        Remember(App.Settings with { Theme = ThemeManager.Toggle().Name });
 
     private void LanguageChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -247,6 +253,13 @@ public partial class MainWindow : Window
             .GetProperty("Code")!.GetValue(LanguagePicker.SelectedItem)!;
 
         Strings.Current.Culture = CultureInfo.GetCultureInfo(code);
+        Remember(App.Settings with { Language = code });
+    }
+
+    private static void Remember(ClientSettings settings)
+    {
+        App.Settings = settings;
+        settings.Save();
     }
 
     private void Say(string messageKey, bool problem)
