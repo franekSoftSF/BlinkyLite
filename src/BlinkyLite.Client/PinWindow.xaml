@@ -1,0 +1,107 @@
+<Window x:Class="BlinkyLite.Client.PinWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:BlinkyLite.Client.Localisation"
+        Title="{l:Loc pin.title}"
+        Width="560"
+        Height="440"
+        WindowStartupLocation="CenterScreen"
+        Topmost="True"
+        ResizeMode="NoResize"
+        Background="{DynamicResource Background}"
+        FontSize="16">
+
+    <!-- Big, on top and its own window: the person typing here is not the
+         operator, and they are typing the one secret nothing in BlinkyLite
+         ever stores. The language switch is theirs, not the operator's. -->
+    <Grid Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0">
+            <ComboBox x:Name="LanguagePicker"
+                      DockPanel.Dock="Right"
+                      Width="140"
+                      DisplayMemberPath="Name"
+                      SelectionChanged="LanguageChanged"
+                      ToolTip="{l:Loc common.language}" />
+
+            <TextBlock Text="{l:Loc pin.title}"
+                       FontSize="24"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource Text}"
+                       TextWrapping="Wrap" />
+        </DockPanel>
+
+        <TextBlock Grid.Row="1"
+                   Margin="0,12,0,0"
+                   Text="{l:Loc pin.explain}"
+                   Foreground="{DynamicResource MutedText}"
+                   TextWrapping="Wrap" />
+
+        <StackPanel Grid.Row="2" Margin="0,20,0,0">
+            <TextBlock Text="{l:Loc pin.new}" Foreground="{DynamicResource Text}" />
+            <PasswordBox x:Name="First"
+                         Margin="0,4,0,0"
+                         Padding="8"
+                         FontSize="20"
+                         PasswordChanged="Typed" />
+
+            <TextBlock Text="{l:Loc pin.repeat}" Margin="0,14,0,0" Foreground="{DynamicResource Text}" />
+            <PasswordBox x:Name="Second"
+                         Margin="0,4,0,0"
+                         Padding="8"
+                         FontSize="20"
+                         PasswordChanged="Typed" />
+        </StackPanel>
+
+        <!-- Shape as well as colour: somebody at this desk does not tell red
+             from green (docs/02). -->
+        <DockPanel Grid.Row="3" Margin="0,18,0,0">
+            <TextBlock x:Name="Mark"
+                       DockPanel.Dock="Left"
+                       Width="28"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource MutedText}" />
+
+            <TextBlock x:Name="Verdict"
+                       Foreground="{DynamicResource MutedText}"
+                       TextWrapping="Wrap" />
+        </DockPanel>
+
+        <TextBlock x:Name="Attempts"
+                   Grid.Row="4"
+                   VerticalAlignment="Bottom"
+                   Foreground="{DynamicResource MutedText}" />
+
+        <StackPanel Grid.Row="5"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,16,0,0">
+            <Button Content="{l:Loc common.cancel}"
+                    MinWidth="120"
+                    Padding="12,8"
+                    Margin="0,0,12,0"
+                    IsCancel="True"
+                    Click="Cancelled" />
+
+            <Button x:Name="Accept"
+                    Content="{l:Loc common.ok}"
+                    MinWidth="140"
+                    Padding="12,8"
+                    IsDefault="True"
+                    IsEnabled="False"
+                    Background="{DynamicResource AccentFill}"
+                    Foreground="{DynamicResource OnAccent}"
+                    BorderThickness="0"
+                    Click="Accepted" />
+        </StackPanel>
+    </Grid>
+</Window>

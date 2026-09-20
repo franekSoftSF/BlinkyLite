@@ -238,6 +238,42 @@
   <data name="common.ok" xml:space="preserve">
     <value>OK</value>
   </data>
+  <data name="client.server" xml:space="preserve">
+    <value>Serwer</value>
+  </data>
+  <data name="client.password" xml:space="preserve">
+    <value>Hasło</value>
+  </data>
+  <data name="client.profile" xml:space="preserve">
+    <value>Profil</value>
+  </data>
+  <data name="client.card" xml:space="preserve">
+    <value>Klucz w czytniku</value>
+  </data>
+  <data name="client.refresh" xml:space="preserve">
+    <value>Odśwież</value>
+  </data>
+  <data name="client.issue" xml:space="preserve">
+    <value>Wydaj klucz</value>
+  </data>
+  <data name="client.theme" xml:space="preserve">
+    <value>Motyw</value>
+  </data>
+  <data name="client.sign-out" xml:space="preserve">
+    <value>Wyloguj</value>
+  </data>
+  <data name="client.progress" xml:space="preserve">
+    <value>Postęp</value>
+  </data>
+  <data name="client.result.issued" xml:space="preserve">
+    <value>Klucz jest gotowy. Certyfikat jest na nim.</value>
+  </data>
+  <data name="client.result.pending" xml:space="preserve">
+    <value>Urząd certyfikacji czeka na zatwierdzenie.</value>
+  </data>
+  <data name="client.target" xml:space="preserve">
+    <value>Dla kogo jest klucz</value>
+  </data>
   <data name="common.cancel" xml:space="preserve">
     <value>Anuluj</value>
   </data>
@@ -270,6 +306,12 @@
   </data>
   <data name="common.language" xml:space="preserve">
     <value>Język</value>
+  </data>
+  <data name="error.reader.none" xml:space="preserve">
+    <value>Ten komputer nie ma czytnika kart.</value>
+  </data>
+  <data name="error.card.none" xml:space="preserve">
+    <value>W żadnym czytniku nie ma karty.</value>
   </data>
   <data name="error.card.not-a-yubikey" xml:space="preserve">
     <value>Ta karta to nie YubiKey.</value>

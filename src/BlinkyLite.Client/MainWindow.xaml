@@ -1,9 +1,175 @@
 <Window x:Class="BlinkyLite.Client.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:BlinkyLite.Client.Localisation"
         Title="BlinkyLite"
-        Width="900"
-        Height="600"
-        WindowStartupLocation="CenterScreen">
-    <Grid />
+        Width="980"
+        Height="700"
+        MinWidth="820"
+        MinHeight="620"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource Background}"
+        Foreground="{DynamicResource Text}"
+        FontSize="14">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,16">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button x:Name="ThemeButton"
+                        Content="{l:Loc client.theme}"
+                        Padding="10,6"
+                        Margin="0,0,8,0"
+                        Click="ThemeToggled" />
+
+                <ComboBox x:Name="LanguagePicker"
+                          Width="130"
+                          DisplayMemberPath="Name"
+                          SelectionChanged="LanguageChanged"
+                          ToolTip="{l:Loc common.language}" />
+
+                <Button x:Name="SignOutButton"
+                        Content="{l:Loc client.sign-out}"
+                        Padding="10,6"
+                        Margin="8,0,0,0"
+                        Visibility="Collapsed"
+                        Click="SignedOut" />
+            </StackPanel>
+
+            <StackPanel>
+                <TextBlock Text="BlinkyLite" FontSize="22" FontWeight="SemiBold" />
+                <TextBlock x:Name="Who" Foreground="{DynamicResource MutedText}" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Signing in. The token lives in the process and goes nowhere else. -->
+        <StackPanel x:Name="SignIn" Grid.Row="1" MaxWidth="440" HorizontalAlignment="Left">
+            <TextBlock Text="{l:Loc client.server}" />
+            <TextBox x:Name="ServerBox" Margin="0,4,0,12" Padding="8" />
+
+            <TextBlock Text="{l:Loc common.user}" />
+            <TextBox x:Name="UserBox" Margin="0,4,0,12" Padding="8" />
+
+            <TextBlock Text="{l:Loc client.password}" />
+            <PasswordBox x:Name="PasswordBox" Margin="0,4,0,16" Padding="8" />
+
+            <Button x:Name="SignInButton"
+                    Content="{l:Loc common.sign-in}"
+                    HorizontalAlignment="Left"
+                    MinWidth="160"
+                    Padding="12,8"
+                    IsDefault="True"
+                    Background="{DynamicResource AccentFill}"
+                    Foreground="{DynamicResource OnAccent}"
+                    BorderThickness="0"
+                    Click="SignedIn" />
+        </StackPanel>
+
+        <!-- Issuing. -->
+        <Grid x:Name="Issuing" Grid.Row="1" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="1.2*" />
+            </Grid.ColumnDefinitions>
+
+            <DockPanel Grid.Column="0">
+                <TextBlock DockPanel.Dock="Top" Text="{l:Loc client.target}" />
+
+                <DockPanel DockPanel.Dock="Top" Margin="0,4,0,12">
+                    <Button DockPanel.Dock="Right"
+                            Content="{l:Loc common.search}"
+                            Padding="10,6"
+                            Margin="8,0,0,0"
+                            Click="Searched" />
+
+                    <TextBox x:Name="SearchBox" Padding="8" KeyDown="SearchKey" />
+                </DockPanel>
+
+                <TextBlock DockPanel.Dock="Top" Text="{l:Loc client.profile}" />
+                <ComboBox x:Name="ProfilePicker"
+                          DockPanel.Dock="Top"
+                          Margin="0,4,0,12"
+                          Padding="8"
+                          DisplayMemberPath="Name" />
+
+                <TextBlock DockPanel.Dock="Top" Text="{l:Loc client.card}" />
+                <DockPanel DockPanel.Dock="Top" Margin="0,4,0,12">
+                    <Button DockPanel.Dock="Right"
+                            Content="{l:Loc client.refresh}"
+                            Padding="10,6"
+                            Margin="8,0,0,0"
+                            Click="CardRefreshed" />
+
+                    <Border Background="{DynamicResource Surface}"
+                            BorderBrush="{DynamicResource Border}"
+                            BorderThickness="1"
+                            Padding="10">
+                        <TextBlock x:Name="CardText" TextWrapping="Wrap" />
+                    </Border>
+                </DockPanel>
+
+                <Button x:Name="IssueButton"
+                        DockPanel.Dock="Bottom"
+                        Content="{l:Loc client.issue}"
+                        Padding="14,10"
+                        FontSize="16"
+                        IsEnabled="False"
+                        Background="{DynamicResource AccentFill}"
+                        Foreground="{DynamicResource OnAccent}"
+                        BorderThickness="0"
+                        Click="Issued" />
+
+                <ListBox x:Name="People"
+                         Margin="0,0,0,12"
+                         Background="{DynamicResource Surface}"
+                         BorderBrush="{DynamicResource Border}"
+                         SelectionChanged="PersonChosen">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="2">
+                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding SamAccount}" Foreground="{DynamicResource MutedText}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+
+            <DockPanel Grid.Column="2">
+                <TextBlock DockPanel.Dock="Top" Text="{l:Loc client.progress}" />
+
+                <!-- Every step carries a mark as well as a colour. -->
+                <ListBox x:Name="Steps"
+                         Margin="0,4,0,0"
+                         Background="{DynamicResource Surface}"
+                         BorderBrush="{DynamicResource Border}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel Margin="2">
+                                <TextBlock DockPanel.Dock="Left"
+                                           Width="26"
+                                           Text="{Binding Mark}"
+                                           FontWeight="Bold"
+                                           Foreground="{Binding Colour}" />
+
+                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Grid>
+
+        <TextBlock x:Name="Message"
+                   Grid.Row="2"
+                   Margin="0,14,0,0"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource MutedText}" />
+    </Grid>
 </Window>

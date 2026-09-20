@@ -33,6 +33,9 @@
     <ProjectReference Include="..\..\src\BlinkyLite.Contracts\BlinkyLite.Contracts.csproj" />
     <ProjectReference Include="..\..\src\BlinkyLite.Piv\BlinkyLite.Piv.csproj" />
     <ProjectReference Include="..\..\src\BlinkyLite.Issuance\BlinkyLite.Issuance.csproj" />
+    <!-- For the palette alone: the colours are C# so a test can count their
+         contrast, which XAML would make impossible (D-20). -->
+    <ProjectReference Include="..\..\src\BlinkyLite.Client\BlinkyLite.Client.csproj" />
     <ProjectReference Include="..\..\src\BlinkyLite.Server\BlinkyLite.Server.csproj" />
   </ItemGroup>
 

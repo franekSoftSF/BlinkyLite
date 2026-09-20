@@ -238,6 +238,42 @@
   <data name="common.ok" xml:space="preserve">
     <value>OK</value>
   </data>
+  <data name="client.server" xml:space="preserve">
+    <value>Server</value>
+  </data>
+  <data name="client.password" xml:space="preserve">
+    <value>Kennwort</value>
+  </data>
+  <data name="client.profile" xml:space="preserve">
+    <value>Profil</value>
+  </data>
+  <data name="client.card" xml:space="preserve">
+    <value>Schlüssel im Leser</value>
+  </data>
+  <data name="client.refresh" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="client.issue" xml:space="preserve">
+    <value>Schlüssel ausgeben</value>
+  </data>
+  <data name="client.theme" xml:space="preserve">
+    <value>Design</value>
+  </data>
+  <data name="client.sign-out" xml:space="preserve">
+    <value>Abmelden</value>
+  </data>
+  <data name="client.progress" xml:space="preserve">
+    <value>Fortschritt</value>
+  </data>
+  <data name="client.result.issued" xml:space="preserve">
+    <value>Der Schlüssel ist fertig. Das Zertifikat ist darauf.</value>
+  </data>
+  <data name="client.result.pending" xml:space="preserve">
+    <value>Die Zertifizierungsstelle wartet auf die Freigabe.</value>
+  </data>
+  <data name="client.target" xml:space="preserve">
+    <value>Für wen der Schlüssel ist</value>
+  </data>
   <data name="common.cancel" xml:space="preserve">
     <value>Abbrechen</value>
   </data>
@@ -270,6 +306,12 @@
   </data>
   <data name="common.language" xml:space="preserve">
     <value>Sprache</value>
+  </data>
+  <data name="error.reader.none" xml:space="preserve">
+    <value>An diesem Rechner ist kein Kartenleser.</value>
+  </data>
+  <data name="error.card.none" xml:space="preserve">
+    <value>In keinem Leser steckt eine Karte.</value>
   </data>
   <data name="error.card.not-a-yubikey" xml:space="preserve">
     <value>Diese Karte ist kein YubiKey.</value>

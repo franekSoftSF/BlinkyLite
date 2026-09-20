@@ -238,6 +238,42 @@
   <data name="common.ok" xml:space="preserve">
     <value>OK</value>
   </data>
+  <data name="client.server" xml:space="preserve">
+    <value>Server</value>
+  </data>
+  <data name="client.password" xml:space="preserve">
+    <value>Lösenord</value>
+  </data>
+  <data name="client.profile" xml:space="preserve">
+    <value>Profil</value>
+  </data>
+  <data name="client.card" xml:space="preserve">
+    <value>Nyckeln i läsaren</value>
+  </data>
+  <data name="client.refresh" xml:space="preserve">
+    <value>Uppdatera</value>
+  </data>
+  <data name="client.issue" xml:space="preserve">
+    <value>Utfärda en nyckel</value>
+  </data>
+  <data name="client.theme" xml:space="preserve">
+    <value>Tema</value>
+  </data>
+  <data name="client.sign-out" xml:space="preserve">
+    <value>Logga ut</value>
+  </data>
+  <data name="client.progress" xml:space="preserve">
+    <value>Förlopp</value>
+  </data>
+  <data name="client.result.issued" xml:space="preserve">
+    <value>Nyckeln är klar. Certifikatet finns på den.</value>
+  </data>
+  <data name="client.result.pending" xml:space="preserve">
+    <value>Certifikatutfärdaren väntar på godkännande.</value>
+  </data>
+  <data name="client.target" xml:space="preserve">
+    <value>Vem nyckeln är till</value>
+  </data>
   <data name="common.cancel" xml:space="preserve">
     <value>Avbryt</value>
   </data>
@@ -270,6 +306,12 @@
   </data>
   <data name="common.language" xml:space="preserve">
     <value>Språk</value>
+  </data>
+  <data name="error.reader.none" xml:space="preserve">
+    <value>Datorn har ingen kortläsare.</value>
+  </data>
+  <data name="error.card.none" xml:space="preserve">
+    <value>Det sitter inget kort i någon läsare.</value>
   </data>
   <data name="error.card.not-a-yubikey" xml:space="preserve">
     <value>Det här kortet är ingen YubiKey.</value>

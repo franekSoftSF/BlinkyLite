@@ -22,6 +22,8 @@ public static class ErrorCodes
     public const string QueryTooShort = "error.query.too-short";
 
     // What the issuance engine refuses before anything is written to a card.
+    public const string ReaderNone = "error.reader.none";
+    public const string CardNone = "error.card.none";
     public const string CardNotAYubiKey = "error.card.not-a-yubikey";
     public const string CardTooOld = "error.card.too-old";
     public const string CardNoPuk = "error.card.no-puk";

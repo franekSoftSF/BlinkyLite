@@ -238,6 +238,42 @@
   <data name="common.ok" xml:space="preserve">
     <value>OK</value>
   </data>
+  <data name="client.server" xml:space="preserve">
+    <value>Server</value>
+  </data>
+  <data name="client.password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="client.profile" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="client.card" xml:space="preserve">
+    <value>Key in the reader</value>
+  </data>
+  <data name="client.refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="client.issue" xml:space="preserve">
+    <value>Issue a key</value>
+  </data>
+  <data name="client.theme" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="client.sign-out" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="client.progress" xml:space="preserve">
+    <value>Progress</value>
+  </data>
+  <data name="client.result.issued" xml:space="preserve">
+    <value>The key is ready. The certificate is on it.</value>
+  </data>
+  <data name="client.result.pending" xml:space="preserve">
+    <value>The certification authority is waiting for approval.</value>
+  </data>
+  <data name="client.target" xml:space="preserve">
+    <value>Who the key is for</value>
+  </data>
   <data name="common.cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
@@ -270,6 +306,12 @@
   </data>
   <data name="common.language" xml:space="preserve">
     <value>Language</value>
+  </data>
+  <data name="error.reader.none" xml:space="preserve">
+    <value>No card reader on this computer.</value>
+  </data>
+  <data name="error.card.none" xml:space="preserve">
+    <value>No card in any reader.</value>
   </data>
   <data name="error.card.not-a-yubikey" xml:space="preserve">
     <value>This card is not a YubiKey.</value>

@@ -326,7 +326,7 @@ Nie istnieje: klient WPF, moduł PowerShell, przeglądarka i weryfikacja.
 | 0021 | 2 | EOBO | `done` |
 | 0022 | 2 | Odzyskiwanie | `open` |
 | 0025 | 2 | Logowanie zintegrowane (Negotiate/Kerberos) | `open` |
-| 0023 | 2 | Klient WPF — wydanie | `open` |
+| 0023 | 2 | Klient WPF — wydanie | `partly-done` |
 | 0030 | 3 | Przeglądarka i weryfikacja w WPF | `open` |
 | 0040 | 4 | Moduł PowerShell | `open` |
 | 0050 | 5 | Docker | `done` |
