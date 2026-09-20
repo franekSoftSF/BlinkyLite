@@ -2,7 +2,7 @@
 
 **Ostatnia aktualizacja:** 2026-09-20
 **Faza:** 2 — Wydanie
-**Ogólnie:** stoi fundament (0001–0005) i warstwa PIV z Blinky (0010):
+**Ogólnie:** pierwszy certyfikat wydany 20 września 2026. Stoi fundament (0001–0005) i warstwa PIV z Blinky (0010):
 logowanie z AD daje JWT z rolami, każdy endpoint ma politykę, sekrety są poza
 konfiguracją i w kopertach AES-256-GCM przywiązanych do karty i wydania, a
 kod rozmawiający z kluczem jest w repozytorium i przechodzi testy na zapisach
@@ -271,8 +271,31 @@ Przy wdrożeniu wyszło, że `Dockerfile` nie kopiował warstwy PIV, którą ser
 od teraz ciągnie dla weryfikacji atestacji — na tej maszynie build przechodził,
 w kontenerze nie. Stary kontener został na miejscu, więc nic nie stanęło.
 
-Nie istnieje: wysyłka do CA, klient WPF, moduł PowerShell. **Żadna karta nie
-ma jeszcze certyfikatu** — to 0021.
+**Pierwszy certyfikat wydany** (0021, 20 września 2026, stacja `DPCLIENT02`):
+pełne wydanie w 56 sekund, od logowania operatora do certyfikatu odczytanego z
+karty.
+
+| | |
+|---|---|
+| karta | 39721373 (5.8.0, AES-192) |
+| żądanie w CA | 223, `EMSDEMOLAB-Sub-CA`, dyspozycja `Issued` |
+| podmiot | `CN=Szymon Frankiewicz, OU=Users, OU=EMSDEMOLAB, …` — **zbudowany z AD** |
+| SAN | UPN `szymon.frankiewicz@emsdemolab.pl` |
+| `1.3.6.1.4.1.311.25.2` | `S-1-5-21-…-1106` — **SID posiadacza karty, nie operatora** |
+| odcisk | `F3C133572477C600635E08D0A98B13EB380A496A`, odczytany z karty i porównany |
+
+W bazie wiersz w stanie `Issued` z numerem żądania i serialem certyfikatu, w
+audycie komplet: `auth.login`, `issuance.reserved`, `customised`, `attested`,
+`submitted`, `issued`.
+
+To domyka zarazem R-07: przy EOBO wystarczyły prawa **agenta**. Posiadacz karty
+nie ma `Enroll` na szablonie i nie potrzebował go — moje wcześniejsze
+ostrzeżenie o `0x80094012` było niepotrzebne.
+
+Czego brakuje do `done`: **użytkownik nie zalogował się jeszcze tą kartą do
+Windows**. To jest dowód końcowy z definicji ukończenia i tylko on liczy.
+
+Nie istnieje: klient WPF, moduł PowerShell, przeglądarka i weryfikacja.
 
 ## Stany
 
@@ -298,7 +321,7 @@ ma jeszcze certyfikatu** — to 0021.
 | 0010 | 1 | Import `Blinky.Piv` | `done` |
 | 0011 | 1 | Personalizacja i klucz | `done` |
 | 0020 | 2 | API wydań | `done-unverified` |
-| 0021 | 2 | EOBO | `open` |
+| 0021 | 2 | EOBO | `done-unverified` |
 | 0022 | 2 | Odzyskiwanie | `open` |
 | 0023 | 2 | Klient WPF — wydanie | `open` |
 | 0030 | 3 | Przeglądarka i weryfikacja w WPF | `open` |
@@ -374,7 +397,7 @@ Zamknięte 2026-09-19, decyzje właściciela:
 | R-03 | WinSCard / CertEnroll z .NET 10 na Windows ARM64 nikt nie uruchomił | 0001 publikuje `win-arm64`, 0053 dowodzi na sprzęcie |
 | R-05 | Usługa Windows w MSIX (`desktop6:Service`) na docelowym Windows Server | 0051 z zapisaną rezerwą: skrypt instalacyjny |
 | R-06 | Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na uprawnienia Graph i ruchu wychodzącego z serwera | wymagania spisane w [09](09-expiry-notification.md#co-przygotowuje-administrator-raz); konto bez Entra → audyt, nie awaria |
-| R-07 | Niepewność, czyje uprawnienia na szablonie liczy CA przy EOBO. Właściciel: agenta, a te szablon już daje grupom operatorów — moje wcześniejsze zdanie o `Enroll` dla posiadacza było niepewne i je wycofuję | rozstrzyga pierwszy `Submit` w 0021; `0x80094012` oznaczałoby, że jednak posiadacza, i wtedy `Enroll` idzie osobną grupą. 0021 tłumaczy ten kod na zdanie o uprawnieniach, a nie surowy HRESULT |
+| R-07 | **Rozstrzygnięte** 20 września 2026, na korzyść właściciela: przy EOBO wystarczają prawa agenta. Żądanie 223 przeszło, choć posiadacz karty nie ma `Enroll` na szablonie | zamknięte; zostaje jako zapis, bo błędna diagnoza kosztowałaby nadanie uprawnień, które nie są potrzebne |
 
 ## Niezweryfikowane
 

@@ -91,19 +91,23 @@ public sealed class IssuanceRunner(ServerClient server, CardPersonaliser? person
                 Policy(profile.PinPolicy, PinPolicy.Once),
                 Touch(profile.TouchPolicy));
 
+            // The personaliser reports its own steps; two of them would read
+            // as lies here - it has already been said that the card is being
+            // read, and "done" is not true until the certificate is on it.
             var result = await personaliser.PersonaliseAsync(
-                session, request, pin, Subject(target), progress, ct);
+                session, request, pin, Subject(target),
+                new Steps(progress, "issuance.step.read-card", "issuance.step.done"), ct);
 
             // From here the card is known: the server marks the envelopes
             // active, and a later failure is recoverable rather than a token
             // nobody can open.
             await server.CustomisedAsync(id, ct);
 
-            progress?.Report("issuance.step.attest");
+            progress?.Report("issuance.step.server-check");
             await server.AttestedAsync(id, new AttestationUpload(
                 result.AttestationDer, result.IntermediateDer, result.CsrDer), ct);
 
-            progress?.Report("issuance.step.check-agent");
+            progress?.Report("issuance.step.cmc");
             var attempt = CertEnrollCmc.Build(result.CsrDer, target.SamAccount, agent);
             if (!attempt.Succeeded)
             {
@@ -213,6 +217,18 @@ public sealed class IssuanceRunner(ServerClient server, CardPersonaliser? person
 
     private static TouchPolicy Touch(string name) =>
         Enum.TryParse<TouchPolicy>(name, ignoreCase: true, out var parsed) ? parsed : TouchPolicy.Never;
+}
+
+/// <summary>Passes the engine's steps on, minus the ones already said here.</summary>
+internal sealed class Steps(IProgress<string>? inner, params string[] hidden) : IProgress<string>
+{
+    public void Report(string value)
+    {
+        if (!hidden.Contains(value, StringComparer.Ordinal))
+        {
+            inner?.Report(value);
+        }
+    }
 }
 
 /// <summary>An issuance that got past the card and failed anyway, with the key to show.</summary>

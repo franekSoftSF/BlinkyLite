@@ -190,6 +190,12 @@
   <data name="issuance.step.sign-request" xml:space="preserve">
     <value>Der Token signiert die Anfrage</value>
   </data>
+  <data name="issuance.step.cmc" xml:space="preserve">
+    <value>Anfrage an die Zertifizierungsstelle wird erstellt</value>
+  </data>
+  <data name="issuance.step.server-check" xml:space="preserve">
+    <value>Der Server prüft die Attestierung</value>
+  </data>
   <data name="issuance.step.submit" xml:space="preserve">
     <value>Anfrage wird an die CA gesendet</value>
   </data>

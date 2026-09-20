@@ -41,8 +41,8 @@
     "phase": 2,
     "phaseTitle": "Wydanie",
     "state": "open",
-    "summary": "Fundament (0001-0005), warstwa PIV (0010), personalizacja sprawdzona na dwoch fabrycznych kluczach (0011) i wdrozenie w Dockerze (0050) na prawdziwej domenie, z certyfikatem z EMSDEMOLAB-Sub-CA. Q-01 zamkniete pomiarem: CertEnroll przyjmuje zadanie podpisane na cudzej karcie. API wydan (0020) stoi i jest wdrozone; zadna karta jeszcze przez nie nie przeszla, bo wysylka do CA to 0021. 393 testy jednostkowe, 84 na PostgreSQL 16, CI zielone.",
-    "nothingIssuedYet": true
+    "summary": "PIERWSZY CERTYFIKAT WYDANY: 20 wrzesnia 2026, karta 39721373, zadanie 223 w EMSDEMOLAB-Sub-CA, certyfikat na kluczu wygenerowanym na tokenie, z SID-em posiadacza karty. Fundament (0001-0005), warstwa PIV (0010), personalizacja na dwoch fabrycznych kluczach (0011), API wydan (0020) i EOBO (0021) - wszystko na prawdziwej domenie, CA i kartach. Zostaje dowod koncowy: logowanie do Windows ta karta. 393 testy jednostkowe, 84 na PostgreSQL 16.",
+    "nothingIssuedYet": false
   },
   "stateLegend": {
     "done": "DoD sprawdzona przez kogoś, kto patcha nie pisał",
@@ -427,8 +427,8 @@
     },
     {
       "id": "R-07",
-      "impact": "Niepewnosc, czyje uprawnienia na szablonie sprawdza CA przy EOBO. Wlasciciel: zadanie wysyla enrollment agent i to jego prawa licza sie dla CA, a te szablon juz daje grupom BlinkyLiteAdmin i BlinkyLiteSecurityOfficer - tak tez mowi wskazowka Microsoftu dla stacji wydawania kart. Moje wczesniejsze zdanie, ze potrzebny jest Enroll dla posiadacza karty, bylo niepewne i zostalo wycofane",
-      "handling": "Rozstrzyga pierwszy Submit w 0021: 0x80094012 CERTSRV_E_TEMPLATE_DENIED oznaczaloby, ze jednak sprawdzany jest posiadacz, i wtedy Enroll nadaje sie osobnej grupie posiadaczy. 0021 tlumaczy ten kod na zdanie o uprawnieniach na szablonie, zamiast pokazywac surowy HRESULT"
+      "impact": "ROZSTRZYGNIETE 20 wrzesnia 2026 na korzysc wlasciciela: przy EOBO wystarczaja prawa agenta. Zadanie 223 przeszlo, choc posiadacz karty nie ma Enroll na szablonie - Enroll maja tylko grupy operatorow. Moje wczesniejsze ostrzezenie o 0x80094012 bylo niepotrzebne",
+      "handling": "zamkniete; zostaje jako zapis, bo bledna diagnoza kosztowalaby nadanie uprawnien, ktore nie sa potrzebne"
     }
   ],
   "patches": [
@@ -514,9 +514,10 @@
       "id": "0021",
       "phase": 2,
       "title": "EOBO",
-      "state": "open",
+      "state": "done-unverified",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-20, stacja DPCLIENT02 w domenie ems-ad.emsdemolab.pl: pelne wydanie w 56 sekund. Certyfikat EA sprawdzony przed dotknieciem karty; rezerwacja na serwerze (PUK i MK powstaly przed karta); personalizacja karty 39721373 (5.8.0, AES-192); atestacja zweryfikowana przez serwer; CMC zbudowany przez CertEnroll z RequesterName EMS-AD\\szymon.frankiewicz i podpisem EA; ICertRequest3.Submit na SubCA.ems-ad.emsdemolab.pl\\EMSDEMOLAB-Sub-CA - zadanie 223, dyspozycja Issued; certyfikat zapisany do 9A i ODCZYTANY Z KARTY z porownaniem odcisku (F3C133572477C600635E08D0A98B13EB380A496A). W bazie wiersz Issued z numerem zadania i serialem certyfikatu, w audycie komplet: auth.login, issuance.reserved, customised, attested, submitted, issued. Certyfikat: podmiot zbudowany z AD (CN=Szymon Frankiewicz, OU=Users), SAN UPN szymon.frankiewicz@emsdemolab.pl, rozszerzenie 1.3.6.1.4.1.311.25.2 z SID-em POSIADACZA karty (S-1-5-21-2478686047-3135080112-2024716456-1106), nie operatora - czyli to, czego wymaga KB5014754.",
+      "gap": "Brakuje dowodu koncowego z definicji ukonczenia: uzytkownik nie zalogowal sie jeszcze ta karta do Windows w domenie. Nie sprawdzone tez sciezki UnderSubmission (CA odklada do zatwierdzenia) ani RetrievePending - kod jest, przebiegu nie bylo."
     },
     {
       "id": "0022",
