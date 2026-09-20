@@ -146,15 +146,19 @@ użytkownika. Brak tłumaczenia to czerwony build —
 
 ## Uruchomienie
 
-Na dziś istnieje szkielet (patch 0001): serwer odpowiada na `/health`, klient
-otwiera puste okno, moduł PowerShell się ładuje — patrz
-[docs/STATUS.md](docs/STATUS.md). Docelowo:
+Serwer **działa już dziś** w Dockerze (patch 0050); klient i wydawanie są w
+trakcie — patrz [docs/STATUS.md](docs/STATUS.md).
 
 ```bash
-# serwer w Dockerze
-cp .env.example .env
-docker compose up -d --build
+./scripts/dev-secrets.sh                        # losowe sekrety do ./secrets
+./scripts/dev-certs.sh blinkylite.corp.example  # albo wgraj własny certyfikat
+cp .env.example .env                            # domena, konto serwisowe, SID-y grup
+docker compose up -d --build                    # baza, migracje, serwer
+curl -k https://localhost:8443/health
 ```
+
+Pełna lista wymagań (serwer, AD, ADCS, stacja) i kroki wdrożenia:
+[docs/11-wymagania-i-wdrozenie.md](docs/11-wymagania-i-wdrozenie.md).
 
 ```powershell
 # serwer jako usługa Windows (MSIX), konfiguracja w %ProgramData%\BlinkyLite
@@ -201,6 +205,7 @@ biblioteki pod nim celują w czyste `net10.0` i budują się wszędzie.
 | [08 — Języki](docs/08-localization.md) | EN / DE / SV / PL, katalog komunikatów, testy kompletności |
 | [09 — Powiadomienie w Teams](docs/09-expiry-notification.md) | Po 1.0: bot Teams informuje o wygasającym certyfikacie |
 | [10 — Eksport do Blinky](docs/10-blinky-export.md) | Jak dane BlinkyLite przechodzą do pełnego CMS, z sekretami zaszyfrowanymi do jego certyfikatu |
+| [11 — Wymagania i wdrożenie](docs/11-wymagania-i-wdrozenie.md) | Co musi istnieć po stronie serwera, AD, ADCS i stacji; uruchomienie stacku krok po kroku |
 | [Status](docs/STATUS.md) · [status.json](docs/status.json) | Co jest zrobione, co tylko napisane, co zablokowane |
 
 ## Licencja

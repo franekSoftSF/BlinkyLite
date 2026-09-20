@@ -41,7 +41,7 @@
     "phase": 1,
     "phaseTitle": "Karta",
     "state": "open",
-    "summary": "Szkielet (0001), baza (0002), serwer (0003), cztery języki (0004), sekrety poza konfiguracją (0005) i warstwa PIV z Blinky (0010). 346 testów jednostkowych, 84 na PostgreSQL 16, CI zielone. Nie ma jeszcze silnika wydania ani kontaktu z AD, CA i kartą.",
+    "summary": "Szkielet (0001), baza (0002), serwer (0003), cztery języki (0004), sekrety poza konfiguracją (0005) i warstwa PIV z Blinky (0010). 346 testów jednostkowych, 84 na PostgreSQL 16, CI zielone. Serwer wstaje jednym docker compose (0050). Nie ma jeszcze silnika wydania ani kontaktu z AD, CA i kartą.",
     "nothingIssuedYet": true
   },
   "stateLegend": {
@@ -536,9 +536,10 @@
       "id": "0050",
       "phase": 5,
       "title": "Docker",
-      "state": "open",
+      "state": "partly-done",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-20: docker/Dockerfile (Ubuntu 24.04 + libldap2 + libgssapi-krb5-2, uzytkownik nieuprzywilejowany), docker-compose.yml (postgres z rolami i haslami z Docker secrets, jednorazowy kontener migrate jako owner, serwer jako app), .dockerignore, scripts/dev-secrets.sh i dev-certs.sh, .env.example, docs/11. Uruchomione od zera na tej maszynie: baza zdrowa, 5 migracji w kontenerze, /health po HTTPS, schema ok, /api/auth/me bez tokenu 401, logowanie przy nieosiagalnym DC -> 503 error.directory.unavailable (libldap laduje sie naprawde).",
+      "gap": "DoD mowi 'dzialajace logowanie' - bez prawdziwego AD nie do potwierdzenia. Uruchamiane na Docker Desktop (Windows); na Linuksie pliki sekretow musza nalezec do uid 1654, co sprawdzi pierwsze wdrozenie."
     },
     {
       "id": "0051",
