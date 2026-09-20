@@ -41,7 +41,7 @@
     "phase": 2,
     "phaseTitle": "Wydanie",
     "state": "open",
-    "summary": "Fundament (0001-0005), warstwa PIV (0010) i wdrozenie w Dockerze (0050). Serwer dziala na prawdziwej domenie: logowanie AD -> JWT z rolami potwierdzone na kontenerze LXC. FAZA 1 ZAMKNIETA: personalizacja przeszla na dwoch fabrycznych YubiKeyach - 5.4.3 (3DES) i 5.8.0 (AES-192) - a ykman piv info potwierdzil na obu 'Management key is stored on the YubiKey, protected by PIN'. 359 testow jednostkowych, 84 na PostgreSQL 16, CI zielone. Nie ma jeszcze kontaktu z CA - zadna karta nie ma certyfikatu.",
+    "summary": "Fundament (0001-0005), warstwa PIV (0010), personalizacja sprawdzona na dwoch fabrycznych kluczach (0011) i wdrozenie w Dockerze (0050) na prawdziwej domenie, z certyfikatem z EMSDEMOLAB-Sub-CA. Q-01 zamkniete pomiarem: CertEnroll przyjmuje zadanie podpisane na cudzej karcie. API wydan (0020) stoi i jest wdrozone; zadna karta jeszcze przez nie nie przeszla, bo wysylka do CA to 0021. 393 testy jednostkowe, 84 na PostgreSQL 16, CI zielone.",
     "nothingIssuedYet": true
   },
   "stateLegend": {
@@ -498,9 +498,10 @@
       "id": "0020",
       "phase": 2,
       "title": "API wydań",
-      "state": "open",
+      "state": "done-unverified",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-20: endpointy dla kazdego kroku z docs/02 (POST /api/issuances, /customised, /attestation, /submitted, /pending, /complete, /failed) plus GET /api/profiles, wszystkie na polityce CanIssue. Sekrety powstaja na serwerze i sa zapieczetowane przed rezerwacja (D-03); test sprawdza, ze do bazy idzie koperta, a nie PUK. Cel wydania nazywa SID i nic wiecej - serwer czyta konto z AD, wiec stacja nie poda UPN-u i SID-u dwoch roznych osob; konto wylaczone dostaje odmowe. Atestacja weryfikowana po stronie serwera (lancuch do przypietego roota, serial karty, SPKI zgodne z CSR): podmieniony CSR odrzucony testem na syntetycznej PKI Yubico. Zamkniecie wydania sprawdza, ze certyfikat jest na atestowanym kluczu i nazywa te osobe - oba rozjazdy maja test. Profile z konfiguracji serwera sprawdzane przy starcie (D-21). 393 testy jednostkowe. Wdrozone na 10.0.20.89: serwer wstal z profilem EMSDEMOLABYubicoSmartcardLogon, /api/profiles i /api/issuances odpowiadaja 401 error.auth.required bez tokenu, czyli sa zamapowane i chronione.",
+      "gap": "Zadna karta jeszcze przez to nie przeszla. Endpointy sprawdzone testami i odpowiedzia 401 na wdrozeniu; nie wywolane tokenem prawdziwego operatora ani na prawdziwej atestacji, bo caly przebieg konczy sie dopiero wysylka do CA (0021). BLINKYLITE_CA_CONFIG na wdrozeniu to sama nazwa CA, a ma byc HOST\\CA CN - poprawic przed 0021."
     },
     {
       "id": "0021",

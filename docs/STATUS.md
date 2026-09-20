@@ -245,8 +245,34 @@ a przy okazji `Management key algorithm: TDES` na 5.4.3 i `AES192` na 5.8.0
 PUK po 3/3 próby, obecne CHUID i CCC oraz `Slot 9A (AUTHENTICATION): Private
 key type: RSA2048`. 0011 jest `done`, a z nim faza 1.
 
+Od 0020 (20 września 2026) stoi **API wydań**: endpoint dla każdego kroku z
+[02](02-issuance.md), wszystkie na polityce `CanIssue`. Serwer robi sekrety i
+pieczętuje je, zanim powstanie rezerwacja (D-03) — test pilnuje, że do bazy
+idzie koperta, a nie PUK. Cel wydania nazywa **SID i nic więcej**: serwer pyta
+AD, kim ten SID jest, więc stacja nie poda UPN-u i SID-u należących do dwóch
+różnych osób, a konto wyłączone w AD dostaje odmowę.
+
+Dwa miejsca, w których serwer odmawia wiary stacji, oba z testem:
+
+- **atestacja** — serwer powtarza sprawdzenie stacji (łańcuch do przypiętego
+  roota Yubico, serial tej karty, SPKI zgodne z kluczem w żądaniu). Trzeci
+  warunek łapie atak, dla którego to wszystko istnieje: stacja zachowuje
+  prawdziwą atestację karty i podsyła żądanie na klucz, który wygenerowała
+  sama. Test buduje syntetyczną PKI Yubico i podmienia klucz — odmowa;
+- **zamknięcie** — certyfikat musi być na kluczu, który karta atestowała, i
+  nazywać tę osobę, dla której wydanie powstało. Certyfikat na inny klucz i
+  certyfikat na innego człowieka: odmowa.
+
+Wdrożone na `10.0.20.89` razem z profilem `EMSDEMOLABYubicoSmartcardLogon`.
+Serwer wstaje z tą konfiguracją, a `/api/profiles` i `/api/issuances` bez
+tokenu odpowiadają `401 error.auth.required`.
+
+Przy wdrożeniu wyszło, że `Dockerfile` nie kopiował warstwy PIV, którą serwer
+od teraz ciągnie dla weryfikacji atestacji — na tej maszynie build przechodził,
+w kontenerze nie. Stary kontener został na miejscu, więc nic nie stanęło.
+
 Nie istnieje: wysyłka do CA, klient WPF, moduł PowerShell. **Żadna karta nie
-ma jeszcze certyfikatu** — to faza 2.
+ma jeszcze certyfikatu** — to 0021.
 
 ## Stany
 
@@ -271,7 +297,7 @@ ma jeszcze certyfikatu** — to faza 2.
 | 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `partly-done` |
 | 0010 | 1 | Import `Blinky.Piv` | `done` |
 | 0011 | 1 | Personalizacja i klucz | `done` |
-| 0020 | 2 | API wydań | `open` |
+| 0020 | 2 | API wydań | `done-unverified` |
 | 0021 | 2 | EOBO | `open` |
 | 0022 | 2 | Odzyskiwanie | `open` |
 | 0023 | 2 | Klient WPF — wydanie | `open` |
