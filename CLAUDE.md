@@ -41,6 +41,7 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `src/BlinkyLite.Contracts/Resources` | `Messages.resx` + `.de`, `.sv`, `.pl` — jedyny katalog tekstów |
 | `tests/BlinkyLite.UnitTests` | xunit, bez sprzętu i bez bazy |
 | `tests/BlinkyLite.DbTests` | xunit na prawdziwym PostgreSQL — funkcje, uprawnienia, migracje |
+| `tools/BlinkyLite.CardLab` | narzędzie warsztatowe: czyta kartę i uruchamia silnik wydania przy prawdziwym kluczu. Nie wchodzi do żadnego instalatora |
 | `packaging/` | manifesty MSIX (klient bundle x64+ARM64, serwer z usługą) |
 | `docs/` | numerowane dokumenty + `STATUS.md` i `status.json` |
 
@@ -63,6 +64,8 @@ echo "<wartosc>" | BlinkyLite.Server.exe --protect-secret jwt-signing-key      #
 dotnet publish src/BlinkyLite.Client -c Release -r win-x64
 dotnet publish src/BlinkyLite.Client -c Release -r win-arm64
 docker compose up -d --build       # serwer + postgres
+dotnet run --project tools/BlinkyLite.CardLab -- inventory          # czyta kartę, nic nie pisze
+dotnet run --project tools/BlinkyLite.CardLab -- personalise --yes  # PISZE na karcie (0011)
 ```
 
 ## Konwencje nie do negocjacji

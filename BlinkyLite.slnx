@@ -7,6 +7,9 @@
     <Project Path="src/BlinkyLite.PowerShell/BlinkyLite.PowerShell.csproj" />
     <Project Path="src/BlinkyLite.Server/BlinkyLite.Server.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/BlinkyLite.CardLab/BlinkyLite.CardLab.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/BlinkyLite.UnitTests/BlinkyLite.UnitTests.csproj" />
     <Project Path="tests/BlinkyLite.DbTests/BlinkyLite.DbTests.csproj" />

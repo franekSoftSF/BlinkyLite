@@ -16,8 +16,15 @@ public sealed partial class NoPinAnywhereTests
     [GeneratedRegex(@"(^|[a-z0-9])Pin($|[A-Z])")]
     private static partial Regex PinWord { get; }
 
-    /// <summary>PIN policy is an attestation value (Once, Always), not a PIN.</summary>
-    private static readonly string[] Allowed = ["PinPolicy", "TouchPolicy"];
+    /// <summary>
+    /// Names that contain the word but hold no PIN. Each one is here on
+    /// purpose, and the list is the place to argue about it:
+    ///   PinPolicy, TouchPolicy - attestation values (Once, Always, Never);
+    ///   FactoryPin             - the published PIN every token ships with,
+    ///                            which is what personalisation replaces;
+    ///   PinCancelled           - the key of a message, not a value.
+    /// </summary>
+    private static readonly string[] Allowed = ["PinPolicy", "TouchPolicy", "FactoryPin", "PinCancelled"];
 
     public static TheoryData<string> Types()
     {
