@@ -41,12 +41,14 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `src/BlinkyLite.Contracts/Resources` | `Messages.resx` + `.de`, `.sv`, `.pl` — jedyny katalog tekstów |
 | `tests/BlinkyLite.UnitTests` | xunit, bez sprzętu i bez bazy |
 | `tests/BlinkyLite.DbTests` | xunit na prawdziwym PostgreSQL — funkcje, uprawnienia, migracje |
+| `tools/BlinkyLite.CardLab` | narzędzie warsztatowe: czyta kartę i uruchamia silnik wydania przy prawdziwym kluczu. Nie wchodzi do żadnego instalatora |
 | `packaging/` | manifesty MSIX (klient bundle x64+ARM64, serwer z usługą) |
 | `docs/` | numerowane dokumenty + `STATUS.md` i `status.json` |
 
-(Na dziś: 0001–0005 i 0010 — szkielet, baza, serwer z logowaniem AD, cztery
-języki, sekrety poza konfiguracją i warstwa PIV z Blinky. Nie ma jeszcze
-`BlinkyLite.Issuance`, klienta, modułu PowerShell ani `packaging/`. Patrz
+(Na dziś: 0001–0005, 0010 i 0011 — szkielet, baza, serwer z logowaniem AD,
+cztery języki, sekrety poza konfiguracją, warstwa PIV z Blinky i silnik
+personalizacji sprawdzony na dwóch fabrycznych kluczach, 5.4.3 i 5.8.0. Nie ma
+jeszcze wysyłki do CA, klienta, modułu PowerShell ani `packaging/`. Patrz
 STATUS.)
 
 ## Komendy
@@ -63,6 +65,10 @@ echo "<wartosc>" | BlinkyLite.Server.exe --protect-secret jwt-signing-key      #
 dotnet publish src/BlinkyLite.Client -c Release -r win-x64
 dotnet publish src/BlinkyLite.Client -c Release -r win-arm64
 docker compose up -d --build       # serwer + postgres
+dotnet run --project tools/BlinkyLite.CardLab -- inventory          # czyta kartę, nic nie pisze
+dotnet run --project tools/BlinkyLite.CardLab -- personalise --yes  # PISZE na karcie (0011)
+# paczka na stację testową: jeden .exe, bez instalowania .NET
+dotnet publish tools/BlinkyLite.CardLab -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o artifacts/cardlab-win-x64
 ```
 
 ## Konwencje nie do negocjacji

@@ -235,4 +235,34 @@
   <data name="common.language" xml:space="preserve">
     <value>Sprache</value>
   </data>
+  <data name="error.card.not-a-yubikey" xml:space="preserve">
+    <value>Diese Karte ist kein YubiKey.</value>
+  </data>
+  <data name="error.card.too-old" xml:space="preserve">
+    <value>Die Firmware dieses Schlüssels ist zu alt für BlinkyLite.</value>
+  </data>
+  <data name="error.card.no-puk" xml:space="preserve">
+    <value>Dieser Schlüssel hat keine PUK und ließe sich nie entsperren.</value>
+  </data>
+  <data name="error.card.not-factory" xml:space="preserve">
+    <value>Dieser Schlüssel ist bereits in Gebrauch. Setzen Sie ihn zurück oder setzen Sie die Ausstellung fort.</value>
+  </data>
+  <data name="error.card.slot-occupied" xml:space="preserve">
+    <value>Slot 9A enthält bereits einen Schlüssel.</value>
+  </data>
+  <data name="error.card.no-attestation" xml:space="preserve">
+    <value>Dieser Schlüssel hat keine Attestierung geliefert.</value>
+  </data>
+  <data name="error.card.attestation-refused" xml:space="preserve">
+    <value>Die Attestierung wurde abgelehnt: es lässt sich nicht beweisen, dass der Schlüssel auf diesem Token liegt.</value>
+  </data>
+  <data name="error.pin.cancelled" xml:space="preserve">
+    <value>Es wurde keine PIN gesetzt, also wurde nichts ausgestellt.</value>
+  </data>
+  <data name="pin.rule.same-as-puk" xml:space="preserve">
+    <value>Die PIN muss sich von der PUK unterscheiden.</value>
+  </data>
+  <data name="pin.rule.ok" xml:space="preserve">
+    <value>Diese PIN kann verwendet werden.</value>
+  </data>
 </root>

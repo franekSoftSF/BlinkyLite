@@ -38,10 +38,10 @@
   },
   "status": {
     "updated": "2026-09-20",
-    "phase": 1,
-    "phaseTitle": "Karta",
+    "phase": 2,
+    "phaseTitle": "Wydanie",
     "state": "open",
-    "summary": "Fundament (0001-0005), warstwa PIV (0010) i wdrozenie w Dockerze (0050). Serwer dziala na prawdziwej domenie: logowanie AD -> JWT z rolami potwierdzone na kontenerze LXC. 347 testow jednostkowych, 84 na PostgreSQL 16, CI zielone. Nie ma jeszcze silnika wydania ani kontaktu z CA i karta.",
+    "summary": "Fundament (0001-0005), warstwa PIV (0010) i wdrozenie w Dockerze (0050). Serwer dziala na prawdziwej domenie: logowanie AD -> JWT z rolami potwierdzone na kontenerze LXC. FAZA 1 ZAMKNIETA: personalizacja przeszla na dwoch fabrycznych YubiKeyach - 5.4.3 (3DES) i 5.8.0 (AES-192) - a ykman piv info potwierdzil na obu 'Management key is stored on the YubiKey, protected by PIN'. 359 testow jednostkowych, 84 na PostgreSQL 16, CI zielone. Nie ma jeszcze kontaktu z CA - zadna karta nie ma certyfikatu.",
     "nothingIssuedYet": true
   },
   "stateLegend": {
@@ -93,8 +93,8 @@
     {
       "id": 1,
       "title": "Karta",
-      "state": "open",
-      "done": false
+      "state": "done",
+      "done": true
     },
     {
       "id": 2,
@@ -480,9 +480,9 @@
       "id": "0011",
       "phase": 1,
       "title": "Personalizacja i klucz",
-      "state": "open",
+      "state": "done",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-20: CardPersonaliser (MK do PRINTED z flaga ADMIN DATA i SET MANAGEMENT KEY, PUK przed PIN-em, CHUID i CCC, klucz 9A, atestacja na przypietych rootach Yubico, CSR podpisany na karcie, wszystko w jednej transakcji PC/SC), PIN przez IPinPrompt i PinRules, zerowany po uzyciu. Po zapisie silnik ODCZYTUJE karte (PersonalisationChecks): MK wraca z PRINTED taki sam, flaga ADMIN DATA mowi 'za PIN-em', podpis CSR sprawdzony ponownym wczytaniem zadania, stan PIN i PUK, metadane slotu 9A. NA SPRZECIE (stacja DPCLIENT02, Windows 11 26100, narzedzie CardLab z artifacts): serial 23673995, firmware 5.4.3, MK TripleDes, UsbAKeychain - WYNIK OK, 6/6 sprawdzen; serial 39721373, firmware 5.8.0, MK Aes192, UsbCKeychain - WYNIK OK, 6/6 sprawdzen. W obu: PIN i PUK Set, slot 9A Rsa2048 Origin=Generated, polityka PIN Once, dotyk Never, CHUID i CCC zapisane, atestacja zweryfikowana do przypietego roota z serialem i firmware zgodnym z karta. ykman piv info (Yubico, kod spoza tego repozytorium) potwierdzil na obu kartach 'Management key is stored on the YubiKey, protected by PIN', algorytm TDES na 5.4.3 i AES192 na 5.8.0, PIN i PUK po 3/3 proby, CHUID i CCC obecne, slot 9A RSA2048. Raporty (bez PIN-u, PUK-u i MK) zostaly na stacji - nie trafiaja do repozytorium, jak transkrypty APDU. Wczesniej, przed resetem, ten sam 23673995 jako karta laboratoryjna Blinky dostal odmowe error.card.not-factory bez zmiany stanu. 359 testow jednostkowych."
     },
     {
       "id": "0020",

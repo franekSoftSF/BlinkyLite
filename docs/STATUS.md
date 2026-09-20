@@ -1,15 +1,17 @@
 # Status projektu — BlinkyLite
 
 **Ostatnia aktualizacja:** 2026-09-20
-**Faza:** 1 — Karta
+**Faza:** 2 — Wydanie
 **Ogólnie:** stoi fundament (0001–0005) i warstwa PIV z Blinky (0010):
 logowanie z AD daje JWT z rolami, każdy endpoint ma politykę, sekrety są poza
 konfiguracją i w kopertach AES-256-GCM przywiązanych do karty i wydania, a
 kod rozmawiający z kluczem jest w repozytorium i przechodzi testy na zapisach
-z prawdziwych tokenów — 347 testów jednostkowych i 84 na PostgreSQL 16, CI
+z prawdziwych tokenów — 359 testów jednostkowych i 84 na PostgreSQL 16, CI
 zielone. **Serwer wstaje jednym `docker compose up`** (0050), razem z bazą i
-migracjami. Nie ma jeszcze silnika wydania ani kontaktu z prawdziwym AD, CA i
-kartą
+migracjami, i **loguje z prawdziwej domeny**. **Faza 1 jest zamknięta:**
+personalizacja przeszła na dwóch fabrycznych kluczach — 5.4.3 (3DES) i 5.8.0
+(AES-192) — a `ykman piv info` potwierdził na obu, że management key stoi za
+PIN-em (0011). Nie ma jeszcze kontaktu z CA: żadna karta nie ma certyfikatu.
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
 się zgadzać; `status.json` czyta build albo dashboard. Definicje ukończenia są
@@ -185,8 +187,66 @@ może przeczytać koperty z pominięciem funkcji. To domyka „działające
 logowanie” z definicji ukończenia 0050 i zarazem lukę 0003, która mówiła, że
 warstwa LDAP nie widziała prawdziwego AD.
 
-Nie istnieje: silnik wydania, klient WPF, moduł PowerShell, kontakt z
-prawdziwym AD, CA i kartą.
+Od 0011 (20 września 2026) istnieje **silnik personalizacji**
+(`BlinkyLite.Issuance`): management key do PRINTED z flagą w ADMIN DATA i
+dopiero potem `SET MANAGEMENT KEY`, PUK przed PIN-em, CHUID i CCC zanim
+Windows zostanie poproszony o logowanie, klucz w 9A, atestacja zweryfikowana
+przypiętymi rootami Yubico i żądanie podpisane przez kartę — wszystko w jednej
+transakcji PC/SC. PIN wpisuje człowiek przez `IPinPrompt`, reguły sprawdza
+`PinRules` przeniesione z Blinky, a po użyciu PIN jest zerowany; nie ma go w
+wyniku, w logu ani w pliku.
+
+Po zapisie silnik **odczytuje kartę zamiast zakładać**: czy management key
+wraca z PRINTED taki sam, czy flaga ADMIN DATA mówi „za PIN-em” (to samo, co
+czyta `ykman piv info`), czy podpis CSR daje się sprawdzić ponownym wczytaniem
+żądania, jaki jest stan PIN-u i PUK-u i czy klucz w 9A został **wygenerowany**,
+a nie wgrany. Komplet tych odpowiedzi to definicja ukończenia 0011 zapisana w
+kodzie (`PersonalisationChecks.Passed`).
+
+`tools/BlinkyLite.CardLab` to narzędzie **stacji testowej**, nie część
+produktu: `inventory` tylko czyta, `personalise` wymaga `--yes` i karty
+fabrycznej, a po przebiegu zostawia dwa pliki — raport do odesłania (bez
+PIN-u, PUK-u i management key) i osobny plik z PUK i management key, który ma
+zostać na stacji. Czytnik wybiera po odpowiedzi na `SELECT`, a nie po nazwie,
+bo ten sam token w czytniku OMNIKEY nie nazywa się „YubiKey”. Spakowane
+samodzielnie (`artifacts/BlinkyLite-CardLab-win-x64.zip`, bez instalowania
+.NET) razem z instrukcją po polsku.
+
+**Sprawdzone na sprzęcie** (20 września 2026, stacja `DPCLIENT02`, Windows 11
+26100) — obie gałęzie algorytmu management key, po jednym fabrycznym kluczu:
+
+| | 23673995 | 39721373 |
+|---|---|---|
+| firmware | 5.4.3 | 5.8.0 |
+| management key | `TripleDes` | `Aes192` |
+| obudowa z atestacji | `UsbAKeychain` | `UsbCKeychain` |
+| wynik | OK, 6/6 sprawdzeń | OK, 6/6 sprawdzeń |
+
+W obu przebiegach: management key wraca z PRINTED taki sam, flaga ADMIN DATA
+mówi „za PIN-em”, podpis CSR daje się sprawdzić, PIN i PUK są `Set`, w 9A
+klucz `Rsa2048` z `Origin=Generated`, polityka PIN `Once`, dotyk `Never`,
+CHUID i CCC zapisane, atestacja zweryfikowana do przypiętego roota Yubico z
+serialem i firmware zgodnym z kartą. Raporty zostają na stacji — jak
+transkrypty APDU, niosą serial i certyfikaty, więc nie wchodzą do
+repozytorium.
+
+Wcześniej, zanim ten sam klucz 23673995 został zresetowany, silnik **odmówił**
+mu wydania: karta z laboratorium Blinky (management key ustawiony, PUK
+zablokowany, w 9A certyfikat z „Blinky Issuing CA”) dostała
+`error.card.not-factory`, a jej stan po próbie był identyczny, bo ten warunek
+stoi przed transakcją.
+
+**Potwierdzone kodem spoza tego repozytorium.** Definicja ukończenia prosi o
+świadka, którego nie pisaliśmy, bo flagę ADMIN DATA czytał dotąd wyłącznie
+nasz własny kod. `ykman piv info` Yubico powiedział na obu kartach dokładnie
+to zdanie — *„Management key is stored on the YubiKey, protected by PIN."* —
+a przy okazji `Management key algorithm: TDES` na 5.4.3 i `AES192` na 5.8.0
+(czyli algorytm naprawdę czytany z karty, nie zgadywany z firmware), PIN i
+PUK po 3/3 próby, obecne CHUID i CCC oraz `Slot 9A (AUTHENTICATION): Private
+key type: RSA2048`. 0011 jest `done`, a z nim faza 1.
+
+Nie istnieje: wysyłka do CA, klient WPF, moduł PowerShell. **Żadna karta nie
+ma jeszcze certyfikatu** — to faza 2.
 
 ## Stany
 
@@ -210,7 +270,7 @@ prawdziwym AD, CA i kartą.
 | 0004 | 0 | Języki EN / DE / SV / PL | `done` |
 | 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `partly-done` |
 | 0010 | 1 | Import `Blinky.Piv` | `done` |
-| 0011 | 1 | Personalizacja i klucz | `open` |
+| 0011 | 1 | Personalizacja i klucz | `done` |
 | 0020 | 2 | API wydań | `open` |
 | 0021 | 2 | EOBO | `open` |
 | 0022 | 2 | Odzyskiwanie | `open` |

@@ -235,4 +235,34 @@
   <data name="common.language" xml:space="preserve">
     <value>Språk</value>
   </data>
+  <data name="error.card.not-a-yubikey" xml:space="preserve">
+    <value>Det här kortet är ingen YubiKey.</value>
+  </data>
+  <data name="error.card.too-old" xml:space="preserve">
+    <value>Nyckelns firmware är för gammal för BlinkyLite.</value>
+  </data>
+  <data name="error.card.no-puk" xml:space="preserve">
+    <value>Nyckeln har ingen PUK och kan därför aldrig låsas upp.</value>
+  </data>
+  <data name="error.card.not-factory" xml:space="preserve">
+    <value>Nyckeln används redan. Återställ den eller fortsätt utfärdningen.</value>
+  </data>
+  <data name="error.card.slot-occupied" xml:space="preserve">
+    <value>Plats 9A innehåller redan en nyckel.</value>
+  </data>
+  <data name="error.card.no-attestation" xml:space="preserve">
+    <value>Nyckeln returnerade ingen attestering.</value>
+  </data>
+  <data name="error.card.attestation-refused" xml:space="preserve">
+    <value>Attesteringen avvisades: det går inte att bevisa att nyckeln finns på den här tokenen.</value>
+  </data>
+  <data name="error.pin.cancelled" xml:space="preserve">
+    <value>Ingen PIN-kod angavs, så ingenting utfärdades.</value>
+  </data>
+  <data name="pin.rule.same-as-puk" xml:space="preserve">
+    <value>PIN-koden måste skilja sig från PUK.</value>
+  </data>
+  <data name="pin.rule.ok" xml:space="preserve">
+    <value>Den här PIN-koden kan användas.</value>
+  </data>
 </root>
