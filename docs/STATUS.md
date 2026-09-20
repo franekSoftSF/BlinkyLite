@@ -271,6 +271,14 @@ Przy wdrożeniu wyszło, że `Dockerfile` nie kopiował warstwy PIV, którą ser
 od teraz ciągnie dla weryfikacji atestacji — na tej maszynie build przechodził,
 w kontenerze nie. Stary kontener został na miejscu, więc nic nie stanęło.
 
+**Karta wydana z okna** (0023, 21 września 2026): operator zalogował się w
+kliencie WPF, wyszukał osobę, wybrał ją z listy i wydał kartę — komplet kroków
+po polsku, na końcu „Klucz jest gotowy. Certyfikat jest na nim." Pierwszy błąd,
+jaki zobaczył prawdziwy operator, był mój: adres bez portu `:8443` klient
+pokazał jako „coś poszło nie tak po stronie serwera", bo wszystko nierozpoznane
+wpadało u mnie w `error.internal`. Teraz mówi, że nie dało się połączyć, pokazuje
+linię techniczną pod komunikatem i pisze log do `%LOCALAPPDATA%\BlinkyLite`.
+
 **Pierwszy certyfikat wydany** (0021, 20 września 2026, stacja `DPCLIENT02`):
 pełne wydanie w 56 sekund, od logowania operatora do certyfikatu odczytanego z
 karty.
@@ -326,7 +334,7 @@ Nie istnieje: klient WPF, moduł PowerShell, przeglądarka i weryfikacja.
 | 0021 | 2 | EOBO | `done` |
 | 0022 | 2 | Odzyskiwanie | `open` |
 | 0025 | 2 | Logowanie zintegrowane (Negotiate/Kerberos) | `open` |
-| 0023 | 2 | Klient WPF — wydanie | `partly-done` |
+| 0023 | 2 | Klient WPF — wydanie | `done` |
 | 0030 | 3 | Przeglądarka i weryfikacja w WPF | `open` |
 | 0040 | 4 | Moduł PowerShell | `partly-done` |
 | 0050 | 5 | Docker | `done` |

@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Net.Http;
+using System.Net.Sockets;
+using System.Security.Authentication;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -11,6 +13,7 @@ using BlinkyLite.Contracts;
 using BlinkyLite.Issuance;
 using BlinkyLite.Issuance.Api;
 using BlinkyLite.Issuance.Eobo;
+using Serilog;
 
 namespace BlinkyLite.Client;
 
@@ -90,7 +93,7 @@ public partial class MainWindow : Window
         }
         catch (Exception problem) when (problem is ServerException or HttpRequestException)
         {
-            Say(Explain(problem), problem: true);
+            Say(problem);
         }
         finally
         {
@@ -137,7 +140,7 @@ public partial class MainWindow : Window
         }
         catch (Exception problem) when (problem is ServerException or HttpRequestException)
         {
-            Say(Explain(problem), problem: true);
+            Say(problem);
         }
     }
 
@@ -184,8 +187,16 @@ public partial class MainWindow : Window
         steps.Clear();
         Message.Text = "";
 
-        var progress = new Progress<string>(key => steps.Add(
-            new Step(Text.Of(key), "•", (Brush)Resources["MutedText"])));
+        // The engine's last step says "done" and the result line below says
+        // it again, in more words. One of them is enough, and the one with the
+        // mark on it is the one worth keeping.
+        var progress = new Progress<string>(key =>
+        {
+            if (key != "issuance.step.done")
+            {
+                steps.Add(new Step(Text.Of(key), "•", (Brush)Resources["MutedText"]));
+            }
+        });
 
         try
         {
@@ -214,7 +225,7 @@ public partial class MainWindow : Window
         catch (Exception problem)
         {
             steps.Add(new Step(Explain(problem, translated: true), "✗", (Brush)Resources["Danger"]));
-            Say(Explain(problem), problem: true);
+            Say(problem);
         }
         finally
         {
@@ -242,16 +253,63 @@ public partial class MainWindow : Window
     {
         Message.Text = Text.Of(messageKey);
         Message.SetResourceReference(ForegroundProperty, problem ? "Danger" : "AccentText");
+
+        Details.Text = "";
+        Log.Information("{Message}", Message.Text);
     }
 
-    /// <summary>The message key behind a failure, or the key plus its detail.</summary>
-    private static string Explain(Exception e, bool translated = false) => e switch
+    /// <summary>The message, plus what threw and why, plus a line in the log.</summary>
+    private void Say(Exception e)
     {
-        ServerException server => translated ? Text.Of(server.MessageKey) : server.MessageKey,
-        IssuanceFailedException failed => translated ? Text.Of(failed.MessageKey) : failed.MessageKey,
-        PersonalisationRefusedException refused => translated ? Text.Of(refused.MessageKey) : refused.MessageKey,
-        NoCardException card => translated ? Text.Of(card.MessageKey) : card.MessageKey,
-        CertEnrollException => translated ? Text.Of(ErrorCodes.CaCmcFailed) : ErrorCodes.CaCmcFailed,
-        _ => translated ? e.Message : ErrorCodes.Internal,
-    };
+        Say(Explain(e), problem: true);
+
+        Details.Text = Detail(e);
+        Log.Error(e, "{Message}", Message.Text);
+    }
+
+    /// <summary>
+    /// The message key behind a failure.
+    /// </summary>
+    /// <remarks>
+    /// Everything unrecognised used to land on <c>error.internal</c>, which
+    /// told an operator that the server was at fault when the real answer was
+    /// usually that the name did not resolve or the certificate was refused.
+    /// A wrong sentence is worse than a long one.
+    /// </remarks>
+    private static string Explain(Exception e, bool translated = false)
+    {
+        var key = e switch
+        {
+            ServerException server => server.MessageKey,
+            IssuanceFailedException failed => failed.MessageKey,
+            PersonalisationRefusedException refused => refused.MessageKey,
+            NoCardException card => card.MessageKey,
+            CertEnrollException => ErrorCodes.CaCmcFailed,
+            HttpRequestException or SocketException or AuthenticationException => ErrorCodes.ServerUnreachable,
+            _ => ErrorCodes.Internal,
+        };
+
+        return translated ? Text.Of(key) : key;
+    }
+
+    /// <summary>
+    /// What actually happened, in the words of whatever threw.
+    /// </summary>
+    /// <remarks>
+    /// Shown under the message and written to the log. It is technical on
+    /// purpose: it is the line somebody copies into a mail to me, and a
+    /// tidied-up version of it would say nothing.
+    /// </remarks>
+    private static string Detail(Exception e)
+    {
+        var innermost = e;
+        while (innermost.InnerException is { } inner)
+        {
+            innermost = inner;
+        }
+
+        return innermost == e
+            ? $"{e.GetType().Name}: {e.Message}"
+            : $"{e.GetType().Name}: {e.Message} — {innermost.GetType().Name}: {innermost.Message}";
+    }
 }

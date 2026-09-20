@@ -50,7 +50,15 @@
         <!-- Signing in. The token lives in the process and goes nowhere else. -->
         <StackPanel x:Name="SignIn" Grid.Row="1" MaxWidth="440" HorizontalAlignment="Left">
             <TextBlock Text="{l:Loc client.server}" />
-            <TextBox x:Name="ServerBox" Margin="0,4,0,12" Padding="8" />
+            <TextBox x:Name="ServerBox" Margin="0,4,0,2" Padding="8" />
+
+            <!-- The port, spelled out: the first operator to use this window
+                 typed the name without it, reached 443 and was told that the
+                 server had a problem. -->
+            <TextBlock Text="{l:Loc client.server-hint}"
+                       Margin="0,0,0,12"
+                       FontSize="12"
+                       Foreground="{DynamicResource MutedText}" />
 
             <TextBlock Text="{l:Loc common.user}" />
             <TextBox x:Name="UserBox" Margin="0,4,0,12" Padding="8" />
@@ -166,10 +174,18 @@
             </DockPanel>
         </Grid>
 
-        <TextBlock x:Name="Message"
-                   Grid.Row="2"
-                   Margin="0,14,0,0"
-                   TextWrapping="Wrap"
-                   Foreground="{DynamicResource MutedText}" />
+        <StackPanel Grid.Row="2" Margin="0,14,0,0">
+            <TextBlock x:Name="Message"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource MutedText}" />
+
+            <!-- The technical line: what threw and why. It is the line
+                 somebody copies into a mail, so it is not tidied up. -->
+            <TextBlock x:Name="Details"
+                       Margin="0,4,0,0"
+                       FontSize="12"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource MutedText}" />
+        </StackPanel>
     </Grid>
 </Window>

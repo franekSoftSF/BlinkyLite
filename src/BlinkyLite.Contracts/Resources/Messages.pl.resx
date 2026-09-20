@@ -82,6 +82,12 @@
   <data name="error.rate-limited" xml:space="preserve">
     <value>Za dużo prób. Poczekaj chwilę i spróbuj ponownie.</value>
   </data>
+  <data name="error.server.unreachable" xml:space="preserve">
+    <value>Nie udało się połączyć z serwerem albo jego certyfikat został odrzucony.</value>
+  </data>
+  <data name="client.details" xml:space="preserve">
+    <value>Szczegóły</value>
+  </data>
   <data name="error.directory.unavailable" xml:space="preserve">
     <value>Nie można połączyć się z Active Directory.</value>
   </data>
@@ -240,6 +246,9 @@
   </data>
   <data name="client.server" xml:space="preserve">
     <value>Serwer</value>
+  </data>
+  <data name="client.server-hint" xml:space="preserve">
+    <value>na przykład https://blinkylite.corp.example:8443</value>
   </data>
   <data name="client.password" xml:space="preserve">
     <value>Hasło</value>

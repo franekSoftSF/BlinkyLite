@@ -542,10 +542,10 @@
       "id": "0023",
       "phase": 2,
       "title": "Klient WPF — wydanie",
-      "state": "partly-done",
+      "state": "done",
       "owner": "cloud-ai",
-      "proof": "2026-09-21: klient WPF - logowanie (token tylko w pamieci procesu, haslo czytane z PasswordBox i natychmiast puszczane), wyszukanie osoby przez serwer, wybor profilu z /api/profiles, odczyt karty w czytniku (tylko odczyt), wydanie przez ten sam IssuanceRunner, ktory wydal pierwszy certyfikat z wiersza polecen, postep krok po kroku. Okno PIN osobne: duze, Topmost, dwa PasswordBoxy, reguly PinRules na zywo, wlasny przelacznik jezyka, PIN czyszczony przy zamknieciu i nietrzymany w zadnym polu. Motyw jasny i ciemny z ustawienia Windows z recznym przelacznikiem, akcent #1DB954. Kolory sa w C# (Palette), zeby dalo sie je policzyc: TEST LICZY KONTRAST kazdej pary niosacej tekst w obu motywach i wymaga 4,5:1 - 417 testow jednostkowych. Stan kroku ma znak, nie tylko kolor. Teksty wylacznie z katalogu przez {l:Loc}.",
-      "gap": "Nie uruchomiony przez nikogo poza kompilatorem: okna nie widzialy jeszcze ekranu ani operatora, wydanie z WPF nie przeszlo na prawdziwej karcie. Brakuje tez ekranu weryfikacji i przegladarki (0030), listy wydan i wznowienia PendingCa (0022)."
+      "proof": "2026-09-21: klient WPF - logowanie (token tylko w pamieci procesu, haslo czytane z PasswordBox i natychmiast puszczane), wyszukanie osoby przez serwer, wybor profilu z /api/profiles, odczyt karty w czytniku (tylko odczyt), wydanie przez ten sam IssuanceRunner, ktory wydal pierwszy certyfikat z wiersza polecen, postep krok po kroku. Okno PIN osobne: duze, Topmost, dwa PasswordBoxy, reguly PinRules na zywo, wlasny przelacznik jezyka, PIN czyszczony przy zamknieciu i nietrzymany w zadnym polu. Motyw jasny i ciemny z ustawienia Windows z recznym przelacznikiem, akcent #1DB954. Kolory sa w C# (Palette), zeby dalo sie je policzyc: TEST LICZY KONTRAST kazdej pary niosacej tekst w obu motywach i wymaga 4,5:1 - 417 testow jednostkowych. Stan kroku ma znak, nie tylko kolor. Teksty wylacznie z katalogu przez {l:Loc}. NA SPRZECIE 21 wrzesnia 2026, stacja DPCLIENT02: operator zalogowal sie do serwera, wyszukal osobe, wybral ja z listy i WYDAL KARTE z okna - komplet krokow po polsku, na koncu 'Klucz jest gotowy. Certyfikat jest na nim.'. Motyw jasny wg ustawienia Windows, akcent #1DB954 na przycisku wydania.",
+      "gap": "Motyw ciemny sprawdzony tylko testem kontrastu, nie okiem. Listy wydan i podgladu PUK nie ma - to 0030; wznowienia PendingCa nie ma - to 0022."
     },
     {
       "id": "0025",

@@ -18,6 +18,7 @@ public static class ErrorCodes
     public const string InvalidCredentials = "error.auth.invalid-credentials";
     public const string NoRole = "error.auth.no-role";
     public const string RateLimited = "error.rate-limited";
+    public const string ServerUnreachable = "error.server.unreachable";
     public const string DirectoryUnavailable = "error.directory.unavailable";
     public const string QueryTooShort = "error.query.too-short";
 

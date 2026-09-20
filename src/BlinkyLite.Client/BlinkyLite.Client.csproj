@@ -16,6 +16,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The client had no log at all, and the first failure on a real station
+         was a wrong port reported as "something went wrong on the server". -->
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\BlinkyLite.Issuance\BlinkyLite.Issuance.csproj" />
   </ItemGroup>
 
