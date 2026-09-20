@@ -10,18 +10,16 @@ namespace BlinkyLite.CardLab;
 /// that was signed on somebody's card, by a key this machine does not have?
 /// </summary>
 /// <remarks>
-/// Builds the CMC and stops there. Submitting it would make the CA issue a
-/// real certificate to a real person, which is not a thing a probe does - and
-/// the question is answered before the submission anyway: if CertEnroll
-/// refuses the inner request, 0021 is written around the hand-made CMC from
-/// the sibling project instead.
+/// Builds the CMC, reads it back and stops there. Submitting it would make the
+/// CA issue a real certificate to a real person, which is not a thing a probe
+/// does - and the question is answered before the submission anyway: if
+/// CertEnroll refuses the inner request, 0021 is written around the hand-made
+/// CMC from the sibling project instead.
 /// </remarks>
 internal static class EoboProbe
 {
-    public static async Task<int> RunAsync(Options options)
+    public static async Task<int> RunAsync(Options options, Transcript log)
     {
-        var log = new Transcript();
-
         if (options.Csr is not { } csrPath)
         {
             log.Problem("Podaj --csr <plik>: raport z personalizacji albo zadanie w PEM.");
@@ -41,36 +39,18 @@ internal static class EoboProbe
         }
         catch (Exception e) when (e is IOException or FormatException or CryptographicException)
         {
-            log.Problem($"Nie moge odczytac zadania z {csrPath}: {e.Message}");
+            log.Problem($"Nie moge odczytac zadania z {csrPath}: {e.Message}", e);
             return 2;
         }
 
         log.Say($"zadanie:      {pkcs10.Length} bajtow z {Path.GetFileName(csrPath)}");
-        log.Say($"podmiot:      {Subject(pkcs10)}");
+        DescribeRequest(pkcs10, log);
         log.Say($"requester:    {requester}");
         log.Say(string.Empty);
 
-        var agents = EnrolmentAgent.Find();
-        log.Say($"certyfikaty Enrollment Agenta w CurrentUser\\My: {agents.Count}");
-
-        foreach (var candidate in agents)
-        {
-            log.Say($"  {candidate.Thumbprint}  {candidate.Subject}");
-            log.Say($"      klucz prywatny: {(candidate.HasPrivateKey ? "jest" : "BRAK")}, "
-                    + $"waznosc: {(candidate.IsCurrent ? "aktualny" : "POZA ZAKRESEM")}, "
-                    + $"do {candidate.Certificate.NotAfter:yyyy-MM-dd}");
-        }
-
-        var agent = options.Agent is { } wanted
-            ? agents.FirstOrDefault(c => c.Thumbprint.Equals(wanted, StringComparison.OrdinalIgnoreCase))
-            : agents.FirstOrDefault(c => c.IsUsable);
-
+        var agent = ChooseAgent(options, log);
         if (agent is null)
         {
-            log.Problem(options.Agent is not null
-                ? "Nie ma certyfikatu EA o takim odcisku."
-                : "Nie ma uzywalnego certyfikatu Enrollment Agenta. Zapisz sie na szablon Enrollment Agent "
-                  + "(EKU 1.3.6.1.4.1.311.20.2.1) i uruchom ponownie.");
             return 3;
         }
 
@@ -91,14 +71,19 @@ internal static class EoboProbe
         if (attempt.Failure is { } failure)
         {
             log.Say(string.Empty);
-            log.Problem($"ODMOWA na kroku \"{failure.Step}\", HRESULT {failure.HResultText}");
+            log.Problem($"ODMOWA na kroku \"{failure.Step}\", HRESULT {failure.HResultText}", failure);
             log.Problem(failure.Message);
+            log.Detail("HRESULT {HResult} ({Known})", failure.HResultText, Known(failure.HResult));
         }
 
+        var inside = attempt.Succeeded ? ReadBack(attempt.Cmc!, requester, log) : true;
+
         log.Say(string.Empty);
-        log.Say(attempt.Succeeded
-            ? $"Q-01: TAK. CertEnroll przyjal zadanie z karty; CMC ma {attempt.Cmc!.Length} znakow base64."
-            : "Q-01: NIE na tej stacji. Patrz krok, ktory nie przeszedl.");
+        log.Say(attempt.Succeeded && inside
+            ? "Q-01: TAK. CertEnroll przyjal zadanie z karty, a w CMC jest to, co CA musi zobaczyc."
+            : attempt.Succeeded
+                ? "Q-01: CZESCIOWO. CMC powstal, ale jego tresc sie nie zgadza - patrz wyzej."
+                : "Q-01: NIE na tej stacji. Patrz krok, ktory nie przeszedl.");
 
         if (options.Template is { } template)
         {
@@ -120,7 +105,84 @@ internal static class EoboProbe
             Console.WriteLine($"CMC:          {cmc}");
         }
 
-        return attempt.Succeeded ? 0 : 6;
+        return attempt.Succeeded && inside ? 0 : 6;
+    }
+
+    /// <summary>
+    /// Reads the CMC back and says whether it carries what the CA needs.
+    /// </summary>
+    /// <remarks>
+    /// "Encode did not throw" is not the answer to Q-01. The requester name is
+    /// what decides whether the certificate comes out in the cardholder's name
+    /// or in the operator's, so the probe checks that the name it asked for is
+    /// really in there.
+    /// </remarks>
+    private static bool ReadBack(string base64, string requester, Transcript log)
+    {
+        var contents = CmcInspection.Inspect(Convert.FromBase64String(base64));
+
+        log.Say(string.Empty);
+        log.Say("Co naprawde jest w CMC:");
+        log.Say($"  {Mark(contents.IsPkiData)} tresc: {contents.ContentType}"
+                + (contents.IsPkiData ? " (PKIData)" : " - a mial byc PKIData"));
+
+        var nameMatches = string.Equals(contents.RequesterName, requester, StringComparison.OrdinalIgnoreCase);
+        log.Say($"  {Mark(nameMatches)} requestername = {contents.RequesterName ?? "BRAK"}");
+
+        log.Say($"  {Mark(contents.HasEnoughSigners)} podpisow: {contents.Signers.Count} "
+                + "(MS-WCCE chce co najmniej dwoch: zgloszeniodawcy i agenta)");
+
+        foreach (var signer in contents.Signers)
+        {
+            log.Say($"      {signer.DigestAlgorithm}  {signer.Subject}");
+        }
+
+        log.Detail("kontrole w PKIData: {Controls}", string.Join(", ", contents.Controls));
+
+        if (contents.Problem is { } problem)
+        {
+            log.Problem($"CMC: {problem}");
+        }
+
+        if (!nameMatches)
+        {
+            log.Problem("Bez requestername CA zbuduje podmiot dla tego, kto wolal, czyli dla operatora.");
+        }
+
+        return contents.IsPkiData && nameMatches && contents.Problem is null;
+    }
+
+    private static EnrolmentAgent.Candidate? ChooseAgent(Options options, Transcript log)
+    {
+        var agents = EnrolmentAgent.Find();
+        log.Say($"certyfikaty Enrollment Agenta w CurrentUser\\My: {agents.Count}");
+
+        foreach (var candidate in agents)
+        {
+            log.Say($"  {candidate.Thumbprint}  {candidate.Subject}");
+            log.Say($"      klucz prywatny: {(candidate.HasPrivateKey ? "jest" : "BRAK")}, "
+                    + $"waznosc: {(candidate.IsCurrent ? "aktualny" : "POZA ZAKRESEM")}, "
+                    + $"do {candidate.Certificate.NotAfter:yyyy-MM-dd}");
+
+            log.Detail("EA {Thumbprint}: wystawca {Issuer}, od {From} do {To}, klucz {Algorithm}, szablon {Template}",
+                candidate.Thumbprint, candidate.Certificate.Issuer,
+                candidate.Certificate.NotBefore, candidate.Certificate.NotAfter,
+                candidate.Certificate.PublicKey.Oid.FriendlyName, TemplateOf(candidate.Certificate));
+        }
+
+        var chosen = options.Agent is { } wanted
+            ? agents.FirstOrDefault(c => c.Thumbprint.Equals(wanted, StringComparison.OrdinalIgnoreCase))
+            : agents.FirstOrDefault(c => c.IsUsable);
+
+        if (chosen is null)
+        {
+            log.Problem(options.Agent is not null
+                ? "Nie ma certyfikatu EA o takim odcisku."
+                : "Nie ma uzywalnego certyfikatu Enrollment Agenta. Zapisz sie na szablon Enrollment Agent "
+                  + "(EKU 1.3.6.1.4.1.311.20.2.1) i uruchom ponownie.");
+        }
+
+        return chosen;
     }
 
     private static string Header() =>
@@ -148,17 +210,43 @@ internal static class EoboProbe
             : throw new FormatException($"the first PEM block is {label}, not CERTIFICATE REQUEST");
     }
 
-    private static string Subject(byte[] pkcs10)
+    private static void DescribeRequest(byte[] pkcs10, Transcript log)
     {
         try
         {
-            return CertificateRequest.LoadSigningRequest(pkcs10, HashAlgorithmName.SHA256).SubjectName.Name;
+            var request = CertificateRequest.LoadSigningRequest(pkcs10, HashAlgorithmName.SHA256);
+
+            log.Say($"podmiot:      {request.SubjectName.Name}");
+            log.Detail("zadanie: klucz {Algorithm} {Size} bitow, podpis sprawdzony przy wczytaniu",
+                request.PublicKey.Oid.FriendlyName, KeySize(request.PublicKey));
         }
         catch (CryptographicException e)
         {
-            return $"nie da sie odczytac ({e.Message})";
+            // The card signed it, so this failing means the file is damaged -
+            // worth saying out loud before CertEnroll is blamed for refusing it.
+            log.Problem($"Zadania nie da sie wczytac ({e.Message}). CertEnroll tez go nie przyjmie.", e);
         }
     }
+
+    private static int KeySize(PublicKey key)
+    {
+        using var rsa = key.GetRSAPublicKey();
+        return rsa?.KeySize ?? 0;
+    }
+
+    private static string? TemplateOf(X509Certificate2 certificate) =>
+        certificate.Extensions["1.3.6.1.4.1.311.21.7"] is null ? "(bez rozszerzenia szablonu)" : "jest";
+
+    /// <summary>The HRESULTs the lab has already seen, so the log names them.</summary>
+    private static string Known(int hresult) => hresult switch
+    {
+        unchecked((int)0x800706BA) => "RPC_S_SERVER_UNAVAILABLE - brak tozsamosci domenowej albo CA",
+        unchecked((int)0x80070005) => "E_ACCESSDENIED - konto nie ma prawa",
+        unchecked((int)0x80070002) => "ERROR_FILE_NOT_FOUND - nie ma takiego CA",
+        unchecked((int)0x80092009) => "CRYPT_E_NO_MATCH - nie ma pasujacego certyfikatu",
+        unchecked((int)0x8009000F) => "NTE_EXISTS",
+        _ => "nieznany tutaj",
+    };
 
     private static string Mark(bool value) => value ? "[ok]" : "[!!]";
 }
