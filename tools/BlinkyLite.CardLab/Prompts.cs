@@ -14,6 +14,10 @@ internal sealed record Options(
     bool Yes,
     bool PinFromStdin,
     bool NoYkman,
+    string? Csr,
+    string? Requester,
+    string? Agent,
+    string? Template,
     IReadOnlyList<string> Unrecognised)
 {
     public static Options Parse(string[] raw)
@@ -27,6 +31,10 @@ internal sealed record Options(
         var yes = false;
         var pinFromStdin = false;
         var noYkman = false;
+        string? csr = null;
+        string? requester = null;
+        string? agent = null;
+        string? template = null;
         var unrecognised = new List<string>();
 
         // From index 1: index 0 is the command. Walked rather than searched,
@@ -43,11 +51,16 @@ internal sealed record Options(
                 case "--yes": yes = true; break;
                 case "--pin-from-stdin": pinFromStdin = true; break;
                 case "--no-ykman": noYkman = true; break;
+                case "--csr": csr = Next(args, ref i) ?? csr; break;
+                case "--requester": requester = Next(args, ref i) ?? requester; break;
+                case "--agent": agent = Next(args, ref i) ?? agent; break;
+                case "--template": template = Next(args, ref i) ?? template; break;
                 default: unrecognised.Add(raw[i]); break;
             }
         }
 
-        return new Options(subject, reader, outDirectory, language, yes, pinFromStdin, noYkman, unrecognised);
+        return new Options(subject, reader, outDirectory, language, yes, pinFromStdin, noYkman,
+            csr, requester, agent, template, unrecognised);
     }
 
     /// <summary>
@@ -77,6 +90,7 @@ internal sealed record Options(
         string[] names =
         [
             "subject", "reader", "out", "lang", "yes", "pin-from-stdin", "no-ykman",
+            "csr", "requester", "agent", "template",
         ];
 
         return [.. args.Select(argument =>

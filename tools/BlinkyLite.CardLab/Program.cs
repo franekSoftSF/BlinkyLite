@@ -40,7 +40,7 @@ static async Task<int> Run(string[] args)
         Console.Error.WriteLine($"Nie rozpoznaje: {string.Join(", ", options.Unrecognised)}. "
                                 + "Uruchom bez argumentow, zeby zobaczyc liste opcji.");
 
-        if (command == "personalise")
+        if (command is "personalise" or "eobo-probe")
         {
             return 2;
         }
@@ -52,6 +52,7 @@ static async Task<int> Run(string[] args)
     {
         "inventory" => Inventory(options),
         "personalise" => await Personalise(options),
+        "eobo-probe" => await EoboProbe.RunAsync(options),
         _ => Help(),
     };
 }
@@ -70,6 +71,14 @@ static int Help()
             --no-ykman                     nie wolaj ykman piv info do raportu
             --pin-from-stdin               czytaj PIN ze standardowego wejscia
                                            zamiast pytac o niego
+          eobo-probe                     Q-01 na stacji w domenie: czy
+                                         CertEnroll owinie w CMC zadanie
+                                         podpisane na cudzej karcie.
+                                         NICZEGO NIE WYSYLA do CA:
+            --csr <plik>                   raport z personalizacji albo PEM
+            --requester DOMENA\uzytkownik  dla kogo ma byc certyfikat
+            --agent <odcisk>               ktory certyfikat EA, gdy jest kilka
+            --template <nazwa>             tylko do wypisania w raporcie
 
         Raport (raport-<serial>.txt) mozna odeslac. Plik sekretow
         (sekrety-<serial>.json) otwiera te karte i zostaje na stacji.
