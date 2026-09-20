@@ -160,6 +160,17 @@ właściciela bazy; brak `.dockerignore` wpuszczał do obrazu katalogi `obj/` z
 Windows i psuł build; `psql -c` nie rozwija zmiennych, więc skrypt ustawiający
 hasła ról kończył się cicho bez ustawienia czegokolwiek.
 
+Pierwsze wdrożenie na prawdziwym Linuksie (kontener LXC na Proxmoxie,
+20 września 2026) pokazało czwartą rzecz, której Docker Desktop nie potrafi
+pokazać: **kontener bazy wykonuje swoje skrypty startowe jako `uid 999`, a
+pliki sekretów należały do użytkownika serwera (`uid 1654`) z prawami 600**.
+Skrypt nie mógł ich przeczytać, ustawił rolom **puste hasła** i wypisał
+„password set”, bo nieudane podstawienie polecenia nie jest nieudanym
+poleceniem. Serwer nie mógł się zalogować do bazy. Poprawione: hasła do bazy
+należą do `999:1654` z prawami `640`, skrypt sprawdza czytelność pliku i
+odmawia ustawienia pustego hasła, a ostrzeżenie o prawach pilnuje już tylko
+dostępu „dla innych”, bo grupa jest tu świadomym sposobem współdzielenia.
+
 Stan `partly-done`: definicja ukończenia mówi „działające logowanie”, a tego
 nie da się potwierdzić bez prawdziwego AD.
 

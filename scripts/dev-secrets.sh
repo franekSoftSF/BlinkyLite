@@ -43,16 +43,29 @@ write blinkylite-ldap-service-password     "${BLINKYLITE_LDAP_SERVICE_PASSWORD:-
 write blinkylite-jwt-signing-key           "$(random_key)"
 write blinkylite-kek-1                     "$(random_key)"
 
-# The server runs unprivileged (uid 1654, from the .NET image). A bind-mounted
-# secret keeps its owner from the host, so root-owned 0600 files would be
-# unreadable inside the container - which looks like a missing secret.
+# Two containers, two users, and a bind-mounted secret keeps the host's owner:
+#   - the server runs as uid 1654 (the .NET image's "app"),
+#   - PostgreSQL runs its init scripts as uid 999 ("postgres").
+# The database passwords are read by both, so they are owned by postgres and
+# readable by the server's group. Everything else belongs to the server alone.
+# Getting this wrong is not loud: the first deployment set empty passwords and
+# said it had set them.
 if [ "$(id -u)" = "0" ]; then
-    chown -R 1654:1654 secrets
-    echo "owner    secrets/* -> uid 1654 (the container's user)"
+    for name in postgres-superuser-password blinkylite-db-owner-password                 blinkylite-db-app-password blinkylite-db-readonly-password; do
+        chown 999:1654 "secrets/$name"
+        chmod 640 "secrets/$name"
+    done
+    for name in blinkylite-jwt-signing-key blinkylite-kek-1 blinkylite-ldap-service-password; do
+        chown 1654:1654 "secrets/$name"
+        chmod 600 "secrets/$name"
+    done
+    echo "owner    database passwords -> 999:1654 (postgres reads, server reads via group)"
+    echo "owner    other secrets      -> 1654:1654"
 else
     echo
-    echo "Not running as root: if the stack reports a missing secret, run"
-    echo "    sudo chown -R 1654:1654 secrets certs"
+    echo "Not running as root: fix the owners before starting the stack, or the"
+    echo "database will be set up with empty passwords:"
+    echo "    sudo ./scripts/dev-secrets.sh"
 fi
 
 cat <<'EOF'

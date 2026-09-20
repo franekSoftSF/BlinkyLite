@@ -158,7 +158,12 @@ public sealed class ChainedSecretStore(params ISecretStore[] stores) : ISecretSt
 
 public static class SecretFiles
 {
-    /// <summary>True if anybody but the owner can read the file.</summary>
+    /// <summary>
+    /// True if anybody outside the file's owner and group can read or write it.
+    /// The group is deliberate: the database container (uid 999) and the server
+    /// (uid 1654) run as different users and share the database password
+    /// through one file, so group access is the mechanism, not the mistake.
+    /// </summary>
     public static bool IsTooOpen(UnixFileMode mode) =>
-        (mode & (UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.OtherRead | UnixFileMode.OtherWrite)) != 0;
+        (mode & (UnixFileMode.OtherRead | UnixFileMode.OtherWrite)) != 0;
 }
