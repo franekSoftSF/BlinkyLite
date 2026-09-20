@@ -347,6 +347,7 @@ Zamknięte 2026-09-19, decyzje właściciela:
 | R-03 | WinSCard / CertEnroll z .NET 10 na Windows ARM64 nikt nie uruchomił | 0001 publikuje `win-arm64`, 0053 dowodzi na sprzęcie |
 | R-05 | Usługa Windows w MSIX (`desktop6:Service`) na docelowym Windows Server | 0051 z zapisaną rezerwą: skrypt instalacyjny |
 | R-06 | Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na uprawnienia Graph i ruchu wychodzącego z serwera | wymagania spisane w [09](09-expiry-notification.md#co-przygotowuje-administrator-raz); konto bez Entra → audyt, nie awaria |
+| R-07 | Pierwsze wydanie kończy się `0x80094012 CERTSRV_E_TEMPLATE_DENIED`, bo przy EOBO CA sprawdza uprawnienia **posiadacza karty** (`RequesterName`), a nie operatora — a `Enroll` na szablonie mają dziś tylko grupy operatorów | [11](11-wymagania-i-wdrozenie.md): posiadacze kart dostają `Enroll` osobną grupą; 0021 tłumaczy ten kod na „to nie operator, to posiadacz”, zamiast pokazywać surowy HRESULT |
 
 ## Niezweryfikowane
 

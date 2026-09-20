@@ -417,6 +417,11 @@
       "id": "R-06",
       "impact": "Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na Graph i ruchu wychodzącego z serwera",
       "handling": "wymagania w docs/09; konto bez Entra -> audyt cert.expiry-notify-failed, nie awaria"
+    },
+    {
+      "id": "R-07",
+      "impact": "Pierwsze wydanie konczy sie 0x80094012 CERTSRV_E_TEMPLATE_DENIED, bo przy EOBO CA sprawdza uprawnienia posiadacza karty (RequesterName), a nie operatora - a na szablonie Enroll maja tylko grupy operatorow",
+      "handling": "docs/11: posiadacze kart dostaja Enroll przez osobna grupe; 0021 pokazuje ten kod bledu jako 'to nie operator, to posiadacz' zamiast surowego HRESULT-u"
     }
   ],
   "patches": [

@@ -52,11 +52,37 @@ Get-ADGroup 'BlinkyLite-SecurityOfficers' | Select-Object -ExpandProperty SID
 | Nazwa konfiguracji CA | `HOST\CA CN`, np. `SUBCA\Corp Issuing CA` |
 | Konfiguracja profili | **na serwerze**, w `appsettings.json` (`Issuance:Profiles`, D-21) — stacje nie mają nazw szablonów i nie trzeba ich obchodzić przy zmianie |
 
-W labie EMSDEMOLAB (20 września 2026) szablon docelowy to jeden dla wszystkich,
-osobny dla BlinkyLite: nazwa `EMSDEMOLABYubicoSmartcardLogon` (wyświetlana:
-*EMSDEMOLAB Yubico Smartcard Logon*). **Nazwa bez spacji jest tą, która idzie
-do `Issuance:Profiles` i do atrybutu `CertificateTemplate:` przy `Submit`** —
-nazwa wyświetlana nie działa.
+### Wnioskodawcą jest posiadacz karty, nie operator
+
+Przy EOBO CA sprawdza uprawnienia **osoby z `RequesterName`**, a nie operatora,
+który wysyła żądanie. Posiadacze kart muszą więc mieć `Enroll` na szablonie
+docelowym — najlepiej przez osobną grupę, a nie przez `Domain Users`, żeby
+*Restricted Enrollment Agents* na CA miało czego pilnować. Bez tego `Submit`
+kończy się `0x80094012 CERTSRV_E_TEMPLATE_DENIED`, a komunikat mówi o „bieżącym
+użytkowniku”, czyli wygląda na problem z operatorem.
+
+### Zmierzone w labie EMSDEMOLAB (20 września 2026)
+
+Szablon docelowy jest jeden dla wszystkich i osobny dla BlinkyLite: nazwa
+`EMSDEMOLABYubicoSmartcardLogon` (wyświetlana: *EMSDEMOLAB Yubico Smartcard
+Logon*). **Nazwa bez spacji jest tą, która idzie do `Issuance:Profiles` i do
+atrybutu `CertificateTemplate:` przy `Submit`** — nazwa wyświetlana nie działa.
+
+`certutil -v -template` potwierdził na nim:
+
+| Właściwość | Wartość | Dlaczego o nią chodzi |
+|---|---|---|
+| `TemplatePropRASignatureCount` | `1` | EOBO wymaga podpisu agenta |
+| `TemplatePropRAEKUs` | `1.3.6.1.4.1.311.20.2.1` | sam licznik bez tego EKU znaczyłby „jakikolwiek podpis” |
+| `TemplatePropSubjectNameFlags` | `82000000` — `ALT_REQUIRE_UPN` + `REQUIRE_DIRECTORY_PATH`, bez `0x1` | podmiot z AD, więc będzie rozszerzenie SID |
+| `TemplatePropMinimumKeySize` | `2048` | tyle wydajemy |
+| `TemplatePropEKUs` | Client Authentication + Smart Card Logon | bez tego Windows nie zaloguje |
+| Uprawnienia | `Enroll` + `Read` dla `BlinkyLiteAdmin` i `BlinkyLiteSecurityOfficer` | te same SID-y, co role serwera (D-17) |
+| Ważność | 1 rok, odnowienie 6 tygodni | progi powiadomień 0060 (30 i 7 dni) muszą być krótsze |
+
+`TemplatePropCryptoProviders = Microsoft Smart Card Key Storage Provider` nie
+dotyczy tej ścieżki: klucz powstaje na YubiKeyu, a CA nie sprawdza dostawcy —
+sprawdza atestację, którą weryfikuje serwer.
 Certyfikat Enrollment Agenta wystawia `EMSDEMOLAB-Sub-CA`; operator
 `EMS-AD\adm_s.frankiewicz` ma go w `CurrentUser\My` z kluczem prywatnym,
 ważny do 19 września 2028.
