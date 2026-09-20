@@ -1,12 +1,14 @@
 # Status projektu — BlinkyLite
 
-**Ostatnia aktualizacja:** 2026-09-19
-**Faza:** 0 — Fundament
-**Ogólnie:** stoją szkielet (0001), baza (0002) i serwer (0003): logowanie z
-AD daje JWT z rolami, każdy endpoint ma politykę, sekrety mają koperty
-AES-256-GCM przywiązane do karty i wydania, a serwer nie wystartuje bez TLS
-ani przy rozjeździe migracji — 164 testy jednostkowe i 84 na PostgreSQL 16.
-Nie ma jeszcze logiki wydania ani kontaktu z prawdziwym AD
+**Ostatnia aktualizacja:** 2026-09-20
+**Faza:** 1 — Karta
+**Ogólnie:** stoi fundament (0001–0005) i warstwa PIV z Blinky (0010):
+logowanie z AD daje JWT z rolami, każdy endpoint ma politykę, sekrety są poza
+konfiguracją i w kopertach AES-256-GCM przywiązanych do karty i wydania, a
+kod rozmawiający z kluczem jest w repozytorium i przechodzi testy na zapisach
+z prawdziwych tokenów — 346 testów jednostkowych i 84 na PostgreSQL 16, CI
+zielone. Nie ma jeszcze silnika wydania ani kontaktu z prawdziwym AD, CA i
+kartą
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
 się zgadzać; `status.json` czyta build albo dashboard. Definicje ukończenia są
@@ -124,7 +126,21 @@ Stan `partly-done`: ostrzeżenie o zbyt szerokich prawach pliku działa na
 Linuksie (prawa POSIX), a na Windows ACL ustawia i sprawdza instalator —
 projekt serwera jest wieloplatformowy i nie ma w nim API do ACL (0051).
 
-Nie istnieje: logika wydania, warstwa PIV, kontakt z prawdziwym AD i CA.
+Od 0010 (20 września 2026) w repozytorium jest warstwa PIV: 34 pliki z
+`Blinky.Piv` (PC/SC, komendy APDU, management key, obiekty karty, weryfikacja
+atestacji Yubico z przypiętymi rootami) i 24 pliki testów z dwoma zapisami
+rozmów z prawdziwymi kluczami — 5.4.3, 5.7.1, 5.7.2 Bio i wirtualny czytnik
+Windows Hello. Przeniesione skryptem z przemianowaniem przestrzeni nazw, bez
+przepisywania ręką. 346 testów jednostkowych przechodzi bez sprzętu.
+
+Jedyna zmiana w treści: **`FF` (SET MANAGEMENT KEY) dodane do maskowania
+APDU**. W Blinky go brakuje, a komentarz przy `DB` przypisuje sobie ochronę
+management key — `DB` zapisuje tylko kopię do PRINTED. Nieudana transmisja
+`FF` wypisałaby management key karty w logu. Test to sprawdza. Pochodzenie
+kodu jest w `NOTICE`.
+
+Nie istnieje: silnik wydania, klient WPF, moduł PowerShell, kontakt z
+prawdziwym AD, CA i kartą.
 
 ## Stany
 
@@ -147,7 +163,7 @@ Nie istnieje: logika wydania, warstwa PIV, kontakt z prawdziwym AD i CA.
 | 0003 | 0 | Serwer | `done-unverified` |
 | 0004 | 0 | Języki EN / DE / SV / PL | `done` |
 | 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `partly-done` |
-| 0010 | 1 | Import `Blinky.Piv` | `open` |
+| 0010 | 1 | Import `Blinky.Piv` | `done` |
 | 0011 | 1 | Personalizacja i klucz | `open` |
 | 0020 | 2 | API wydań | `open` |
 | 0021 | 2 | EOBO | `open` |

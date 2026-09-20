@@ -1,0 +1,26 @@
+BlinkyLite
+Copyright 2026 Szymon Frankiewicz
+
+Ten produkt zawiera kod przeniesiony z projektu Blinky
+(https://github.com/franekSoftSF/blinky), na licencji Apache-2.0,
+Copyright 2026 Szymon Frankiewicz:
+
+- `src/BlinkyLite.Piv` — warstwa PIV: PC/SC, komendy APDU, management key,
+  obiekty karty i weryfikacja atestacji Yubico (z `Blinky.Piv`, patch 0010).
+- `tests/BlinkyLite.UnitTests/Piv` i `tests/BlinkyLite.UnitTests/Fixtures` —
+  testy tej warstwy wraz z zapisami rozmów z prawdziwymi kluczami.
+- `src/BlinkyLite.Server/Data/ReadSessions.cs` — sposób sprawdzania mapowań
+  NHibernate przy starcie (z `Blinky.Infrastructure/SchemaValidator.cs`).
+- Koperta sekretu AES-256-GCM w `src/BlinkyLite.Server/Secrets` — schemat z
+  `Blinky.Api/Secrets/PukEscrow.cs`.
+
+Zmiany względem oryginału są opisane w `docs/06-from-blinky.md`.
+
+Osadzone certyfikaty w `src/BlinkyLite.Piv/Attestation/*.pem` to publiczne
+certyfikaty główne atestacji Yubico. Nazwy „YubiKey”, „Yubico” i „PIV” są
+użyte opisowo; BlinkyLite nie jest powiązany z Yubico ani przez Yubico
+wspierany.
+
+Licencja BlinkyLite jest jeszcze nieustalona (pytanie Q-02 w
+`docs/STATUS.md`); dopóki nie zostanie wybrana, przeniesiony kod pozostaje na
+warunkach Apache-2.0.

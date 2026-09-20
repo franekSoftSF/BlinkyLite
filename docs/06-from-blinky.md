@@ -8,18 +8,31 @@ zaczyna od zera. Ścieżki niżej są względem repozytorium Blinky.
 
 | Źródło w Blinky | Cel w BlinkyLite | Uwagi |
 |---|---|---|
-| `src/Blinky.Piv/**` (bez `PivBiometricOperations` na start) | `src/BlinkyLite.Piv` | PC/SC, APDU, `ManagementKey` (3DES z trzech DES — .NET odrzuca fabryczny klucz jako słaby), `PivCardObjects` (CHUID, CCC, PRINTED, ADMIN DATA), `PivConnection` (odzyskiwanie po `SCARD_W_RESET_CARD`), `PivSignatureGenerator` |
+| `src/Blinky.Piv/**` | `src/BlinkyLite.Piv` — **przeniesione w 0010** | PC/SC, APDU, `ManagementKey` (3DES z trzech DES — .NET odrzuca fabryczny klucz jako słaby), `PivCardObjects` (CHUID, CCC, PRINTED, ADMIN DATA), `PivConnection` (odzyskiwanie po `SCARD_W_RESET_CARD`), `PivSignatureGenerator` |
 | `src/Blinky.Piv/Attestation/**` + trzy pliki PEM | `src/BlinkyLite.Piv/Attestation` | dwa przypięte rooty Yubico (PIV Root CA 263751 i Attestation Root 1) + przypięte pośrednie dla Root 1 |
-| `src/Blinky.Piv/ApduRedaction.cs` | to samo | **dodać `FF`** do listy redagowanych INS |
+| `src/Blinky.Piv/ApduRedaction.cs` | to samo | **`FF` dodane** do listy redagowanych INS (0010) — w Blinky go brakuje, a `SET MANAGEMENT KEY` niesie klucz jawnie |
 | `src/Blinky.Contracts/PinRules.cs` | `src/BlinkyLite.Contracts` | reguły PIN bez zmian |
 | `src/Blinky.Api/Secrets/PukEscrow.cs` (część kryptograficzna) | `src/BlinkyLite.Server/Secrets` | koperta AES-256-GCM, klucz per koperta z HKDF, AAD; bez checkout/commit — w Lite robi to stan wydania |
 | `src/Blinky.Agent.Service/.../CardEnrolment.cs` | wzorzec dla `BlinkyLite.Issuance` | kolejność kroków, ponowne pytanie o PIN przy `6982`, obsługa czytnika, który padł |
 | `src/Blinky.Pki/Adcs/CmcRequest.cs`, `AdcsConnector/EnrolmentAgentSigner.cs`, `CertificateServices.cs` | rezerwa dla D-04 | ręczny CMC działa w labie; CertEnroll jest ścieżką główną do potwierdzenia |
 | `src/Blinky.Agent.Ui/Theme.cs`, `Strings.cs`, `Themes/*.xaml`, `PinDialog.*` | `src/BlinkyLite.Client` | motyw, lokalizacja PL/EN, okno PIN |
-| `tests/.../ApduRedactionTests.cs`, `FixtureSafetyTests.cs`, testy z transkryptami | `tests/BlinkyLite.UnitTests` | transkrypty APDU nie są commitowane (serial + certyfikaty) |
-
+| `tests/.../*` dotyczące PIV (24 pliki) + `Fixtures/` | `tests/BlinkyLite.UnitTests/Piv` — **przeniesione w 0010** | dwa zapisy rozmów z prawdziwymi kluczami (5.4.3, 5.7.1, 5.7.2 Bio, wirtualny czytnik) są w Blinky commitowane i przyszły razem z testami; nowe zapisy z własnego sprzętu już nie |
 | `src/Blinky.Infrastructure/SchemaValidator.cs` | `src/BlinkyLite.Server/Data` | porównanie mapowań z bazą przy starcie; loguje i działa dalej zamiast pętli restartów |
 | `src/Blinky.Infrastructure` — konfiguracja NHibernate + Npgsql (dialekt, `timestamptz`, `bytea`) | `src/BlinkyLite.Server/Data` | sama konfiguracja sesji; mapowania piszemy od nowa we FluentNHibernate |
+
+### Co dokładnie przyszło w 0010
+
+34 pliki warstwy PIV i 24 pliki testów, skopiowane skryptem i przemianowane
+(`Blinky.Piv` → `BlinkyLite.Piv`) — żadnego przepisywania ręką, bo tam ginie
+zmiana, której nikt potem nie zauważy. 180 testów przechodzi bez sprzętu.
+
+Nie przyszedł jeden test (`KeyAlgorithmChoiceTests`): ciągnie `Blinky.Agent.Service`
+i `Blinky.Contracts`, więc należy do silnika wydania (0011), nie do warstwy PIV.
+
+Jedyna zmiana w treści kodu: **`FF` w `ApduRedaction`**. W Blinky komentarz
+przy `DB` przypisuje sobie ochronę management key, ale `DB` zapisuje tylko
+kopię do PRINTED; nieudana transmisja `SET MANAGEMENT KEY` wypisałaby klucz
+karty w hex. Pochodzenie kodu jest odnotowane w `NOTICE`.
 
 Czego **nie** przenosimy: `SchemaTool` (w BlinkyLite schemat to ręczne
 skrypty SQL, a mapowania się do nich dopasowują — odwrotnie niż w Blinky),
