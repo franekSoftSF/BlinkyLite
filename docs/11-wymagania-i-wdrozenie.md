@@ -52,8 +52,11 @@ Get-ADGroup 'BlinkyLite-SecurityOfficers' | Select-Object -ExpandProperty SID
 | Nazwa konfiguracji CA | `HOST\CA CN`, np. `SUBCA\Corp Issuing CA` |
 | Konfiguracja profili | **na serwerze**, w `appsettings.json` (`Issuance:Profiles`, D-21) — stacje nie mają nazw szablonów i nie trzeba ich obchodzić przy zmianie |
 
-W labie EMSDEMOLAB (20 września 2026) szablon docelowy to jeden dla wszystkich:
-nazwa `EMSDEMOLABSmartcardLogon` (wyświetlana: *EMSDEMOLAB Smartcard Logon*).
+W labie EMSDEMOLAB (20 września 2026) szablon docelowy to jeden dla wszystkich,
+osobny dla BlinkyLite: nazwa `EMSDEMOLABYubicoSmartcardLogon` (wyświetlana:
+*EMSDEMOLAB Yubico Smartcard Logon*). **Nazwa bez spacji jest tą, która idzie
+do `Issuance:Profiles` i do atrybutu `CertificateTemplate:` przy `Submit`** —
+nazwa wyświetlana nie działa.
 Certyfikat Enrollment Agenta wystawia `EMSDEMOLAB-Sub-CA`; operator
 `EMS-AD\adm_s.frankiewicz` ma go w `CurrentUser\My` z kluczem prywatnym,
 ważny do 19 września 2028.
