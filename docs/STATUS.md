@@ -7,7 +7,8 @@ logowanie z AD daje JWT z rolami, każdy endpoint ma politykę, sekrety są poza
 konfiguracją i w kopertach AES-256-GCM przywiązanych do karty i wydania, a
 kod rozmawiający z kluczem jest w repozytorium i przechodzi testy na zapisach
 z prawdziwych tokenów — 346 testów jednostkowych i 84 na PostgreSQL 16, CI
-zielone. Nie ma jeszcze silnika wydania ani kontaktu z prawdziwym AD, CA i
+zielone. **Serwer wstaje jednym `docker compose up`** (0050), razem z bazą i
+migracjami. Nie ma jeszcze silnika wydania ani kontaktu z prawdziwym AD, CA i
 kartą
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
@@ -139,6 +140,29 @@ management key — `DB` zapisuje tylko kopię do PRINTED. Nieudana transmisja
 `FF` wypisałaby management key karty w logu. Test to sprawdza. Pochodzenie
 kodu jest w `NOTICE`.
 
+Od 0050 (20 września 2026) serwer **da się uruchomić jednym poleceniem**:
+`docker compose up -d --build` stawia PostgreSQL z trzema rolami, stosuje
+migracje jednorazowym kontenerem jako `blinkylite_owner` i dopiero potem
+startuje serwer jako `blinkylite_app`. Sekrety to Docker secrets, TLS to para
+PEM (klucz też jest sekretem), a wymagania i kroki wdrożenia są w
+[11](11-wymagania-i-wdrozenie.md). Sprawdzone na tej maszynie:
+
+- `docker compose up -d --build` od zera: baza zdrowa, 5 migracji zastosowanych
+  w kontenerze, serwer słucha na 8443, w logu `schema ok`;
+- `/health` odpowiada po HTTPS, `/api/auth/me` bez tokenu daje 401;
+- logowanie przy nieosiągalnym kontrolerze domeny daje 503
+  `error.directory.unavailable` — czyli `libldap` naprawdę się ładuje, a nie
+  wywala się na braku biblioteki.
+
+Trzy rzeczy wyszły dopiero przy uruchomieniu i są poprawione: `--migrate`
+wykonywał się **przed** wczytaniem sekretów, więc nie dostawał hasła
+właściciela bazy; brak `.dockerignore` wpuszczał do obrazu katalogi `obj/` z
+Windows i psuł build; `psql -c` nie rozwija zmiennych, więc skrypt ustawiający
+hasła ról kończył się cicho bez ustawienia czegokolwiek.
+
+Stan `partly-done`: definicja ukończenia mówi „działające logowanie”, a tego
+nie da się potwierdzić bez prawdziwego AD.
+
 Nie istnieje: silnik wydania, klient WPF, moduł PowerShell, kontakt z
 prawdziwym AD, CA i kartą.
 
@@ -171,7 +195,7 @@ prawdziwym AD, CA i kartą.
 | 0023 | 2 | Klient WPF — wydanie | `open` |
 | 0030 | 3 | Przeglądarka i weryfikacja w WPF | `open` |
 | 0040 | 4 | Moduł PowerShell | `open` |
-| 0050 | 5 | Docker | `open` |
+| 0050 | 5 | Docker | `partly-done` |
 | 0051 | 5 | Serwer Windows — MSIX | `open` |
 | 0052 | 5 | Klient — MSIX | `open` |
 | 0053 | 5 | Test end-to-end | `open` |

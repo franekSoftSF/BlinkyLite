@@ -1,0 +1,21 @@
+# Without this, COPY drops the host's bin/ and obj/ into the image on top of
+# the restore that has just run there - and the build fails looking for a
+# package at a Windows path that does not exist in the container.
+**/bin/
+**/obj/
+artifacts/
+
+.git/
+.github/
+.vs/
+.idea/
+
+# Never in an image: the KEK, the TLS key and the database passwords.
+secrets/
+certs/
+.env
+
+docs/
+tests/
+packaging/
+*.md

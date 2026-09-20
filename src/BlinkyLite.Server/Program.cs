@@ -18,11 +18,6 @@ builder.Services.AddSerilog((services, logger) => logger
     .Enrich.FromLogContext()
     .WriteTo.Console());
 
-if (args.Contains("--migrate", StringComparer.Ordinal))
-{
-    return await MigrateAsync(builder.Configuration);
-}
-
 if (Array.IndexOf(args, "--protect-secret") is var flag and >= 0)
 {
     if (flag + 1 >= args.Length)
@@ -55,6 +50,14 @@ using (var loggers = LoggerFactory.Create(logging => logging.AddSimpleConsole())
         loggers.CreateLogger("BlinkyLite").LogCritical("{Reason} The server will not start.", e.Message);
         return ServerSetup.ExitConfiguration;
     }
+}
+
+// After the secrets are in place: --migrate needs the owner password from the
+// secret store too, and reading it before this point is how the first compose
+// run failed with "no password has been provided".
+if (args.Contains("--migrate", StringComparer.Ordinal))
+{
+    return await MigrateAsync(builder.Configuration);
 }
 
 builder.Services.AddBlinkyLiteProblems();

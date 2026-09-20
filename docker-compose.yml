@@ -1,0 +1,135 @@
+name: blinkylite
+
+# One command brings up the database, applies the migrations and starts the
+# server:  docker compose up -d --build
+#
+# Before the first run:
+#   ./scripts/dev-secrets.sh          # random secrets into ./secrets
+#   ./scripts/dev-certs.sh blinkylite.example.com
+#   cp .env.example .env              # then fill in the directory and the role SIDs
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: blinkylite
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres-superuser-password
+    secrets:
+      - postgres-superuser-password
+      - blinkylite-db-owner-password
+      - blinkylite-db-app-password
+      - blinkylite-db-readonly-password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Runs once, on an empty data directory: the roles, then their passwords.
+      # CREATE ROLE needs a superuser, which the server neither has nor should.
+      - ./db/init/00_roles.sql:/docker-entrypoint-initdb.d/10-roles.sql:ro
+      - ./docker/postgres/20-passwords.sh:/docker-entrypoint-initdb.d/20-passwords.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d blinkylite"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # A separate one-shot service, so that the server never starts against a
+  # schema it was not built for - and so that migrations run as the owner role
+  # while the server runs as the application role.
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["--migrate"]
+    environment:
+      ConnectionStrings__Owner: Host=db;Database=blinkylite;Username=blinkylite_owner
+    secrets:
+      - source: blinkylite-db-owner-password
+        uid: "1654"
+        mode: "0400"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${BLINKYLITE_PORT:-8443}:8443"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # The base image sets 8080; emptied so that the only listener is the
+      # HTTPS one below and the log does not say it is overriding an address.
+      ASPNETCORE_HTTP_PORTS: ""
+      # TLS is not optional: the operator's AD password and the JWT travel on
+      # this connection. A PEM pair, because the key is a Docker secret and a
+      # PFX would need its password somewhere as well.
+      Kestrel__Endpoints__Https__Url: https://*:8443
+      Kestrel__Endpoints__Https__Certificate__Path: /certs/blinkylite.crt
+      Kestrel__Endpoints__Https__Certificate__KeyPath: /run/secrets/blinkylite-tls-key
+      # No password here; the server adds it from the secret (D-18).
+      ConnectionStrings__App: Host=db;Database=blinkylite;Username=blinkylite_app
+      Ldap__Server: ${BLINKYLITE_LDAP_SERVER:-}
+      Ldap__Port: ${BLINKYLITE_LDAP_PORT:-636}
+      Ldap__Transport: ${BLINKYLITE_LDAP_TRANSPORT:-Ldaps}
+      Ldap__BaseDn: ${BLINKYLITE_LDAP_BASE_DN:-}
+      Ldap__NetBiosDomain: ${BLINKYLITE_NETBIOS_DOMAIN:-}
+      Ldap__ServiceAccount: ${BLINKYLITE_LDAP_SERVICE_ACCOUNT:-}
+      # AD groups by SID; Admin and SecurityOfficer are the Enrollment Agent
+      # groups on the CA (D-17).
+      Roles__Admin__0: ${BLINKYLITE_GROUP_ADMIN:-}
+      Roles__SecurityOfficer__0: ${BLINKYLITE_GROUP_SECURITY_OFFICER:-}
+      Roles__Helpdesk__0: ${BLINKYLITE_GROUP_HELPDESK:-}
+      Secrets__CurrentKekVersion: "1"
+    secrets:
+      # Compose outside swarm IGNORES uid and mode: a file secret is a bind
+      # mount and keeps the host's owner and permissions. They are kept here
+      # for a swarm deployment; on a plain Linux host what matters is that the
+      # files belong to uid 1654 (scripts/dev-secrets.sh does that when run as
+      # root). On Docker Desktop the mount reports 0777 and the server warns
+      # about it on every start - that warning is about the host, not a bug.
+      - source: blinkylite-jwt-signing-key
+        uid: "1654"
+        mode: "0400"
+      - source: blinkylite-kek-1
+        uid: "1654"
+        mode: "0400"
+      - source: blinkylite-db-app-password
+        uid: "1654"
+        mode: "0400"
+      - source: blinkylite-ldap-service-password
+        uid: "1654"
+        mode: "0400"
+      - source: blinkylite-tls-key
+        uid: "1654"
+        mode: "0400"
+    volumes:
+      # The certificate is public; only the key is a secret. A corporate CA for
+      # LDAPS goes into ./certs/ca/ldap-ca.crt.
+      - ./certs:/certs:ro
+    restart: unless-stopped
+
+volumes:
+  db-data:
+
+secrets:
+  postgres-superuser-password:
+    file: ./secrets/postgres-superuser-password
+  blinkylite-db-owner-password:
+    file: ./secrets/blinkylite-db-owner-password
+  blinkylite-db-app-password:
+    file: ./secrets/blinkylite-db-app-password
+  blinkylite-db-readonly-password:
+    file: ./secrets/blinkylite-db-readonly-password
+  blinkylite-jwt-signing-key:
+    file: ./secrets/blinkylite-jwt-signing-key
+  blinkylite-kek-1:
+    file: ./secrets/blinkylite-kek-1
+  blinkylite-ldap-service-password:
+    file: ./secrets/blinkylite-ldap-service-password
+  blinkylite-tls-key:
+    file: ./certs/blinkylite.key

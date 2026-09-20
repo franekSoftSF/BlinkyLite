@@ -158,7 +158,7 @@ docker compose up -d --build       # serwer + postgres
 - **`docs/STATUS.md` i `docs/status.json` muszą się zgadzać**, łącznie z
   `status.updated`, przy każdej zmianie stanu patcha.
 - Nowa reguła z pomiaru na sprzęcie trafia do `docs/06-from-blinky.md` (sekcja
-  reguł) albo, jeśli jest nowa dla BlinkyLite, do nowego `docs/11-hardware-notes.md`.
+  reguł) albo, jeśli jest nowa dla BlinkyLite, do nowego `docs/12-hardware-notes.md`.
   Rzecz, która okazała się błędna, jest oznaczana jako błędna, nie cicho
   usuwana.
 

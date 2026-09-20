@@ -11,6 +11,10 @@ TestResults/
 
 # Local config and secrets
 .env
+# Docker secrets and the TLS key of a stack: the KEK in here is the only thing
+# standing between a database dump and every PUK in it.
+secrets/
+certs/
 appsettings.*.local.json
 *.pfx
 *.p12
