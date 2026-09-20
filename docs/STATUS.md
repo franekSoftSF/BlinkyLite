@@ -292,8 +292,10 @@ To domyka zarazem R-07: przy EOBO wystarczyły prawa **agenta**. Posiadacz karty
 nie ma `Enroll` na szablonie i nie potrzebował go — moje wcześniejsze
 ostrzeżenie o `0x80094012` było niepotrzebne.
 
-Czego brakuje do `done`: **użytkownik nie zalogował się jeszcze tą kartą do
-Windows**. To jest dowód końcowy z definicji ukończenia i tylko on liczy.
+**Użytkownik zalogował się tą kartą do Windows w domenie** — to jest dowód
+końcowy z definicji ukończenia i jedyny, który liczy. Znaczy, że SID w
+rozszerzeniu, CHUID i CCC, polityka PIN i łańcuch zaufania zgadzają się na
+tyle, że przyjmuje je kontroler domeny, a nie tylko nasze testy.
 
 Nie istnieje: klient WPF, moduł PowerShell, przeglądarka i weryfikacja.
 
@@ -321,8 +323,9 @@ Nie istnieje: klient WPF, moduł PowerShell, przeglądarka i weryfikacja.
 | 0010 | 1 | Import `Blinky.Piv` | `done` |
 | 0011 | 1 | Personalizacja i klucz | `done` |
 | 0020 | 2 | API wydań | `done-unverified` |
-| 0021 | 2 | EOBO | `done-unverified` |
+| 0021 | 2 | EOBO | `done` |
 | 0022 | 2 | Odzyskiwanie | `open` |
+| 0025 | 2 | Logowanie zintegrowane (Negotiate/Kerberos) | `open` |
 | 0023 | 2 | Klient WPF — wydanie | `open` |
 | 0030 | 3 | Przeglądarka i weryfikacja w WPF | `open` |
 | 0040 | 4 | Moduł PowerShell | `open` |
@@ -361,6 +364,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-18 | Sekrety serwera (KEK, klucz JWT, hasło LDAP, hasło do bazy) tylko z pliku sekretu (Docker secret / DPAPI maszyny) albo zmiennej; wpisane w `appsettings.json` zatrzymują start |
 | D-19 | Dane BlinkyLite dają się wyeksportować do Blinky; sekrety w paczce zaszyfrowane do certyfikatu Blinky |
 | D-20 | Akcent klienta `#1DB954`, oba motywy wg ustawienia Windows; role koloru rozdzielone dla kontrastu |
+| D-23 | Stacja loguje się do serwera **tożsamością Windows operatora** (Negotiate/Kerberos); hasło AD zostaje jako droga zapasowa — zmienia „Poza zakresem", gdzie Negotiate był odrzucony |
 | D-22 | Reset karty do stanu fabrycznego **tylko w narzędziu stacji testowej** (`CardLab reset --yes`), nie w kliencie ani w module PowerShell; zakres produktu bez zmian |
 | D-21 | Profile konfiguruje odgórnie admin na **serwerze**, klient dostaje je przez `GET /api/profiles` i podaje nazwę profilu; szablon do wiersza wpisuje serwer ze swojej konfiguracji; jeden profil = brak pytania |
 
@@ -397,6 +401,7 @@ Zamknięte 2026-09-19, decyzje właściciela:
 | R-03 | WinSCard / CertEnroll z .NET 10 na Windows ARM64 nikt nie uruchomił | 0001 publikuje `win-arm64`, 0053 dowodzi na sprzęcie |
 | R-05 | Usługa Windows w MSIX (`desktop6:Service`) na docelowym Windows Server | 0051 z zapisaną rezerwą: skrypt instalacyjny |
 | R-06 | Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na uprawnienia Graph i ruchu wychodzącego z serwera | wymagania spisane w [09](09-expiry-notification.md#co-przygotowuje-administrator-raz); konto bez Entra → audyt, nie awaria |
+| R-08 | Negotiate na Kestrelu w kontenerze linuksowym wymaga keytaba dla SPN `HTTP/blinkylite…` i działającego `krb5.conf`; bez tego stacja dostaje 401 bez wyjaśnienia i wygląda to na błąd klienta | 0025: wymagania keytaba w [11](11-wymagania-i-wdrozenie.md) **przed** kodem; logowanie hasłem zostaje jako droga zapasowa |
 | R-07 | **Rozstrzygnięte** 20 września 2026, na korzyść właściciela: przy EOBO wystarczają prawa agenta. Żądanie 223 przeszło, choć posiadacz karty nie ma `Enroll` na szablonie | zamknięte; zostaje jako zapis, bo błędna diagnoza kosztowałaby nadanie uprawnień, które nie są potrzebne |
 
 ## Niezweryfikowane

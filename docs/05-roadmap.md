@@ -33,6 +33,7 @@ niezbędne do „wydaj klucz, zapisz PUK, zweryfikuj kto co dostał”, jest
 |---|---|---|
 | 0020 | API wydań | endpointy dla każdego kroku z [02](02-issuance.md) na funkcjach `bl_*`; PUK i MK wygenerowane przed kartą; serwer weryfikuje atestację i przy `/complete` sprawdza SPKI == atestowany klucz oraz SID/UPN == cel; podmieniony CSR odrzucony (test). **`GET /api/profiles`** oddaje profile z konfiguracji serwera (D-21), a żądanie wydania niesie nazwę profilu — nazwa szablonu przysłana przez klienta jest ignorowana, profil spoza listy to odmowa (test) |
 | 0021 | EOBO | certyfikat EA wykryty i sprawdzony przed kartą; PKCS#10 z karty → CertEnroll CMC z `RequesterName` i podpisem EA → `ICertRequest3.Submit`; certyfikat zapisany na kartę i odczytany. **Dowód:** użytkownik loguje się do Windows w domenie tą kartą, a certyfikat ma jego SID, nie operatora. Jeśli CertEnroll odmówi (Q-01) — builder z Blinky i zapisany powód |
+| 0025 | Logowanie zintegrowane | stacja loguje się do serwera tożsamością Windows operatora (Negotiate/Kerberos), bez wpisywania hasła AD; role dalej z SID-ów grup, token dalej wydaje serwer; **hasło zostaje jako droga zapasowa**, a brak keytaba na serwerze daje czytelny komunikat, nie ciche 401 (D-23, R-08) |
 | 0022 | Odzyskiwanie | każdy wiersz tabeli „Odzyskiwanie” z [02](02-issuance.md#odzyskiwanie) odtworzony przerwaniem procesu w tym miejscu i wznowiony; ponowne wydanie znanej karty |
 | 0023 | Klient WPF — wydanie | logowanie (token tylko w pamięci), wybór użytkownika i profilu, postęp krok po kroku, okno PIN z osobnym przełącznikiem języka, komunikaty z katalogu `Messages`; motyw jasny i ciemny wg ustawienia Windows z ręcznym przełącznikiem, akcent `#1DB954` wg tabeli w [02](02-issuance.md#kolory-d-20) — **test liczy kontrast** każdej pary kolor/tło z motywów i wymaga ≥ 4.5:1 dla tekstu; stan wydania ma też kształt, nie tylko kolor |
 
@@ -82,6 +83,5 @@ poniższe nie jest odłożone na później, tylko nie należy do tego narzędzia
 | Zmiana / rotacja PUK, odblokowanie PIN, dalsze życie karty | **Blinky** |
 | Reset PIV **w produkcie**, `SET PIN RETRIES` | Blinky; w BlinkyLite reset istnieje wyłącznie w narzędziu stacji testowej (`CardLab reset --yes`, D-22) i nie wchodzi do klienta ani do modułu |
 | Odnowienia, unieważnienia, CRL | ADCS / Blinky |
-| Negotiate / Kerberos SSO | — (LDAPS bind wystarcza) |
 | Ekrany edycji profili i ról | `appsettings.json` serwera |
 | Narzędzie rotacji KEK, limity odsłonięć | — (kolumna `kek_version` jest, audyt jest) |
