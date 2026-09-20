@@ -41,7 +41,7 @@
     "phase": 1,
     "phaseTitle": "Karta",
     "state": "open",
-    "summary": "Szkielet (0001), baza (0002), serwer (0003), cztery języki (0004), sekrety poza konfiguracją (0005) i warstwa PIV z Blinky (0010). 346 testów jednostkowych, 84 na PostgreSQL 16, CI zielone. Serwer wstaje jednym docker compose (0050). Nie ma jeszcze silnika wydania ani kontaktu z AD, CA i kartą.",
+    "summary": "Fundament (0001-0005), warstwa PIV (0010) i wdrozenie w Dockerze (0050). Serwer dziala na prawdziwej domenie: logowanie AD -> JWT z rolami potwierdzone na kontenerze LXC. 347 testow jednostkowych, 84 na PostgreSQL 16, CI zielone. Nie ma jeszcze silnika wydania ani kontaktu z CA i karta.",
     "nothingIssuedYet": true
   },
   "stateLegend": {
@@ -445,10 +445,10 @@
       "id": "0003",
       "phase": 0,
       "title": "Serwer",
-      "state": "done-unverified",
+      "state": "done",
       "owner": "cloud-ai",
-      "proof": "2026-09-19: logowanie LDAPS bind -> JWT HS256 30 min z rolami z grup AD (po SID), polityki CanIssue/CanList/CanViewDetails/CanRevealPuk/CanRevealMgmtKey/CanAudit, wyszukiwanie uzytkownika kontem serwisowym, koperty AES-256-GCM (HKDF na koperte, AAD kind|serial|issuance_id), bledy jako ProblemDetails code+args. 112 testow jednostkowych: kazdy endpoint z polityka, zle haslo 401 + auth.denied bez SID, brak grupy 403 z SID, puste haslo nie dociera do LDAP, 5 prob blokuje konto przed AD, token cudzym kluczem i wygasly odrzucone, Helpdesk bez katalogu, koperta w innym wierszu sie nie otwiera, zmieniony bajt wykryty, rotacja KEK czyta stare, brak pola i kolumny z PIN. 84 testy bazy z migracja 0005 (id wydania z serwera). Serwer po HTTPS: /health ok, /api/auth/me bez tokenu 401 error.auth.required, logowanie bez LDAP 503, po HTTP w Production odmowa startu (kod 4).",
-      "gap": "LdapDirectory nie widzial prawdziwego AD - testy uzywaja atrapy katalogu; TLS Kestrela sprawdzony tylko certyfikatem deweloperskim; DoD sprawdzal autor, CI nie ruszylo na GitHub."
+      "proof": "2026-09-19: logowanie LDAPS bind -> JWT HS256 30 min z rolami z grup AD (po SID), polityki CanIssue/CanList/CanViewDetails/CanRevealPuk/CanRevealMgmtKey/CanAudit, wyszukiwanie uzytkownika kontem serwisowym, koperty AES-256-GCM (HKDF na koperte, AAD kind|serial|issuance_id), bledy jako ProblemDetails code+args. 112 testow jednostkowych: kazdy endpoint z polityka, zle haslo 401 + auth.denied bez SID, brak grupy 403 z SID, puste haslo nie dociera do LDAP, 5 prob blokuje konto przed AD, token cudzym kluczem i wygasly odrzucone, Helpdesk bez katalogu, koperta w innym wierszu sie nie otwiera, zmieniony bajt wykryty, rotacja KEK czyta stare, brak pola i kolumny z PIN. 84 testy bazy z migracja 0005 (id wydania z serwera). Serwer po HTTPS: /health ok, /api/auth/me bez tokenu 401 error.auth.required, logowanie bez LDAP 503, po HTTP w Production odmowa startu (kod 4). 2026-09-20, prawdziwa domena ems-ad.emsdemolab.pl: LDAPS do rdc01 z lancuchem EMSDEMOLAB Root/Sub CA, bind konta domenowego, odczyt grup przechodnich, mapowanie na role Admin, audyt auth.login i auth.denied w bazie.",
+      "gap": "TLS Kestrela z certyfikatem z magazynu Windows nadal niesprawdzony (0051)."
     },
     {
       "id": "0004",
@@ -536,10 +536,9 @@
       "id": "0050",
       "phase": 5,
       "title": "Docker",
-      "state": "partly-done",
+      "state": "done",
       "owner": "cloud-ai",
-      "proof": "2026-09-20: docker/Dockerfile (Ubuntu 24.04 + libldap2 + libgssapi-krb5-2, uzytkownik nieuprzywilejowany), docker-compose.yml (postgres z rolami i haslami z Docker secrets, jednorazowy kontener migrate jako owner, serwer jako app), .dockerignore, scripts/dev-secrets.sh i dev-certs.sh, .env.example, docs/11. Uruchomione od zera na tej maszynie: baza zdrowa, 5 migracji w kontenerze, /health po HTTPS, schema ok, /api/auth/me bez tokenu 401, logowanie przy nieosiagalnym DC -> 503 error.directory.unavailable (libldap laduje sie naprawde). Pierwsze wdrozenie na prawdziwym Linuksie (LXC na Proxmoxie) pokazalo, ze kontener bazy uruchamia skrypty startowe jako uid 999 i nie mogl przeczytac sekretow nalezacych do uid 1654 - ustawil rolom puste hasla i zglosil sukces. Poprawione: hasla bazy 999:1654 mode 640, skrypt sprawdza czytelnosc i odmawia pustego hasla, ostrzezenie o prawach patrzy juz tylko na dostep 'dla innych'.",
-      "gap": "DoD mowi 'dzialajace logowanie' - bez prawdziwego AD nie do potwierdzenia. Uruchamiane na Docker Desktop (Windows); na Linuksie pliki sekretow musza nalezec do uid 1654, co sprawdzi pierwsze wdrozenie."
+      "proof": "2026-09-20: docker/Dockerfile (Ubuntu 24.04 + libldap2 + libgssapi-krb5-2, uzytkownik nieuprzywilejowany), docker-compose.yml (postgres z rolami i haslami z Docker secrets, jednorazowy kontener migrate jako owner, serwer jako app), .dockerignore, scripts/dev-secrets.sh i dev-certs.sh, .env.example, docs/11. Uruchomione od zera na tej maszynie: baza zdrowa, 5 migracji w kontenerze, /health po HTTPS, schema ok, /api/auth/me bez tokenu 401, logowanie przy nieosiagalnym DC -> 503 error.directory.unavailable (libldap laduje sie naprawde). Pierwsze wdrozenie na prawdziwym Linuksie (LXC na Proxmoxie) pokazalo, ze kontener bazy uruchamia skrypty startowe jako uid 999 i nie mogl przeczytac sekretow nalezacych do uid 1654 - ustawil rolom puste hasla i zglosil sukces. Poprawione: hasla bazy 999:1654 mode 640, skrypt sprawdza czytelnosc i odmawia pustego hasla, ostrzezenie o prawach patrzy juz tylko na dostep 'dla innych'. 2026-09-20: wdrozone na kontenerze LXC 10.0.20.89 (Ubuntu 24.04, Docker 29.1.3, overlay2 na LVM). Logowanie kontem domenowym zwrocilo token z rola Admin; audyt ma auth.denied i auth.login; has_column_privilege dla puk_envelope = f."
     },
     {
       "id": "0051",
@@ -592,11 +591,6 @@
       "what": "0002: przeglad funkcji bl_*",
       "why": "DoD sprawdzal autor",
       "when": "przeglad przed 0020"
-    },
-    {
-      "what": "0003: LdapDirectory przeciw prawdziwemu AD",
-      "why": "testy uzywaja atrapy katalogu; bind, tokenGroups, filtry i LDAPS nie widzialy kontrolera domeny",
-      "when": "pierwsza stacja w domenie (0021)"
     },
     {
       "what": "0003: TLS Kestrela z certyfikatem z magazynu Windows",

@@ -6,7 +6,7 @@
 logowanie z AD daje JWT z rolami, każdy endpoint ma politykę, sekrety są poza
 konfiguracją i w kopertach AES-256-GCM przywiązanych do karty i wydania, a
 kod rozmawiający z kluczem jest w repozytorium i przechodzi testy na zapisach
-z prawdziwych tokenów — 346 testów jednostkowych i 84 na PostgreSQL 16, CI
+z prawdziwych tokenów — 347 testów jednostkowych i 84 na PostgreSQL 16, CI
 zielone. **Serwer wstaje jednym `docker compose up`** (0050), razem z bazą i
 migracjami. Nie ma jeszcze silnika wydania ani kontaktu z prawdziwym AD, CA i
 kartą
@@ -95,6 +95,8 @@ stronie serwera). Sprawdzone:
   401 `error.auth.required`, logowanie bez skonfigurowanego LDAP 503
   `error.directory.unavailable`, a po zwykłym HTTP w Production serwer odmawia
   startu (kod 4);
+- **na prawdziwym AD** (20 września 2026): bind przez LDAPS, odczyt grup
+  przechodnich i mapowanie na rolę `Admin` — szczegóły niżej, przy 0050;
 - **CI na GitHub przeszło** 19 września 2026 po pierwszym pushu: job Windows
   (build, testy, publikacja x64 i ARM64, import modułu) i job Linux (serwer i
   testy bazy na PostgreSQL 16) — oba zielone.
@@ -171,8 +173,17 @@ należą do `999:1654` z prawami `640`, skrypt sprawdza czytelność pliku i
 odmawia ustawienia pustego hasła, a ostrzeżenie o prawach pilnuje już tylko
 dostępu „dla innych”, bo grupa jest tu świadomym sposobem współdzielenia.
 
-Stan `partly-done`: definicja ukończenia mówi „działające logowanie”, a tego
-nie da się potwierdzić bez prawdziwego AD.
+**Potwierdzone na prawdziwej domenie** (20 września 2026, kontener LXC
+`10.0.20.89`, domena `ems-ad.emsdemolab.pl`): kontrolery znalezione po SRV,
+LDAPS zweryfikowany łańcuchem `EMSDEMOLAB-Root-CA` → `EMSDEMOLAB-Sub-CA`
+pobranym z `pki.emsdemolab.pl`, trzy grupy AD zmapowane po SID. Logowanie
+kontem `adm_s.frankiewicz` zwróciło token z rolą `Admin`, a w audycie są dwa
+wpisy: `auth.denied` dla nieistniejącego konta i `auth.login` z rolą i
+adresem źródłowym. `has_column_privilege('blinkylite_app', 'card_secrets',
+'puk_envelope', 'SELECT')` na tym wdrożeniu zwraca `f` — aplikacja nadal nie
+może przeczytać koperty z pominięciem funkcji. To domyka „działające
+logowanie” z definicji ukończenia 0050 i zarazem lukę 0003, która mówiła, że
+warstwa LDAP nie widziała prawdziwego AD.
 
 Nie istnieje: silnik wydania, klient WPF, moduł PowerShell, kontakt z
 prawdziwym AD, CA i kartą.
@@ -195,7 +206,7 @@ prawdziwym AD, CA i kartą.
 | 0000 | 0 | Dokumentacja i schemat działania | `done` |
 | 0001 | 0 | Szkielet repozytorium | `done-unverified` |
 | 0002 | 0 | Baza danych (NHibernate + procedury `bl_*`) | `done-unverified` |
-| 0003 | 0 | Serwer | `done-unverified` |
+| 0003 | 0 | Serwer | `done` |
 | 0004 | 0 | Języki EN / DE / SV / PL | `done` |
 | 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `partly-done` |
 | 0010 | 1 | Import `Blinky.Piv` | `done` |
@@ -206,7 +217,7 @@ prawdziwym AD, CA i kartą.
 | 0023 | 2 | Klient WPF — wydanie | `open` |
 | 0030 | 3 | Przeglądarka i weryfikacja w WPF | `open` |
 | 0040 | 4 | Moduł PowerShell | `open` |
-| 0050 | 5 | Docker | `partly-done` |
+| 0050 | 5 | Docker | `done` |
 | 0051 | 5 | Serwer Windows — MSIX | `open` |
 | 0052 | 5 | Klient — MSIX | `open` |
 | 0053 | 5 | Test end-to-end | `open` |
@@ -272,7 +283,6 @@ Zamknięte 2026-09-19, decyzje właściciela:
 |---|---|---|
 | 0001: klient `win-arm64` uruchomiony | binarka ma poprawny nagłówek ARM64, ale nie startowała na maszynie ARM64 | 0053 |
 | 0002: przegląd funkcji `bl_*` | DoD sprawdzał autor; reguły stanów i uprawnień warto, żeby przeczytał ktoś drugi | przegląd przed 0020 |
-| 0003: `LdapDirectory` przeciw prawdziwemu AD | testy używają atrapy katalogu; bind, `tokenGroups`, filtry i LDAPS nie widziały kontrolera domeny | pierwsza stacja w domenie (0021) |
 | 0003: TLS Kestrela z certyfikatem z magazynu Windows | sprawdzony tylko certyfikat deweloperski z pliku | 0051 |
 
 Rzeczy, których Blinky nie sprawdził, a BlinkyLite będzie musiał:
