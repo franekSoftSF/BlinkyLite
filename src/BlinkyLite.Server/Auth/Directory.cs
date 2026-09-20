@@ -161,7 +161,17 @@ public sealed class LdapDirectory(LdapOptions options) : IDirectory
             throw new DirectoryUnavailableException($"Service account bind failed: {e.Message} ({e.ErrorCode})", e);
         }
 
-        var term = LdapFilter.Escape(query.Trim());
+        // DOMAIN\user is the form this server prints in every result and the
+        // form an operator pastes back in; nobody has a backslash in a
+        // sAMAccountName, so the search found nothing and said so politely.
+        var typed = query.Trim();
+        var backslash = typed.LastIndexOf('\\');
+        if (backslash >= 0 && backslash < typed.Length - 1)
+        {
+            typed = typed[(backslash + 1)..];
+        }
+
+        var term = LdapFilter.Escape(typed);
         var filter = "(&(objectCategory=person)(objectClass=user)" +
                      $"(|(sAMAccountName={term}*)(userPrincipalName={term}*)(displayName=*{term}*)(mail={term}*)))";
 

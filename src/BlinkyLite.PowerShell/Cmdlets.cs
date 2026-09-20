@@ -249,6 +249,14 @@ public sealed class NewBlinkyLiteIssuanceCommand : PSCmdlet
     {
         var found = client.SearchAsync(User).GetAwaiter().GetResult();
 
+        // An exact account name or UPN wins over a list: a person and their
+        // own administrative account come back together because they share a
+        // mailbox, and one of the two is named precisely.
+        if (DirectoryMatch.Exact(User, found) is { } exact)
+        {
+            return exact;
+        }
+
         switch (found.Count)
         {
             case 1:
@@ -265,7 +273,7 @@ public sealed class NewBlinkyLiteIssuanceCommand : PSCmdlet
                     new InvalidOperationException(
                         $"Do \"{User}\" pasuje {found.Count} osob: "
                         + string.Join(", ", found.Select(u => u.SamAccount))
-                        + ". Podaj dokladniej."),
+                        + ". Podaj dokladna nazwe konta albo UPN."),
                     "BlinkyLite.AmbiguousUser", ErrorCategory.InvalidArgument, User));
                 return null;
         }
