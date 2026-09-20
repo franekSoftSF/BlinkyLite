@@ -150,7 +150,7 @@ Serwer **działa już dziś** w Dockerze (patch 0050); klient i wydawanie są w
 trakcie — patrz [docs/STATUS.md](docs/STATUS.md).
 
 ```bash
-./scripts/dev-secrets.sh                        # losowe sekrety do ./secrets
+sudo ./scripts/dev-secrets.sh                   # losowe sekrety do ./secrets, z właścicielami
 ./scripts/dev-certs.sh blinkylite.corp.example  # albo wgraj własny certyfikat
 cp .env.example .env                            # domena, konto serwisowe, SID-y grup
 docker compose up -d --build                    # baza, migracje, serwer

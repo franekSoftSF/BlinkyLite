@@ -67,7 +67,7 @@ Get-ADGroup 'BlinkyLite-SecurityOfficers' | Select-Object -ExpandProperty SID
 git clone https://github.com/franekSoftSF/BlinkyLite.git
 cd BlinkyLite
 
-./scripts/dev-secrets.sh                      # losowe sekrety do ./secrets
+sudo ./scripts/dev-secrets.sh                 # losowe sekrety do ./secrets, z właścicielami
 ./scripts/dev-certs.sh blinkylite.corp.example  # albo wgraj własny certyfikat
 cp .env.example .env                          # domena, konto serwisowe, SID-y grup
 nano secrets/blinkylite-ldap-service-password  # prawdziwe hasło konta serwisowego
@@ -96,11 +96,14 @@ curl -k -X POST https://localhost:8443/api/auth/login \
 
 - **Kopia pliku `secrets/blinkylite-kek-1`.** Baza bez KEK to baza bez PUK-ów.
   Kopia bazy i kopia KEK nie mogą leżeć w tym samym miejscu.
-- **Sekrety należą do użytkownika kontenera.** Na Linuksie pliki w `secrets/`
-  muszą być własnością `uid 1654` (`sudo chown -R 1654:1654 secrets certs`) —
-  inaczej serwer ich nie przeczyta. Na Docker Desktop dla Windows montowanie
-  raportuje prawa `0777` i serwer to zgłasza w logu; to informacja o hoście,
-  nie błąd.
+- **Sekrety mają dwóch czytelników.** Serwer działa jako `uid 1654`, a
+  PostgreSQL wykonuje swoje skrypty startowe jako `uid 999`. Hasła do bazy
+  czyta jedno i drugie, więc należą do `999:1654` z prawami `640`; reszta
+  sekretów należy do `1654:1654` z prawami `600`. Robi to
+  `scripts/dev-secrets.sh` uruchomiony jako root — **uruchom go przez `sudo`**,
+  inaczej baza wstanie z pustymi hasłami. Na Docker Desktop dla Windows
+  montowanie raportuje prawa `0777` i serwer to zgłasza w logu; to informacja
+  o hoście, nie błąd.
 - **Kopia bazy:** `pg_dump` albo `pg_basebackup`. Snapshot LVM działającej bazy
   to kopia „jakby wyciągnięto wtyczkę” — PostgreSQL to przeżyje, ale dump jest
   bezpieczniejszy.

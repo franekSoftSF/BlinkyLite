@@ -64,8 +64,11 @@ public sealed class SecretStoreTests : IDisposable
 
     [Theory]
     [InlineData(UnixFileMode.UserRead | UnixFileMode.UserWrite, false)]
-    [InlineData(UnixFileMode.UserRead | UnixFileMode.GroupRead, true)]
+    // The group is how the database container and the server share one
+    // password file; "others" is the hole.
+    [InlineData(UnixFileMode.UserRead | UnixFileMode.GroupRead, false)]
     [InlineData(UnixFileMode.UserRead | UnixFileMode.OtherRead, true)]
+    [InlineData(UnixFileMode.UserRead | UnixFileMode.OtherWrite, true)]
     public void A_secret_file_anybody_can_read_is_worth_a_warning(UnixFileMode mode, bool tooOpen) =>
         Assert.Equal(tooOpen, SecretFiles.IsTooOpen(mode));
 

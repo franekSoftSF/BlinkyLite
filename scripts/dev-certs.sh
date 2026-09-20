@@ -49,5 +49,11 @@ openssl req -x509 -newkey rsa:3072 -sha256 -days 397 -nodes \
 chmod 600 certs/blinkylite.key
 chmod 644 certs/blinkylite.crt
 
+# The server reads the key as uid 1654; a root-owned 0600 file is invisible to
+# it inside the container.
+if [ "$(id -u)" = "0" ]; then
+    chown 1654:1654 certs/blinkylite.key certs/blinkylite.crt
+fi
+
 echo "wrote certs/blinkylite.crt and certs/blinkylite.key"
 echo "names: $alt"
