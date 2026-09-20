@@ -311,17 +311,16 @@
       "state": "locked",
       "decidedOn": "2026-09-19",
       "by": "owner"
+    },
+    {
+      "id": "D-21",
+      "choice": "Szablon ADCS wybiera operator przy wydaniu, z listy profili w appsettings.json serwera; profili moze byc kilka, kazdy niesie nazwe szablonu, algorytm klucza oraz polityke PIN i dotyku. Wydanie kopiuje nazwe profilu i szablonu do swojego wiersza, wiec pozniejsza zmiana konfiguracji nie przepisuje historii. Ekranu edycji profili nie ma",
+      "state": "locked",
+      "decidedOn": "2026-09-20",
+      "by": "owner"
     }
   ],
   "openQuestions": [
-    {
-      "id": "Q-01",
-      "question": "Czy IX509CertificateRequestCmc.InitializeFromInnerRequest przyjmie PKCS#10 podpisany na karcie, bez klucza prywatnego?",
-      "blocks": [
-        "0021"
-      ],
-      "needs": "próba na stacji w domenie z ADCS"
-    },
     {
       "id": "Q-02",
       "question": "Licencja BlinkyLite — Apache-2.0 jak Blinky?",
@@ -380,6 +379,12 @@
       "answer": "#1DB954, oba motywy",
       "closedOn": "2026-09-19",
       "decision": "D-20"
+    },
+    {
+      "id": "Q-01",
+      "question": "Czy IX509CertificateRequestCmc.InitializeFromInnerRequest przyjmie PKCS#10 podpisany na karcie, bez klucza prywatnego?",
+      "answer": "TAK. Zmierzone 20 wrzesnia 2026 na DPCLIENT02 (Windows 11 26100, domena ems-ad.emsdemolab.pl, certyfikat EA z EMSDEMOLAB-Sub-CA): InitializeDecode, InitializeFromInnerRequest, RequesterName, SignerCertificate i Encode przeszly na zadaniu podpisanym na karcie 39721373 - kluczem, ktorego ta stacja nie ma. CMC odczytany z powrotem ma tresc PKIData (1.3.6.1.5.5.7.12.2), dwie kontrole (1.3.6.1.4.1.311.10.10.1 i RegInfo) oraz dwa SignerInfo: jeden bez certyfikatu w kopercie, za zgloszeniodawce, i jeden agenta - ksztalt, ktorego wymaga MS-WCCE. 0021 idzie przez CertEnroll (D-04); recznie pisany CMC z Blinky nie jest potrzebny",
+      "closedOn": "2026-09-20"
     }
   ],
   "risks": [

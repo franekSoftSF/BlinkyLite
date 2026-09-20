@@ -130,18 +130,30 @@ public static class CmcInspection
                 continue;
             }
 
-            // MS-WCCE: an OCTET STRING of UTF-8 pairs joined by "&", of which
-            // requestername is the one that matters.
-            var text = Encoding.UTF8.GetString(values.ReadOctetString());
-            requester = text
-                .Split('&')
-                .Select(pair => pair.Split('=', 2))
-                .Where(pair => pair.Length == 2
-                               && pair[0].Equals("requestername", StringComparison.OrdinalIgnoreCase))
-                .Select(pair => pair[1])
-                .FirstOrDefault() ?? text;
+            requester = RequesterFrom(Encoding.UTF8.GetString(values.ReadOctetString()));
         }
 
         return (requester, controls);
     }
+
+    /// <summary>
+    /// The requester name out of a RegInfo value.
+    /// </summary>
+    /// <remarks>
+    /// MS-WCCE puts UTF-8 pairs joined by <c>&amp;</c> in here, and each side is
+    /// percent-encoded - it has to be, or the <c>\</c> of DOMAIN\user and the
+    /// separators themselves could not tell each other apart. CertEnroll writes
+    /// <c>requestername=EMS-AD%5Cszymon.frankiewicz</c>, which looked like a
+    /// wrong name the first time this was read back: it was the right name,
+    /// read wrongly.
+    /// </remarks>
+    internal static string RequesterFrom(string regInfo) =>
+        regInfo
+            .Split('&')
+            .Select(pair => pair.Split('=', 2))
+            .Where(pair => pair.Length == 2
+                           && Uri.UnescapeDataString(pair[0])
+                               .Equals("requestername", StringComparison.OrdinalIgnoreCase))
+            .Select(pair => Uri.UnescapeDataString(pair[1]))
+            .FirstOrDefault() ?? regInfo;
 }

@@ -312,15 +312,26 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-18 | Sekrety serwera (KEK, klucz JWT, hasło LDAP, hasło do bazy) tylko z pliku sekretu (Docker secret / DPAPI maszyny) albo zmiennej; wpisane w `appsettings.json` zatrzymują start |
 | D-19 | Dane BlinkyLite dają się wyeksportować do Blinky; sekrety w paczce zaszyfrowane do certyfikatu Blinky |
 | D-20 | Akcent klienta `#1DB954`, oba motywy wg ustawienia Windows; role koloru rozdzielone dla kontrastu |
+| D-21 | Szablon ADCS wybiera operator z listy profili w `appsettings.json`; profili może być kilka, wydanie kopiuje nazwę profilu i szablonu do swojego wiersza |
 
 ## Otwarte pytania
 
 | ID | Pytanie | Blokuje |
 |---|---|---|
-| Q-01 | Czy `IX509CertificateRequestCmc.InitializeFromInnerRequest` przyjmie PKCS#10 podpisany na karcie, bez dostępu do klucza prywatnego? | 0021 |
 | Q-02 | Licencja BlinkyLite — Apache-2.0 jak Blinky? | wydanie publiczne |
 | Q-07 | Czy paczka eksportu ma być dodatkowo podpisana (CMS SignedData), nie tylko zaszyfrowana? | 0054 |
 | Q-08 | Czy eksport ma umieć wybrać podzbiór kart, czy zawsze całość? | 0054 |
+
+Zamknięte 2026-09-20, **pomiarem na stacji w domenie**:
+- Q-01 (CertEnroll a żądanie podpisane na karcie) — **TAK**. Na `DPCLIENT02`
+  wszystkie kroki przeszły na żądaniu z karty 39721373, podpisanym kluczem,
+  którego ta stacja nie ma. Odczytany z powrotem CMC ma treść PKIData, kontrole
+  `1.3.6.1.4.1.311.10.10.1` i RegInfo oraz **dwa** SignerInfo — jeden bez
+  certyfikatu w kopercie, za zgłoszeniodawcę, i jeden agenta. 0021 idzie przez
+  CertEnroll (D-04); ręcznie pisany CMC z Blinky nie jest potrzebny.
+- `requestername` jest w RegInfo **kodowany procentowo**
+  (`EMS-AD%5Cszymon.frankiewicz`) — pierwsze odczytanie uznało poprawną nazwę za
+  błędną. Reguła zapisana w [02](02-issuance.md#cmc-i-eobo--co-musi-się-zgadzać-w-adcs).
 
 Zamknięte 2026-09-19, decyzje właściciela:
 - Q-06 (kanał powiadomienia) — **bot Microsoft Teams**; progi domyślnie 30 i 7 dni, konfigurowalne (D-16);

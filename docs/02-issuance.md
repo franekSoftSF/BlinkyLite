@@ -123,9 +123,40 @@ końca, może być jedyną kopią management key karty leżącej na czyimś biur
   algorytmu: P-256 przy minimum 2048 → `0x80094811 CERTSRV_E_KEY_LENGTH`.
 - W atrybucie podajemy **nazwę** szablonu, nie nazwę wyświetlaną.
 - Konfiguracja CA: `HOST\CA CN`, np. `SUBCA\Corp Issuing CA`.
+- **`RequesterName` jedzie w kontroli RegInfo (`1.3.6.1.5.5.7.7.18`) i jest
+  kodowany procentowo**: CertEnroll zapisuje `requestername=EMS-AD%5Cjkowalski`,
+  bo pary są łączone przez `&` i `=`, więc `\` musi je przetrwać. Czytając CMC
+  z powrotem, najpierw dekoduj — inaczej poprawna nazwa wygląda na błędną
+  (zmierzone 20 września 2026, `DPCLIENT02`, Windows 11 26100).
+- CertEnroll wkłada do PKIData dwie kontrole: `1.3.6.1.4.1.311.10.10.1`
+  (atrybuty CMC) i wspomniane RegInfo, oraz **dwa** SignerInfo — jeden bez
+  certyfikatu w kopercie (za zgłoszeniodawcę) i jeden agenta. To jest kształt,
+  którego wymaga MS-WCCE.
 - Znane błędy z labu Blinky: `0x800706ba` (brak tożsamości domenowej),
   `0x80070005` (brak praw), `0x80070002` (brak CA). Późno wiązany COM owija
   wyjątki w `TargetInvocationException` — rozpakować przed pokazaniem.
+
+## Profile i szablony (D-21)
+
+Kart jest więcej niż jeden rodzaj, więc szablon nie jest wpisany w kod. Serwer
+ma w `appsettings.json` listę **profili**; operator wybiera profil przy wydaniu,
+a profil niesie wszystko, co odróżnia jedno wydanie od drugiego:
+
+| Pole | Co znaczy |
+|---|---|
+| `Name` | to, co operator widzi na liście |
+| `Template` | **nazwa** szablonu ADCS, nie nazwa wyświetlana |
+| `KeyAlgorithm` | domyślnie `Rsa2048` — ECC wymaga `EnumerateECCCerts` |
+| `PinPolicy` | `Once`, `Always` albo `Never` |
+| `TouchPolicy` | `Never`, `Always` albo `Cached` |
+
+Wydanie **kopiuje** `Name` i `Template` do swojego wiersza (`profile_name`,
+`template_name` w [03](03-data-model.md)). Zmiana pliku konfiguracyjnego pół
+roku później nie może przepisać tego, co już zostało wydane. Ekranu do edycji
+profili nie ma: nowy profil to zmiana pliku i restart.
+
+Nazwa szablonu jedzie do CA w atrybucie `CertificateTemplate:<nazwa>` przy
+`ICertRequest3.Submit`, a nie w CMC.
 
 ## Powłoki
 

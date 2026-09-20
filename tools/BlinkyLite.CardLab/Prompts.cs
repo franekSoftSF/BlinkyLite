@@ -18,6 +18,7 @@ internal sealed record Options(
     string? Requester,
     string? Agent,
     string? Template,
+    string? Cmc,
     IReadOnlyList<string> Unrecognised)
 {
     public static Options Parse(string[] raw)
@@ -35,6 +36,7 @@ internal sealed record Options(
         string? requester = null;
         string? agent = null;
         string? template = null;
+        string? cmc = null;
         var unrecognised = new List<string>();
 
         // From index 1: index 0 is the command. Walked rather than searched,
@@ -55,12 +57,13 @@ internal sealed record Options(
                 case "--requester": requester = Next(args, ref i) ?? requester; break;
                 case "--agent": agent = Next(args, ref i) ?? agent; break;
                 case "--template": template = Next(args, ref i) ?? template; break;
+                case "--cmc": cmc = Next(args, ref i) ?? cmc; break;
                 default: unrecognised.Add(raw[i]); break;
             }
         }
 
         return new Options(subject, reader, outDirectory, language, yes, pinFromStdin, noYkman,
-            csr, requester, agent, template, unrecognised);
+            csr, requester, agent, template, cmc, unrecognised);
     }
 
     /// <summary>
@@ -90,7 +93,7 @@ internal sealed record Options(
         string[] names =
         [
             "subject", "reader", "out", "lang", "yes", "pin-from-stdin", "no-ykman",
-            "csr", "requester", "agent", "template",
+            "csr", "requester", "agent", "template", "cmc",
         ];
 
         return [.. args.Select(argument =>

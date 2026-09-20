@@ -18,6 +18,42 @@ namespace BlinkyLite.CardLab;
 /// </remarks>
 internal static class EoboProbe
 {
+    /// <summary>
+    /// Reads a CMC somebody already has and says what is inside it.
+    /// </summary>
+    /// <remarks>
+    /// Needs no station, no card and no agent certificate, which is the point:
+    /// the first probe run reported a requester name that looked wrong, and
+    /// answering "is it the CMC or the reading?" should not cost a trip to a
+    /// machine in the domain.
+    /// </remarks>
+    public static async Task<int> InspectAsync(Options options, Transcript log)
+    {
+        if (options.Cmc is not { } path)
+        {
+            log.Problem("Podaj --cmc <plik>: CMC w base64, taki jak q01-cmc.b64.");
+            return 2;
+        }
+
+        byte[] der;
+        try
+        {
+            der = Convert.FromBase64String((await File.ReadAllTextAsync(path)).Trim());
+        }
+        catch (Exception e) when (e is IOException or FormatException)
+        {
+            log.Problem($"Nie moge odczytac CMC z {path}: {e.Message}", e);
+            return 2;
+        }
+
+        log.Say($"CMC:          {der.Length} bajtow z {Path.GetFileName(path)}");
+
+        var wanted = options.Requester;
+        var ok = ReadBack(Convert.ToBase64String(der), wanted, log);
+
+        return ok || wanted is null ? 0 : 6;
+    }
+
     public static async Task<int> RunAsync(Options options, Transcript log)
     {
         if (options.Csr is not { } csrPath)
@@ -117,7 +153,7 @@ internal static class EoboProbe
     /// or in the operator's, so the probe checks that the name it asked for is
     /// really in there.
     /// </remarks>
-    private static bool ReadBack(string base64, string requester, Transcript log)
+    private static bool ReadBack(string base64, string? requester, Transcript log)
     {
         var contents = CmcInspection.Inspect(Convert.FromBase64String(base64));
 
@@ -126,8 +162,14 @@ internal static class EoboProbe
         log.Say($"  {Mark(contents.IsPkiData)} tresc: {contents.ContentType}"
                 + (contents.IsPkiData ? " (PKIData)" : " - a mial byc PKIData"));
 
-        var nameMatches = string.Equals(contents.RequesterName, requester, StringComparison.OrdinalIgnoreCase);
-        log.Say($"  {Mark(nameMatches)} requestername = {contents.RequesterName ?? "BRAK"}");
+        // Compared without case, because a domain does not distinguish it, and
+        // after decoding: CertEnroll percent-encodes the backslash.
+        var nameMatches = requester is null
+            ? contents.RequesterName is not null
+            : string.Equals(contents.RequesterName, requester, StringComparison.OrdinalIgnoreCase);
+
+        log.Say($"  {Mark(nameMatches)} requestername = {contents.RequesterName ?? "BRAK"}"
+                + (requester is null || nameMatches ? string.Empty : $"  (prosilismy o {requester})"));
 
         log.Say($"  {Mark(contents.HasEnoughSigners)} podpisow: {contents.Signers.Count} "
                 + "(MS-WCCE chce co najmniej dwoch: zgloszeniodawcy i agenta)");

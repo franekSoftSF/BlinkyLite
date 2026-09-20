@@ -59,6 +59,7 @@ static async Task<int> Run(string[] args)
             "inventory" => Inventory(options, log),
             "personalise" => await Personalise(options, log),
             "eobo-probe" => await EoboProbe.RunAsync(options, log),
+            "cmc-inspect" => await EoboProbe.InspectAsync(options, log),
             _ => Help(),
         };
     }
@@ -98,6 +99,9 @@ static int Help()
             --requester DOMENA\uzytkownik  dla kogo ma byc certyfikat
             --agent <odcisk>               ktory certyfikat EA, gdy jest kilka
             --template <nazwa>             tylko do wypisania w raporcie
+          cmc-inspect --cmc <plik>       mowi, co jest w gotowym CMC. Nie
+                                         potrzebuje ani karty, ani domeny:
+            --requester DOMENA\uzytkownik  sprawdz przy okazji, czy to ta osoba
 
         Kazdy przebieg zostawia log (cardlab-<data>-<komenda>.log) - to jego
         odsylaj, gdy cos nie wyjdzie. Raport (raport-<serial>.txt) tez mozna
