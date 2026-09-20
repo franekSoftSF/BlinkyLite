@@ -270,8 +270,13 @@ internal static class SyntheticYubico
         X509Certificate2 Intermediate,
         X509Certificate2Collection Roots);
 
+    /// <param name="attestedKey">
+    /// The key the leaf should attest. Given when a test needs the attestation
+    /// and a certificate request to be about the same key - which is what the
+    /// server checks before it believes either of them.
+    /// </param>
     public static Pki Build(uint serial = 29177301, byte formFactor = 0x03,
-        string slotName = "9a")
+        string slotName = "9a", RSA? attestedKey = null)
     {
         // Yubico's real attestation certificates run to 2052; what matters
         // here is only that the window contains now, because the verifier
@@ -298,10 +303,22 @@ internal static class SyntheticYubico
         var intermediateWithKey = intermediate.CopyWithPrivateKey(intermediateKey);
 
         using var leafKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-        var leafRequest = new CertificateRequest($"CN=YubiKey PIV Attestation {slotName}",
-            leafKey, HashAlgorithmName.SHA256);
+        var leafRequest = attestedKey is null
+            ? new CertificateRequest($"CN=YubiKey PIV Attestation {slotName}",
+                leafKey, HashAlgorithmName.SHA256)
+            : new CertificateRequest($"CN=YubiKey PIV Attestation {slotName}",
+                attestedKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+
         AddYubicoExtensions(leafRequest, serial, formFactor);
-        var leaf = leafRequest.Create(intermediateWithKey, notBefore, notAfter, [0x02]);
+
+        // Signed through a generator rather than through the issuer
+        // certificate: a leaf whose subject key is RSA cannot be signed by the
+        // certificate overload when the issuer's key is EC, and an attested
+        // key is whatever the token generated.
+        var leaf = leafRequest.Create(
+            intermediateWithKey.SubjectName,
+            X509SignatureGenerator.CreateForECDsa(intermediateKey),
+            notBefore, notAfter, [0x02]);
 
         return new Pki(leaf, intermediate, [root]);
     }

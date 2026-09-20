@@ -62,6 +62,7 @@ if (args.Contains("--migrate", StringComparer.Ordinal))
 
 builder.Services.AddBlinkyLiteProblems();
 builder.Services.AddBlinkyLiteAuth(builder.Configuration);
+builder.Services.AddBlinkyLiteIssuance(builder.Configuration);
 
 var appConnectionString = builder.Configuration.GetConnectionString("App");
 if (!string.IsNullOrWhiteSpace(appConnectionString))
@@ -125,6 +126,7 @@ var version = typeof(Program).Assembly
     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
 
 app.MapBlinkyLiteApi(version);
+app.MapIssuanceApi();
 
 await app.RunAsync();
 return 0;

@@ -31,6 +31,13 @@ public static class ErrorCodes
     public const string CardAttestationRefused = "error.card.attestation-refused";
     public const string PinCancelled = "error.pin.cancelled";
 
+    // Issuance API (0020).
+    public const string ProfileUnknown = "error.profile.unknown";
+    public const string TargetNotFound = "error.target.not-found";
+    public const string TargetDisabled = "error.target.disabled";
+    public const string CertificateKeyMismatch = "error.certificate.key-mismatch";
+    public const string CertificateTargetMismatch = "error.certificate.target-mismatch";
+
     // From the bl_* functions (docs/07-database.md#błędy).
     public const string IssuanceInvalidState = "error.issuance.invalid-state";
     public const string CardReservedElsewhere = "error.card.reserved-elsewhere";

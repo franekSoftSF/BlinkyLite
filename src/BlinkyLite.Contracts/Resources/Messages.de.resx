@@ -88,6 +88,21 @@
   <data name="error.query.too-short" xml:space="preserve">
     <value>Geben Sie mindestens {0} Zeichen ein.</value>
   </data>
+  <data name="error.profile.unknown" xml:space="preserve">
+    <value>Dieser Server kennt dieses Profil nicht.</value>
+  </data>
+  <data name="error.target.not-found" xml:space="preserve">
+    <value>Kein Konto im Verzeichnis hat diese Kennung.</value>
+  </data>
+  <data name="error.target.disabled" xml:space="preserve">
+    <value>Dieses Konto ist deaktiviert und kann keinen Schlüssel erhalten.</value>
+  </data>
+  <data name="error.certificate.key-mismatch" xml:space="preserve">
+    <value>Das Zertifikat gehört zu einem anderen Schlüssel als dem auf diesem Token.</value>
+  </data>
+  <data name="error.certificate.target-mismatch" xml:space="preserve">
+    <value>Das Zertifikat nennt eine andere Person als diese Ausgabe.</value>
+  </data>
   <data name="error.issuance.invalid-state" xml:space="preserve">
     <value>Dieser Schritt ist jetzt nicht möglich.</value>
   </data>

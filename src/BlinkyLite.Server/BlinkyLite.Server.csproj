@@ -28,6 +28,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BlinkyLite.Contracts\BlinkyLite.Contracts.csproj" />
+    <!-- Only for the attestation verifier: the server repeats the check the
+         station made, because a station is a machine on somebody's desk and
+         its word is not evidence (docs/02, krok 15). Nothing here touches
+         PC/SC, which is Windows-only and guarded. -->
+    <ProjectReference Include="..\BlinkyLite.Piv\BlinkyLite.Piv.csproj" />
   </ItemGroup>
 
   <ItemGroup>

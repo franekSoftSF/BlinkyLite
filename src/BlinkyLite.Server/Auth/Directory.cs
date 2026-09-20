@@ -21,6 +21,17 @@ public interface IDirectory
 
     /// <summary>Finds people who can receive a key, as the read-only service account.</summary>
     Task<IReadOnlyList<DirectoryUser>> SearchUsersAsync(string query, int limit, CancellationToken ct = default);
+
+    /// <summary>
+    /// The one account with this SID, or null when AD has none.
+    /// </summary>
+    /// <remarks>
+    /// An issuance names its target by SID and by nothing else, so the server
+    /// asks AD who that is instead of believing a UPN and a SID that arrived
+    /// together in one request. A SID also outlives a rename, which a sAM
+    /// account name does not.
+    /// </remarks>
+    Task<DirectoryUser?> FindBySidAsync(string sid, CancellationToken ct = default);
 }
 
 /// <summary>Stands in when the Ldap section is missing, so the answer is 503 and not a 500.</summary>
@@ -32,6 +43,9 @@ public sealed class UnconfiguredDirectory : IDirectory
         throw new DirectoryUnavailableException(Message);
 
     public Task<IReadOnlyList<DirectoryUser>> SearchUsersAsync(string query, int limit, CancellationToken ct = default) =>
+        throw new DirectoryUnavailableException(Message);
+
+    public Task<DirectoryUser?> FindBySidAsync(string sid, CancellationToken ct = default) =>
         throw new DirectoryUnavailableException(Message);
 }
 
@@ -92,6 +106,9 @@ public sealed class LdapDirectory(LdapOptions options) : IDirectory
 
     public Task<IReadOnlyList<DirectoryUser>> SearchUsersAsync(string query, int limit, CancellationToken ct = default) =>
         Task.Run(() => Search(query, limit), ct);
+
+    public Task<DirectoryUser?> FindBySidAsync(string sid, CancellationToken ct = default) =>
+        Task.Run(() => FindBySid(sid), ct);
 
     private DirectoryAccount? Authenticate(string username, string password)
     {
@@ -162,6 +179,46 @@ public sealed class LdapDirectory(LdapOptions options) : IDirectory
         return response.Entries.Cast<SearchResultEntry>().Select(ToUser)
             .OrderBy(u => u.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
+    }
+
+    /// <summary>
+    /// Reads one account by SID, as the read-only service account.
+    /// </summary>
+    /// <remarks>
+    /// The search base is the SID alias AD accepts in place of a DN, so the
+    /// SID never has to be escaped into a filter as binary - that escaping is
+    /// the part everyone gets wrong, and a wrong filter here would silently
+    /// find nobody rather than fail.
+    /// </remarks>
+    private DirectoryUser? FindBySid(string sid)
+    {
+        if (!System.Text.RegularExpressions.Regex.IsMatch(sid, @"^S-1-[0-9-]{1,120}$"))
+        {
+            return null;
+        }
+
+        using var connection = Connect();
+        try
+        {
+            connection.Bind(new NetworkCredential(options.ServiceAccount, options.ServicePassword));
+        }
+        catch (LdapException e)
+        {
+            throw new DirectoryUnavailableException($"Service account bind failed: {e.Message} ({e.ErrorCode})", e);
+        }
+
+        var request = new SearchRequest(
+            $"<SID={sid}>", "(objectClass=user)", SearchScope.Base, UserAttributes);
+
+        try
+        {
+            var response = (SearchResponse)connection.SendRequest(request);
+            return response.Entries.Cast<SearchResultEntry>().Select(ToUser).FirstOrDefault();
+        }
+        catch (DirectoryOperationException e) when (e.Response?.ResultCode is ResultCode.NoSuchObject)
+        {
+            return null;
+        }
     }
 
     private LdapConnection Connect()

@@ -88,6 +88,21 @@
   <data name="error.query.too-short" xml:space="preserve">
     <value>Skriv minst {0} tecken.</value>
   </data>
+  <data name="error.profile.unknown" xml:space="preserve">
+    <value>Servern känner inte till den profilen.</value>
+  </data>
+  <data name="error.target.not-found" xml:space="preserve">
+    <value>Inget konto i katalogen har den identiteten.</value>
+  </data>
+  <data name="error.target.disabled" xml:space="preserve">
+    <value>Kontot är avstängt och kan inte få någon nyckel.</value>
+  </data>
+  <data name="error.certificate.key-mismatch" xml:space="preserve">
+    <value>Certifikatet hör till en annan nyckel än den på den här enheten.</value>
+  </data>
+  <data name="error.certificate.target-mismatch" xml:space="preserve">
+    <value>Certifikatet namnger en annan person än den här utfärdningen.</value>
+  </data>
   <data name="error.issuance.invalid-state" xml:space="preserve">
     <value>Det här steget går inte att göra nu.</value>
   </data>

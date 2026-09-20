@@ -157,9 +157,15 @@ temu zmiana szablonu jest jedną zmianą w jednym miejscu, a nie obchodem po
 stacjach.
 
 Klient w żądaniu wydania podaje **nazwę profilu, nigdy nazwę szablonu** —
-szablon i konfigurację CA dokłada serwer po swojej stronie. Podmieniony klient
-nie może więc wskazać dowolnego szablonu na CA; może najwyżej poprosić o profil,
-którego nie ma, i dostać odmowę.
+do wiersza wydania serwer wpisuje szablon ze swojej konfiguracji. Profil, którego
+nie ma na liście, to odmowa (`error.profile.unknown`).
+
+Czego to **nie** daje: klient dostaje nazwę szablonu w odpowiedzi, bo to on
+rozmawia z CA — buduje CMC i woła `ICertRequest3.Submit`. Podmieniona stacja
+może więc wysłać do CA żądanie na inny szablon. Powstrzymuje ją CA, nie my
+(uprawnienia szablonu, *Restricted Enrollment Agents*), a po naszej stronie
+zostaje zapis, który się z tym nie zgodzi: wiersz wydania nosi szablon z
+konfiguracji serwera, więc rozjazd widać, zamiast go nie być.
 
 **Jeden profil to normalny przypadek** — wtedy klient o nic nie pyta i po
 prostu go używa. Wybór pojawia się na ekranie wydania dopiero wtedy, gdy

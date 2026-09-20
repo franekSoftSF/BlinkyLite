@@ -2,8 +2,10 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using BlinkyLite.Contracts;
+using BlinkyLite.Piv.Attestation;
 using BlinkyLite.Server.Auth;
 using BlinkyLite.Server.Data;
+using ServerIssuance = BlinkyLite.Server.Data.Issuance;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +27,15 @@ public sealed class ServerFactory : WebApplicationFactory<Program>
 
     public RecordingProcedures Procedures { get; } = new();
 
+    public FakeIssuances Issuances { get; } = new();
+
+    /// <summary>
+    /// A synthetic Yubico PKI in place of the real roots, for the tests that
+    /// need an attestation to verify. Null leaves the production pinning,
+    /// which is what makes "this is not Yubico's" a meaningful test.
+    /// </summary>
+    public AttestationVerifier? Verifier { get; init; }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -34,10 +45,24 @@ public sealed class ServerFactory : WebApplicationFactory<Program>
         builder.UseSetting($"Roles:{Role.Helpdesk}:0", HelpdeskGroup);
         builder.UseSetting("RateLimits:LoginPerMinute", "1000");
 
+        // One profile, as in the normal case (D-21). A KEK is needed because
+        // the server seals the secrets before it writes the reservation.
+        builder.UseSetting("Issuance:CertificationAuthority", @"SUBCA\Corp Issuing CA");
+        builder.UseSetting("Issuance:Profiles:0:Name", "Karta");
+        builder.UseSetting("Issuance:Profiles:0:Template", "CorpSmartcardLogon");
+        builder.UseSetting("Secrets:CurrentKekVersion", "1");
+        builder.UseSetting("Secrets:Keks:1", Convert.ToBase64String(Enumerable.Range(0, 32).Select(i => (byte)i).ToArray()));
+
         builder.ConfigureServices(services =>
         {
             services.AddSingleton<IDirectory>(Directory);
             services.AddSingleton<IProcedures>(Procedures);
+            services.AddSingleton<IIssuanceReader>(Issuances);
+
+            if (Verifier is not null)
+            {
+                services.AddSingleton(Verifier);
+            }
         });
     }
 
@@ -87,6 +112,22 @@ public sealed class FakeDirectory : IDirectory
     public Task<IReadOnlyList<DirectoryUser>> SearchUsersAsync(string query, int limit, CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<DirectoryUser>>(
             Users.Where(u => u.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)).Take(limit).ToList());
+
+    public Task<DirectoryUser?> FindBySidAsync(string sid, CancellationToken ct = default) =>
+        Task.FromResult(Users.FirstOrDefault(u => u.Sid == sid));
+}
+
+/// <summary>Stands in for the read side; the issuances a test put there.</summary>
+/// <remarks>
+/// Aliased on purpose: the test project also sees the engine's namespace
+/// <c>BlinkyLite.Issuance</c>, so a bare <c>Issuance</c> binds to that instead
+/// of to the entity.
+/// </remarks>
+public sealed class FakeIssuances : IIssuanceReader
+{
+    public Dictionary<Guid, ServerIssuance> Rows { get; } = [];
+
+    public ServerIssuance? Find(Guid id) => Rows.GetValueOrDefault(id);
 }
 
 /// <summary>Records what the server would have written to the database.</summary>
@@ -103,19 +144,49 @@ public sealed class RecordingProcedures : IProcedures
     public string? ReasonOf(int index) =>
         Audits[index].Data?.GetType().GetProperty("reason")?.GetValue(Audits[index].Data) as string;
 
-    public Task<Guid> ReserveIssuanceAsync(IssuanceReservation r, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
+    public List<IssuanceReservation> Reservations { get; } = [];
 
-    public Task MarkCustomisedAsync(Guid issuanceId, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
+    public List<(Guid Id, AttestationRecord Record)> Attestations { get; } = [];
 
-    public Task MarkAttestedAsync(Guid issuanceId, AttestationRecord a, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
+    public List<(Guid Id, IssuedCertificate Certificate)> Issued { get; } = [];
 
-    public Task MarkSubmittedAsync(Guid issuanceId, int caRequestId, string eaThumbprint, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
+    public List<(Guid Id, string Step)> Steps { get; } = [];
 
-    public Task MarkPendingAsync(Guid issuanceId, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
+    public Task<Guid> ReserveIssuanceAsync(IssuanceReservation r, Actor actor, CancellationToken ct = default)
+    {
+        Reservations.Add(r);
+        return Task.FromResult(r.IssuanceId);
+    }
 
-    public Task MarkIssuedAsync(Guid issuanceId, IssuedCertificate c, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
+    public Task MarkCustomisedAsync(Guid issuanceId, Actor actor, CancellationToken ct = default) =>
+        Step(issuanceId, "customised");
 
-    public Task MarkFailedAsync(Guid issuanceId, string error, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
+    public Task MarkAttestedAsync(Guid issuanceId, AttestationRecord a, Actor actor, CancellationToken ct = default)
+    {
+        Attestations.Add((issuanceId, a));
+        return Step(issuanceId, "attested");
+    }
+
+    public Task MarkSubmittedAsync(Guid issuanceId, int caRequestId, string eaThumbprint, Actor actor, CancellationToken ct = default) =>
+        Step(issuanceId, "submitted");
+
+    public Task MarkPendingAsync(Guid issuanceId, Actor actor, CancellationToken ct = default) =>
+        Step(issuanceId, "pending");
+
+    public Task MarkIssuedAsync(Guid issuanceId, IssuedCertificate c, Actor actor, CancellationToken ct = default)
+    {
+        Issued.Add((issuanceId, c));
+        return Step(issuanceId, "issued");
+    }
+
+    public Task MarkFailedAsync(Guid issuanceId, string error, Actor actor, CancellationToken ct = default) =>
+        Step(issuanceId, "failed");
+
+    private Task Step(Guid id, string step)
+    {
+        Steps.Add((id, step));
+        return Task.CompletedTask;
+    }
 
     public Task<SecretEnvelope> DiscloseSecretAsync(long cardSerial, SecretKind kind, string reason, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
 

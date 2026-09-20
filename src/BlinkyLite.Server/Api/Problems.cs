@@ -1,6 +1,7 @@
 using BlinkyLite.Contracts;
 using BlinkyLite.Server.Auth;
 using BlinkyLite.Server.Data;
+using BlinkyLite.Server.Issuing;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace BlinkyLite.Server.Api;
@@ -64,6 +65,7 @@ public static class Problems
             var result = error switch
             {
                 DatabaseRuleException rule => Of(StatusFor(rule), rule.MessageKey),
+                IssuanceRefusedException refusal => Of(refusal.Status, refusal.MessageKey),
                 DirectoryUnavailableException => Of(StatusCodes.Status503ServiceUnavailable, ErrorCodes.DirectoryUnavailable),
                 _ => Of(StatusCodes.Status500InternalServerError, ErrorCodes.Internal),
             };
@@ -71,6 +73,12 @@ public static class Problems
             if (error is DirectoryUnavailableException)
             {
                 logger.LogError(error, "Directory unavailable on {Path}", context.Request.Path);
+            }
+            else if (error is IssuanceRefusedException refused)
+            {
+                // Not a server fault and not a surprise: the station asked for
+                // something this server will not do, and the detail says which.
+                logger.LogWarning("Refused on {Path}: {Reason}", context.Request.Path, refused.Message);
             }
             else if (error is not DatabaseRuleException)
             {

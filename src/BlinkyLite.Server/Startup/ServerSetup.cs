@@ -3,9 +3,12 @@ using BlinkyLite.Contracts;
 using BlinkyLite.Server.Api;
 using BlinkyLite.Server.Auth;
 using BlinkyLite.Server.Data;
+using BlinkyLite.Piv.Attestation;
+using BlinkyLite.Server.Issuing;
 using BlinkyLite.Server.Secrets;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
 
 namespace BlinkyLite.Server.Startup;
@@ -89,10 +92,32 @@ public static class ServerSetup
         });
     }
 
+    /// <summary>
+    /// The profile list, checked at start-up rather than at the first
+    /// issuance: a server with a broken one looks healthy right up to the
+    /// moment somebody is standing at a desk with a token in their hand.
+    /// </summary>
+    public static void AddBlinkyLiteIssuance(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<IssuanceOptions>()
+            .Bind(configuration.GetSection(IssuanceOptions.Section))
+            .Validate(options => options.Problems().Count == 0,
+                string.Join(" ", configuration.GetSection(IssuanceOptions.Section).Get<IssuanceOptions>()?.Problems()
+                                 ?? ["Issuance is not configured."]))
+            .ValidateOnStart();
+
+        // Registered rather than built inside the service, so a test can put
+        // a synthetic Yubico PKI in its place - a real attestation names one
+        // physical token and this repository is public.
+        services.TryAddSingleton(AttestationVerifier.ForYubico());
+        services.AddScoped<IssuanceService>();
+    }
+
     public static void AddBlinkyLiteDatabase(this IServiceCollection services, string connectionString)
     {
         services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
         services.AddSingleton<IProcedures, Procedures>();
+        services.AddSingleton<IIssuanceReader, IssuanceReader>();
         services.AddSingleton(_ => ReadSessions.BuildConfiguration(connectionString));
         services.AddSingleton(provider =>
             ReadSessions.BuildSessionFactory(provider.GetRequiredService<NHibernate.Cfg.Configuration>()));

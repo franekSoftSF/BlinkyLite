@@ -314,7 +314,7 @@
     },
     {
       "id": "D-21",
-      "choice": "Profile (nazwa szablonu ADCS, algorytm klucza, polityka PIN i dotyku) konfiguruje ODGORNIE administrator w appsettings.json SERWERA, a serwer rozdaje je klientom przez GET /api/profiles - stacja nie ma zadnego pliku z szablonami. Klient w zadaniu wydania podaje nazwe profilu, nigdy nazwe szablonu; szablon i konfiguracje CA dokłada serwer, wiec podmieniony klient nie wskaze dowolnego szablonu. Profili moze byc kilka; jeden to normalny przypadek i wtedy klient o nic nie pyta. Wydanie kopiuje nazwe profilu i szablonu do swojego wiersza, wiec pozniejsza zmiana konfiguracji nie przepisuje historii. Ekranu edycji nie ma",
+      "choice": "Profile (nazwa szablonu ADCS, algorytm klucza, polityka PIN i dotyku) konfiguruje ODGORNIE administrator w appsettings.json SERWERA, a serwer rozdaje je klientom przez GET /api/profiles - stacja nie ma zadnego pliku z szablonami. Klient w zadaniu wydania podaje nazwe profilu, nigdy nazwe szablonu, a serwer wpisuje do wiersza szablon ze swojej konfiguracji; nazwe szablonu klient i tak dostaje w odpowiedzi, bo to stacja rozmawia z CA, wiec podmieniona stacja moze wyslac zadanie na inny szablon - powstrzymuje ja CA, a nie my. Profili moze byc kilka; jeden to normalny przypadek i wtedy klient o nic nie pyta. Wydanie kopiuje nazwe profilu i szablonu do swojego wiersza, wiec pozniejsza zmiana konfiguracji nie przepisuje historii. Ekranu edycji nie ma",
       "state": "locked",
       "decidedOn": "2026-09-20",
       "by": "owner"

@@ -88,6 +88,21 @@
   <data name="error.query.too-short" xml:space="preserve">
     <value>Type at least {0} characters.</value>
   </data>
+  <data name="error.profile.unknown" xml:space="preserve">
+    <value>This server does not know that profile.</value>
+  </data>
+  <data name="error.target.not-found" xml:space="preserve">
+    <value>No account in the directory has that identifier.</value>
+  </data>
+  <data name="error.target.disabled" xml:space="preserve">
+    <value>That account is disabled, so it cannot be given a key.</value>
+  </data>
+  <data name="error.certificate.key-mismatch" xml:space="preserve">
+    <value>The certificate is for a different key than the one on this key.</value>
+  </data>
+  <data name="error.certificate.target-mismatch" xml:space="preserve">
+    <value>The certificate names a different person than this issuance.</value>
+  </data>
   <data name="error.issuance.invalid-state" xml:space="preserve">
     <value>This step cannot be done now.</value>
   </data>

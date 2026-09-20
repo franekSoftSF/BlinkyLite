@@ -88,6 +88,21 @@
   <data name="error.query.too-short" xml:space="preserve">
     <value>Wpisz co najmniej {0} znaki.</value>
   </data>
+  <data name="error.profile.unknown" xml:space="preserve">
+    <value>Ten serwer nie zna takiego profilu.</value>
+  </data>
+  <data name="error.target.not-found" xml:space="preserve">
+    <value>Żadne konto w katalogu nie ma takiego identyfikatora.</value>
+  </data>
+  <data name="error.target.disabled" xml:space="preserve">
+    <value>To konto jest wyłączone, więc nie może dostać klucza.</value>
+  </data>
+  <data name="error.certificate.key-mismatch" xml:space="preserve">
+    <value>Certyfikat jest do innego klucza niż ten na tym tokenie.</value>
+  </data>
+  <data name="error.certificate.target-mismatch" xml:space="preserve">
+    <value>Certyfikat wskazuje inną osobę niż to wydanie.</value>
+  </data>
   <data name="error.issuance.invalid-state" xml:space="preserve">
     <value>Tego kroku nie można teraz wykonać.</value>
   </data>

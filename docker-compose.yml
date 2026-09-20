@@ -79,6 +79,15 @@ services:
       Ldap__BaseDn: ${BLINKYLITE_LDAP_BASE_DN:-}
       Ldap__NetBiosDomain: ${BLINKYLITE_NETBIOS_DOMAIN:-}
       Ldap__ServiceAccount: ${BLINKYLITE_LDAP_SERVICE_ACCOUNT:-}
+      # What may be issued (D-21). The server refuses to start without at
+      # least one profile: a server that cannot issue anything looks healthy
+      # right up to the moment somebody is standing at a desk with a token.
+      Issuance__CertificationAuthority: ${BLINKYLITE_CA_CONFIG:-}
+      Issuance__Profiles__0__Name: ${BLINKYLITE_PROFILE_NAME:-Karta}
+      Issuance__Profiles__0__Template: ${BLINKYLITE_PROFILE_TEMPLATE:-}
+      Issuance__Profiles__0__KeyAlgorithm: ${BLINKYLITE_PROFILE_KEY:-Rsa2048}
+      Issuance__Profiles__0__PinPolicy: ${BLINKYLITE_PROFILE_PIN_POLICY:-Once}
+      Issuance__Profiles__0__TouchPolicy: ${BLINKYLITE_PROFILE_TOUCH_POLICY:-Never}
       # AD groups by SID; Admin and SecurityOfficer are the Enrollment Agent
       # groups on the CA (D-17).
       Roles__Admin__0: ${BLINKYLITE_GROUP_ADMIN:-}
