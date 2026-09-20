@@ -85,6 +85,12 @@ Serwer stoi na `blinkylite.ems-ad.emsdemolab.pl` (rekord A → `10.0.20.89`), z
 certyfikatem z `EMSDEMOLAB-Sub-CA` ważnym do 20 września 2028. `/health`
 odpowiada 200 przy pełnej weryfikacji łańcucha, bez `-k`.
 
+Konfiguracja CA dla `ICertRequest3`: **`SubCA.ems-ad.emsdemolab.pl\EMSDEMOLAB-Sub-CA`**
+— dokładnie to, co wypisuje `certutil -config - -ping`. Zapisana jako
+`BLINKYLITE_CA_CONFIG` w `.env`. Uwaga przy edycji: `sed` traktuje `\E` w
+łańcuchu zastępującym jako swoją sekwencję i po cichu zjada oba znaki, więc tę
+linię wpisuje się innym narzędziem.
+
 `certutil -v -template` potwierdził na nim:
 
 | Właściwość | Wartość | Dlaczego o nią chodzi |
