@@ -11,10 +11,15 @@ WORKDIR /src
 # change in the source does not re-download the world.
 COPY global.json Directory.Build.props Directory.Packages.props ./
 COPY src/BlinkyLite.Contracts/BlinkyLite.Contracts.csproj src/BlinkyLite.Contracts/
+# The PIV layer comes along for the attestation verifier alone: the server
+# repeats the check the station made (docs/02, krok 15). Nothing in it touches
+# PC/SC here - that part is Windows-only and guarded.
+COPY src/BlinkyLite.Piv/BlinkyLite.Piv.csproj src/BlinkyLite.Piv/
 COPY src/BlinkyLite.Server/BlinkyLite.Server.csproj src/BlinkyLite.Server/
 RUN dotnet restore src/BlinkyLite.Server/BlinkyLite.Server.csproj
 
 COPY src/BlinkyLite.Contracts/ src/BlinkyLite.Contracts/
+COPY src/BlinkyLite.Piv/ src/BlinkyLite.Piv/
 COPY src/BlinkyLite.Server/ src/BlinkyLite.Server/
 # The migrations are embedded in the assembly (docs/07): the image carries the
 # exact scripts this build was tested with.
