@@ -150,13 +150,29 @@ a profil niesie wszystko, co odróżnia jedno wydanie od drugiego:
 | `PinPolicy` | `Once`, `Always` albo `Never` |
 | `TouchPolicy` | `Never`, `Always` albo `Cached` |
 
+**Profile konfiguruje odgórnie administrator, na serwerze, i to serwer je
+rozdaje.** Stacja nie ma żadnego pliku z szablonami: klient pyta
+`GET /api/profiles` (polityka `CanIssue`) i dostaje to, co wolno wydać. Dzięki
+temu zmiana szablonu jest jedną zmianą w jednym miejscu, a nie obchodem po
+stacjach.
+
+Klient w żądaniu wydania podaje **nazwę profilu, nigdy nazwę szablonu** —
+szablon i konfigurację CA dokłada serwer po swojej stronie. Podmieniony klient
+nie może więc wskazać dowolnego szablonu na CA; może najwyżej poprosić o profil,
+którego nie ma, i dostać odmowę.
+
+**Jeden profil to normalny przypadek** — wtedy klient o nic nie pyta i po
+prostu go używa. Wybór pojawia się na ekranie wydania dopiero wtedy, gdy
+profili jest więcej niż jeden.
+
 Wydanie **kopiuje** `Name` i `Template` do swojego wiersza (`profile_name`,
 `template_name` w [03](03-data-model.md)). Zmiana pliku konfiguracyjnego pół
 roku później nie może przepisać tego, co już zostało wydane. Ekranu do edycji
 profili nie ma: nowy profil to zmiana pliku i restart.
 
 Nazwa szablonu jedzie do CA w atrybucie `CertificateTemplate:<nazwa>` przy
-`ICertRequest3.Submit`, a nie w CMC.
+`ICertRequest3.Submit`, a nie w CMC. Do stacji trafia tylko tyle, ile stacja
+musi wiedzieć, żeby wykonać swoje kroki.
 
 ## Powłoki
 

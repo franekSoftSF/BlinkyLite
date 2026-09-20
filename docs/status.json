@@ -314,7 +314,7 @@
     },
     {
       "id": "D-21",
-      "choice": "Szablon ADCS wybiera operator przy wydaniu, z listy profili w appsettings.json serwera; profili moze byc kilka, kazdy niesie nazwe szablonu, algorytm klucza oraz polityke PIN i dotyku. Wydanie kopiuje nazwe profilu i szablonu do swojego wiersza, wiec pozniejsza zmiana konfiguracji nie przepisuje historii. Ekranu edycji profili nie ma",
+      "choice": "Profile (nazwa szablonu ADCS, algorytm klucza, polityka PIN i dotyku) konfiguruje ODGORNIE administrator w appsettings.json SERWERA, a serwer rozdaje je klientom przez GET /api/profiles - stacja nie ma zadnego pliku z szablonami. Klient w zadaniu wydania podaje nazwe profilu, nigdy nazwe szablonu; szablon i konfiguracje CA dokłada serwer, wiec podmieniony klient nie wskaze dowolnego szablonu. Profili moze byc kilka; jeden to normalny przypadek i wtedy klient o nic nie pyta. Wydanie kopiuje nazwe profilu i szablonu do swojego wiersza, wiec pozniejsza zmiana konfiguracji nie przepisuje historii. Ekranu edycji nie ma",
       "state": "locked",
       "decidedOn": "2026-09-20",
       "by": "owner"

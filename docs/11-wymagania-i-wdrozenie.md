@@ -50,6 +50,13 @@ Get-ADGroup 'BlinkyLite-SecurityOfficers' | Select-Object -ExpandProperty SID
 | Minimalna długość klucza | ≤ 2048, bo domyślnie wydajemy RSA-2048 |
 | Enrollment Agent | certyfikat z szablonu *Enrollment Agent* dla operatorów; zalecane *Restricted Enrollment Agents* na CA |
 | Nazwa konfiguracji CA | `HOST\CA CN`, np. `SUBCA\Corp Issuing CA` |
+| Konfiguracja profili | **na serwerze**, w `appsettings.json` (`Issuance:Profiles`, D-21) — stacje nie mają nazw szablonów i nie trzeba ich obchodzić przy zmianie |
+
+W labie EMSDEMOLAB (20 września 2026) szablon docelowy to jeden dla wszystkich:
+nazwa `EMSDEMOLABSmartcardLogon` (wyświetlana: *EMSDEMOLAB Smartcard Logon*).
+Certyfikat Enrollment Agenta wystawia `EMSDEMOLAB-Sub-CA`; operator
+`EMS-ADdm_s.frankiewicz` ma go w `CurrentUser\My` z kluczem prywatnym,
+ważny do 19 września 2028.
 
 ## 4. Stacja operatora (wydawanie)
 
