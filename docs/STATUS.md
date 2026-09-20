@@ -8,9 +8,9 @@ konfiguracją i w kopertach AES-256-GCM przywiązanych do karty i wydania, a
 kod rozmawiający z kluczem jest w repozytorium i przechodzi testy na zapisach
 z prawdziwych tokenów — 359 testów jednostkowych i 84 na PostgreSQL 16, CI
 zielone. **Serwer wstaje jednym `docker compose up`** (0050), razem z bazą i
-migracjami, i **loguje z prawdziwej domeny**. Silnik personalizacji istnieje i
-na prawdziwej karcie odmówił dokładnie tam, gdzie miał (0011) — ale fabryczny
-klucz jeszcze go nie spotkał. Nie ma jeszcze kontaktu z CA.
+migracjami, i **loguje z prawdziwej domeny**. **Personalizacja przeszła na
+dwóch fabrycznych kluczach** — 5.4.3 (3DES) i 5.8.0 (AES-192) — z kompletem
+sprawdzeń odczytanych z karty (0011). Nie ma jeszcze kontaktu z CA.
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
 się zgadzać; `status.json` czyta build albo dashboard. Definicje ukończenia są
@@ -211,12 +211,35 @@ bo ten sam token w czytniku OMNIKEY nie nazywa się „YubiKey”. Spakowane
 samodzielnie (`artifacts/BlinkyLite-CardLab-win-x64.zip`, bez instalowania
 .NET) razem z instrukcją po polsku.
 
-**Na sprzęcie sprawdzona jest na razie odmowa**: podłączony klucz (5.4.3,
-serial 23673995) okazał się kartą z laboratorium Blinky — management key
-ustawiony, PUK zablokowany, w 9A certyfikat z „Blinky Issuing CA”. Silnik
-odmówił z `error.card.not-factory`, a stan karty po próbie był identyczny, bo
-ten warunek stoi przed transakcją. Czego brakuje do `done`: przebiegu na
-**fabrycznym** kluczu, osobno 5.4.x (3DES) i 5.7+ (AES-192).
+**Sprawdzone na sprzęcie** (20 września 2026, stacja `DPCLIENT02`, Windows 11
+26100) — obie gałęzie algorytmu management key, po jednym fabrycznym kluczu:
+
+| | 23673995 | 39721373 |
+|---|---|---|
+| firmware | 5.4.3 | 5.8.0 |
+| management key | `TripleDes` | `Aes192` |
+| obudowa z atestacji | `UsbAKeychain` | `UsbCKeychain` |
+| wynik | OK, 6/6 sprawdzeń | OK, 6/6 sprawdzeń |
+
+W obu przebiegach: management key wraca z PRINTED taki sam, flaga ADMIN DATA
+mówi „za PIN-em”, podpis CSR daje się sprawdzić, PIN i PUK są `Set`, w 9A
+klucz `Rsa2048` z `Origin=Generated`, polityka PIN `Once`, dotyk `Never`,
+CHUID i CCC zapisane, atestacja zweryfikowana do przypiętego roota Yubico z
+serialem i firmware zgodnym z kartą. Raporty zostają na stacji — jak
+transkrypty APDU, niosą serial i certyfikaty, więc nie wchodzą do
+repozytorium.
+
+Wcześniej, zanim ten sam klucz 23673995 został zresetowany, silnik **odmówił**
+mu wydania: karta z laboratorium Blinky (management key ustawiony, PUK
+zablokowany, w 9A certyfikat z „Blinky Issuing CA”) dostała
+`error.card.not-factory`, a jej stan po próbie był identyczny, bo ten warunek
+stoi przed transakcją.
+
+Czego brakuje do `done`: **`ykman piv info` nie potwierdził tego niezależnie**
+— na stacji nie ma zainstalowanego ykman, więc raport nie ma tej sekcji.
+Flagę ADMIN DATA czyta na razie tylko nasz własny kod, a definicja ukończenia
+prosi o świadka spoza tego repozytorium. Jedno uruchomienie `ykman piv info`
+na którejkolwiek z tych kart zamyka patch.
 
 Nie istnieje: wysyłka do CA, klient WPF, moduł PowerShell.
 

@@ -41,7 +41,7 @@
     "phase": 1,
     "phaseTitle": "Karta",
     "state": "open",
-    "summary": "Fundament (0001-0005), warstwa PIV (0010) i wdrozenie w Dockerze (0050). Serwer dziala na prawdziwej domenie: logowanie AD -> JWT z rolami potwierdzone na kontenerze LXC. Silnik personalizacji istnieje i na prawdziwej karcie ODMOWIL zgodnie z regulami (0011, partly-done); karta fabryczna jeszcze go nie spotkala. 359 testow jednostkowych, 84 na PostgreSQL 16, CI zielone. Nie ma jeszcze kontaktu z CA.",
+    "summary": "Fundament (0001-0005), warstwa PIV (0010) i wdrozenie w Dockerze (0050). Serwer dziala na prawdziwej domenie: logowanie AD -> JWT z rolami potwierdzone na kontenerze LXC. Personalizacja przeszla na dwoch FABRYCZNYCH YubiKeyach - 5.4.3 (3DES) i 5.8.0 (AES-192) - z komplet sprawdzen odczytanych z karty (0011); brakuje tylko niezaleznego potwierdzenia przez ykman piv info. 359 testow jednostkowych, 84 na PostgreSQL 16, CI zielone. Nie ma jeszcze kontaktu z CA.",
     "nothingIssuedYet": true
   },
   "stateLegend": {
@@ -482,8 +482,8 @@
       "title": "Personalizacja i klucz",
       "state": "partly-done",
       "owner": "cloud-ai",
-      "proof": "2026-09-20: CardPersonaliser (MK do PRINTED z flaga ADMIN DATA i SET MANAGEMENT KEY, PUK przed PIN-em, CHUID i CCC, klucz 9A, atestacja na przypietych rootach Yubico, CSR podpisany na karcie, wszystko w jednej transakcji PC/SC), PIN przez IPinPrompt i PinRules, zerowany po uzyciu. Po zapisie silnik ODCZYTUJE z karty: MK wraca z PRINTED taki sam (ManagementKey.Matches), flaga ADMIN DATA mowi 'za PIN-em' (PivSession.IsManagementKeyBehindPin - to samo, co czyta ykman piv info), podpis CSR sprawdzony przez ponowne wczytanie, stan PIN i PUK, metadane slotu 9A (Origin=Generated). tools/BlinkyLite.CardLab to narzedzie stacji testowej: inventory (tylko odczyt), personalise --yes, raport do odeslania bez PIN-u, PUK-u i MK oraz osobny plik sekretow, ktory zostaje na stacji; wybor czytnika po SELECT, nie po nazwie. Na podlaczonym kluczu (5.4.3, serial 23673995, karta laboratoryjna Blinky) silnik odmowil: error.card.not-factory, stan karty po probie identyczny. 359 testow jednostkowych.",
-      "gap": "Zadna karta FABRYCZNA jeszcze tego nie przeszla. Brakuje przebiegu na 5.4.x (3DES) i na 5.7+ (AES-192) z potwierdzeniem, ze ykman piv info pokazuje 'Management key is stored on the YubiKey, protected by PIN', a PIN i PUK nie sa fabryczne. Narzedzie spakowane dla stacji testowej (artifacts/BlinkyLite-CardLab-win-x64.zip, self-contained, bez instalacji .NET); czeka na fabryczny klucz."
+      "proof": "2026-09-20: CardPersonaliser (MK do PRINTED z flaga ADMIN DATA i SET MANAGEMENT KEY, PUK przed PIN-em, CHUID i CCC, klucz 9A, atestacja na przypietych rootach Yubico, CSR podpisany na karcie, wszystko w jednej transakcji PC/SC), PIN przez IPinPrompt i PinRules, zerowany po uzyciu. Po zapisie silnik ODCZYTUJE karte (PersonalisationChecks): MK wraca z PRINTED taki sam, flaga ADMIN DATA mowi 'za PIN-em', podpis CSR sprawdzony ponownym wczytaniem zadania, stan PIN i PUK, metadane slotu 9A. NA SPRZECIE (stacja DPCLIENT02, Windows 11 26100, narzedzie CardLab z artifacts): serial 23673995, firmware 5.4.3, MK TripleDes, UsbAKeychain - WYNIK OK, 6/6 sprawdzen; serial 39721373, firmware 5.8.0, MK Aes192, UsbCKeychain - WYNIK OK, 6/6 sprawdzen. W obu: PIN i PUK Set, slot 9A Rsa2048 Origin=Generated, polityka PIN Once, dotyk Never, CHUID i CCC zapisane, atestacja zweryfikowana do przypietego roota z serialem i firmware zgodnym z karta. Raporty (bez PIN-u, PUK-u i MK) zostaly na stacji - nie trafiaja do repozytorium, jak transkrypty APDU. Wczesniej, przed resetem, ten sam 23673995 jako karta laboratoryjna Blinky dostal odmowe error.card.not-factory bez zmiany stanu. 359 testow jednostkowych.",
+      "gap": "ykman piv info nie potwierdzil niezaleznie 'Management key is stored on the YubiKey, protected by PIN' - na stacji nie ma ykman, wiec raport nie ma tej sekcji. Flage ADMIN DATA czyta nasz wlasny kod, a DoD prosi o swiadka spoza tego repozytorium. Jedno uruchomienie ykman piv info na ktorejkolwiek z tych dwoch kart zamyka patch."
     },
     {
       "id": "0020",
@@ -599,9 +599,9 @@
       "when": "0051"
     },
     {
-      "what": "0011: personalizacja fabrycznej karty",
-      "why": "na sprzecie sprawdzona tylko odmowa (karta nie byla fabryczna); zapis MK, PUK, PIN i klucza 9A nie spotkal jeszcze zadnego fabrycznego tokenu",
-      "when": "0011 - przebieg na stacji testowej, 5.4.x i 5.7+"
+      "what": "0011: potwierdzenie przez ykman piv info",
+      "why": "personalizacja przeszla na 5.4.3 i 5.8.0, ale ochrone MK za PIN-em czyta na razie tylko nasz kod (ta sama flaga ADMIN DATA); na stacji testowej nie ma zainstalowanego ykman",
+      "when": "0011 - jedno uruchomienie ykman piv info na karcie 23673995 albo 39721373"
     }
   ]
 }
