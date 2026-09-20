@@ -55,7 +55,7 @@ Get-ADGroup 'BlinkyLite-SecurityOfficers' | Select-Object -ExpandProperty SID
 W labie EMSDEMOLAB (20 września 2026) szablon docelowy to jeden dla wszystkich:
 nazwa `EMSDEMOLABSmartcardLogon` (wyświetlana: *EMSDEMOLAB Smartcard Logon*).
 Certyfikat Enrollment Agenta wystawia `EMSDEMOLAB-Sub-CA`; operator
-`EMS-ADdm_s.frankiewicz` ma go w `CurrentUser\My` z kluczem prywatnym,
+`EMS-AD\adm_s.frankiewicz` ma go w `CurrentUser\My` z kluczem prywatnym,
 ważny do 19 września 2028.
 
 ## 4. Stacja operatora (wydawanie)
