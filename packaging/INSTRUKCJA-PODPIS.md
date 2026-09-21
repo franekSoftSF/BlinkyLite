@@ -87,7 +87,7 @@ certyfikat:
 ```
 
 Na stację w domenie trafiają: pakiet, `packaging/client/Sign-Msix.ps1` oraz
-`signtool.exe` i `appxsip.dll` z Windows SDK (`bin\<wersja>d` — te dwa pliki
+`signtool.exe` i `appxsip.dll` z Windows SDK (`bin\<wersja>\x64` — te dwa pliki
 wystarczą, `makeappx` bez SDK nie działa, dlatego wydawca jest ustalony przy
 budowie). Tam, w Windows PowerShell:
 
