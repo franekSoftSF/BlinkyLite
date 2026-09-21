@@ -356,7 +356,7 @@ wersji, przez którą przeszło wydanie.
 | 0050 | 5 | Docker | `done` |
 | 0055 | 5 | nginx w Dockerze | `partly-done` |
 | 0051 | 5 | Serwer Windows — MSIX | `open` |
-| 0052 | 5 | Klient — MSIX | `open` |
+| 0052 | 5 | Klient — MSIX | `partly-done` |
 | 0053 | 5 | Test end-to-end | `open` |
 | 0054 | 5 | Eksport do Blinky | `open` |
 | 0060 | 6 | Powiadomienie o wygaśnięciu przez bota Teams (po 1.0) | `open` |
@@ -397,6 +397,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-28 | Admin konfiguruje w aplikacji web **profile (CA, szablon)** i **importuje keytab** — odwołuje „bez ekranu edycji" z D-21; profile w bazie z audytem, role dalej w `appsettings.json` |
 | D-27 | Kerberos dla **wszystkich** klientów (web, WPF, PowerShell) i dla **każdej** nazwy serwisu |
 | D-26 | Całość w Dockerze **za nginx**; TLS także między nginx a serwerem |
+| D-35 | Instalator stacji: **MSIX x64** do pobrania z konsoli web (Narzędzia); skrót na pulpicie, `blinkylite-cardlab` w cmd przez alias aplikacji, moduł PowerShell w paczce, kopiowany dla użytkownika przy starcie; CardLab w wydaniu **Station** — bez `reset`/`personalise`/`eobo-probe`; podpis certyfikatem z firmowego ADCS. Odwołuje `.nupkg` z D-11 |
 | D-34 | Licencja **Apache-2.0**, jak Blinky; dane labu w dokumentacji zanonimizowane (`DIGITALWORKSPACE`, `dw-ad`, `jan.kowalski`) |
 | D-25 | Przeglądarka jest **aplikacją web** dla Helpdesku; WPF zostaje narzędziem wydania |
 | D-24 | Klient pamięta adres serwera, login, język i motyw w `%APPDATA%\BlinkyLite\client.json`; **nigdy hasła ani tokenu** |

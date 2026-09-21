@@ -42,6 +42,24 @@ server {
         try_files $uri =404;
     }
 
+    # Installers the console offers for download (0052): whatever
+    # packaging/client/Build-Msix.ps1 put in /opt/blinkylite/downloads, with
+    # the index.json the Tools page reads. Not behind a token - an installer
+    # holds no secret, and a browser download cannot carry the bearer that
+    # lives only in the page's memory (D-32). No listing either: the index is
+    # the list.
+    location /downloads/ {
+        alias /usr/share/nginx/downloads/;
+        autoindex off;
+        types {
+            application/msix     msix;
+            application/json     json;
+        }
+        default_type application/octet-stream;
+        include /etc/nginx/security-headers.conf;
+        add_header Cache-Control "no-cache" always;
+    }
+
     # Angular routes: anything that is not a file is the application.
     location / {
         include /etc/nginx/security-headers.conf;

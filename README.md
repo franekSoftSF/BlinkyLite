@@ -170,13 +170,10 @@ Add-AppxPackage .\BlinkyLite.Server.msix
 ```
 
 ```powershell
-# klient na stacji (x64 i ARM64 w jednym bundle)
-Add-AppxPackage .\BlinkyLite.Client.msixbundle
-```
-
-```powershell
-# moduł PowerShell — osobno, z firmowego repozytorium (MSIX nie trafia do PSModulePath)
-Install-PSResource BlinkyLite -Repository CorpPSRepo
+# stacja: instalator z konsoli web (strona Narzędzia) - aplikacja ze skrótem na
+# pulpicie, blinkylite-cardlab w cmd i moduł PowerShell (kopiowany przy
+# pierwszym uruchomieniu aplikacji)
+Add-AppxPackage .\BlinkyLite-Client-<wersja>-x64.msix
 Import-Module BlinkyLite
 Connect-BlinkyLite -Server https://blinkylite.corp.local
 New-BlinkyLiteIssuance -User 'CORP\jkowalski' -Template 'BlinkyLiteSmartcardLogon'

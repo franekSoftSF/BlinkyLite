@@ -13,6 +13,11 @@
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="menuOpen.set(false)">
           <span class="nav-icon" aria-hidden="true">▤</span>{{ i18n.t('web.nav.issuances') }}
         </a>
+        @if (auth.hasRole('Admin', 'SecurityOfficer')) {
+          <a routerLink="/tools" routerLinkActive="active" (click)="menuOpen.set(false)">
+            <span class="nav-icon" aria-hidden="true">⭳</span>{{ i18n.t('web.nav.tools') }}
+          </a>
+        }
         @if (auth.hasRole('Admin')) {
           <a routerLink="/audit" routerLinkActive="active" (click)="menuOpen.set(false)">
             <span class="nav-icon" aria-hidden="true">≡</span>{{ i18n.t('web.nav.audit') }}

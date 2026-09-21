@@ -1,8 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- A bench tool, not part of the product: it is how the issuance engine is
-       driven against a real token before the WPF client exists (0023). Not in
-       any installer. -->
+  <!-- A bench tool first: it is how the issuance engine is driven against a
+       real token. Two editions (D-35):
+         Lab     - everything, including reset and personalise; never in an
+                   installer.
+         Station - what the MSIX installs for the command line: reads, dump,
+                   cmc-inspect and a full issue. Nothing that writes to a card
+                   outside an issuance - a card personalised or reset here
+                   would have secrets the server never heard of (D-03, D-22).
+       dotnet publish -p:CardLabEdition=Station -->
+  <PropertyGroup>
+    <CardLabEdition Condition="'$(CardLabEdition)' == ''">Lab</CardLabEdition>
+    <DefineConstants Condition="'$(CardLabEdition)' == 'Station'">$(DefineConstants);STATION_EDITION</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>

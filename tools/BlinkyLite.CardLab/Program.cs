@@ -57,11 +57,17 @@ static async Task<int> Run(string[] args)
         return command switch
         {
             "inventory" => Inventory(options, log),
+#if STATION_EDITION
+            // Not in what the installer puts on a station: each of these
+            // writes to a card outside an issuance (D-35).
+            "personalise" or "eobo-probe" or "reset" => LabOnly(command, log),
+#else
             "personalise" => await Personalise(options, log),
             "eobo-probe" => await EoboProbe.RunAsync(options, log),
+            "reset" => Reset(options, log),
+#endif
             "cmc-inspect" => await EoboProbe.InspectAsync(options, log),
             "issue" => await Issue.RunAsync(options, log),
-            "reset" => Reset(options, log),
             "dump" => await Dump.RunAsync(options, log),
             _ => Help(),
         };
@@ -80,6 +86,41 @@ static async Task<int> Run(string[] args)
     }
 }
 
+#if STATION_EDITION
+static int LabOnly(string command, Transcript log)
+{
+    log.Problem($"'{command}' jest tylko w wydaniu narzedzia dla stacji testowej, nie w tym z instalatora: "
+                + "zapisuje na karte poza wydaniem, a takiej karty serwer by nie znal.");
+    return 2;
+}
+
+static int Help()
+{
+    Console.WriteLine("""
+        BlinkyLite CardLab - narzedzie wiersza polecen (wydanie stacji)
+
+          inventory                      czyta klucz, nic nie zapisuje
+            --reader <czesc nazwy>         ktory czytnik, gdy jest ich kilka
+          dump                           wszystkie obiekty PIV czytelne bez
+                                         PIN-u, surowo i rozpisane
+          issue                          PELNE WYDANIE: rezerwacja na serwerze,
+                                         personalizacja karty, CMC, CA i zapis
+                                         certyfikatu na karte:
+            --server https://host          serwer BlinkyLite (443)
+            --operator DOMENA\uzytkownik   kto wydaje (haslo AD zapyta);
+                                           bez tej opcji - konto Windows
+            --target <fragment nazwy>      dla kogo jest karta
+            --profile <nazwa>              gdy serwer ma wiecej niz jeden
+            --agent <odcisk>               ktory certyfikat EA, gdy jest kilka
+          cmc-inspect --cmc <plik>       mowi, co jest w gotowym CMC
+            --requester DOMENA\uzytkownik  sprawdz przy okazji, czy to ta osoba
+
+        Kazdy przebieg zostawia log (cardlab-<data>-<komenda>.log) - to jego
+        odsylaj, gdy cos nie wyjdzie.
+        """);
+    return 0;
+}
+#else
 static int Help()
 {
     Console.WriteLine("""
@@ -127,6 +168,7 @@ static int Help()
         """);
     return 0;
 }
+#endif
 
 static int Inventory(Options options, Transcript log)
 {
@@ -180,6 +222,7 @@ static void Describe(TokenInventory inventory, Transcript log)
     }
 }
 
+#if !STATION_EDITION
 /// <summary>
 /// Wipes the PIV applet: keys, certificates, PIN and PUK.
 /// </summary>
@@ -344,3 +387,4 @@ static async Task<int> Personalise(Options options, Transcript log)
 
     return result.Checks.Passed ? 0 : 5;
 }
+#endif

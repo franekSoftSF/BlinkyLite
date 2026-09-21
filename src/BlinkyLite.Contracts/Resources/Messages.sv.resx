@@ -658,4 +658,46 @@
   <data name="client.progress.empty" xml:space="preserve">
     <value>Här visas utfärdningens steg eller resultatet av en verifiering.</value>
   </data>
+  <data name="web.nav.tools" xml:space="preserve">
+    <value>Verktyg</value>
+  </data>
+  <data name="web.tools.title" xml:space="preserve">
+    <value>Verktyg för utfärdningsstationer</value>
+  </data>
+  <data name="web.tools.explain" xml:space="preserve">
+    <value>Ett installationspaket för en station som utfärdar nycklar: BlinkyLite-programmet, kommandoraden och PowerShell-modulen.</value>
+  </data>
+  <data name="web.tools.client" xml:space="preserve">
+    <value>BlinkyLite för Windows (x64)</value>
+  </data>
+  <data name="web.tools.version" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="web.tools.download" xml:space="preserve">
+    <value>Ladda ned</value>
+  </data>
+  <data name="web.tools.signed-by" xml:space="preserve">
+    <value>Signerad av {0}</value>
+  </data>
+  <data name="web.tools.unsigned" xml:space="preserve">
+    <value>Paketet är inte signerat. Windows installerar det inte förrän det har byggts med kodsigneringscertifikatet.</value>
+  </data>
+  <data name="web.tools.contains" xml:space="preserve">
+    <value>Vad som installeras</value>
+  </data>
+  <data name="web.tools.item.app" xml:space="preserve">
+    <value>BlinkyLite-programmet, på Start-menyn och som genväg på skrivbordet.</value>
+  </data>
+  <data name="web.tools.item.cli" xml:space="preserve">
+    <value>Kommandot blinkylite-cardlab i cmd och PowerShell: läs, verifiera och utfärda en nyckel.</value>
+  </data>
+  <data name="web.tools.item.module" xml:space="preserve">
+    <value>PowerShell-modulen för PowerShell 7.6, kopieras till din profil första gången programmet startar.</value>
+  </data>
+  <data name="web.tools.install" xml:space="preserve">
+    <value>Öppna den nedladdade filen eller kör i PowerShell:</value>
+  </data>
+  <data name="web.tools.none" xml:space="preserve">
+    <value>Det finns inget installationspaket på servern än.</value>
+  </data>
 </root>

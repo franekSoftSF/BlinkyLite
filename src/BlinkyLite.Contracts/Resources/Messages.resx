@@ -658,4 +658,46 @@
   <data name="client.progress.empty" xml:space="preserve">
     <value>The steps of the issuance, or the result of a verification, will appear here.</value>
   </data>
+  <data name="web.nav.tools" xml:space="preserve">
+    <value>Tools</value>
+  </data>
+  <data name="web.tools.title" xml:space="preserve">
+    <value>Tools for issuing stations</value>
+  </data>
+  <data name="web.tools.explain" xml:space="preserve">
+    <value>One installer for a station that issues keys: the BlinkyLite application, the command line and the PowerShell module.</value>
+  </data>
+  <data name="web.tools.client" xml:space="preserve">
+    <value>BlinkyLite for Windows (x64)</value>
+  </data>
+  <data name="web.tools.version" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="web.tools.download" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="web.tools.signed-by" xml:space="preserve">
+    <value>Signed by {0}</value>
+  </data>
+  <data name="web.tools.unsigned" xml:space="preserve">
+    <value>This package is not signed. Windows will not install it until it is built with the code signing certificate.</value>
+  </data>
+  <data name="web.tools.contains" xml:space="preserve">
+    <value>What gets installed</value>
+  </data>
+  <data name="web.tools.item.app" xml:space="preserve">
+    <value>The BlinkyLite application, in the Start menu and as a shortcut on the desktop.</value>
+  </data>
+  <data name="web.tools.item.cli" xml:space="preserve">
+    <value>The blinkylite-cardlab command in cmd and PowerShell: read, verify and issue a key.</value>
+  </data>
+  <data name="web.tools.item.module" xml:space="preserve">
+    <value>The PowerShell module for PowerShell 7.6, copied to your profile the first time the application starts.</value>
+  </data>
+  <data name="web.tools.install" xml:space="preserve">
+    <value>Open the downloaded file, or run in PowerShell:</value>
+  </data>
+  <data name="web.tools.none" xml:space="preserve">
+    <value>There is no installer on the server yet.</value>
+  </data>
 </root>

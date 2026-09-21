@@ -61,6 +61,9 @@ public partial class App : Application
             typeof(App).Assembly.GetName().Version, Environment.MachineName,
             Environment.UserDomainName, Environment.UserName, Strings.Current.Culture.Name);
 
+        // The MSIX has no install-time step; the module reaches pwsh here.
+        ModuleInstaller.EnsureInstalled();
+
         // Anything that reaches here would otherwise close the window with no
         // trace of why.
         DispatcherUnhandledException += (_, args) =>

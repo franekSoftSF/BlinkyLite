@@ -103,13 +103,14 @@ CA, algorytm, polityka PIN/touch) i mapowanie grup AD na role są sekcjami
 
 | Paczka | Zawartość | Uwagi |
 |---|---|---|
-| `BlinkyLite.Client.msixbundle` | WPF + silnik, `win-x64` i `win-arm64` w jednym bundle | Windows wybiera architekturę sam |
+| `BlinkyLite-Client-<wersja>-x64.msix` | WPF + silnik, CardLab w wydaniu **stacji** i moduł PowerShell (D-35) | skrót na pulpicie (`desktop7:Shortcut`); aliasy `blinkylite` i `blinkylite-cardlab` w cmd — MSIX nie zmienia `PATH`, alias jest jego sposobem, żeby w nim być; na razie tylko `win-x64`, ARM64 dojdzie jako bundle. Pobierany ze strony **Narzędzia** w konsoli web. Buduje `packaging/client/Build-Msix.ps1` |
 | `BlinkyLite.Server.msix` | serwer jako usługa (`desktop6:Service`) | wymaga Windows Server 2022 / Windows 10 2004+ i ograniczonej zdolności `packagedServices`; ryzyko R-05 |
-| `BlinkyLite.PowerShell.nupkg` | moduł PowerShell | **nie w MSIX**: pliki paczki MSIX leżą w `WindowsApps`, poza `PSModulePath`, a MSIX nie zmienia zmiennych środowiskowych. Instalacja: `Install-PSResource` z firmowego repozytorium (udział sieciowy) |
+| moduł PowerShell | **w MSIX klienta**, w `Modules\BlinkyLite` | pliki paczki leżą w `WindowsApps`, poza `PSModulePath`, a MSIX nie ma kroku instalacji — więc aplikacja kopiuje moduł przy starcie do `Dokumenty\PowerShell\Modules\BlinkyLite\<wersja>` użytkownika (`ModuleInstaller`). Odwołuje `.nupkg` z D-11 (D-35) |
 
 Wszystkie paczki podpisane certyfikatem code signing z firmowego ADCS;
 stacje i serwer muszą mu ufać (GPO). Niepodpisanego MSIX Windows nie
-zainstaluje.
+zainstaluje. Szablon, certyfikat i podpis krok po kroku:
+[packaging/INSTRUKCJA-PODPIS.md](../packaging/INSTRUKCJA-PODPIS.md).
 
 ## Role i granice zaufania
 

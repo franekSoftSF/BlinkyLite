@@ -658,4 +658,46 @@
   <data name="client.progress.empty" xml:space="preserve">
     <value>Tu pojawią się kroki wydania albo wynik weryfikacji.</value>
   </data>
+  <data name="web.nav.tools" xml:space="preserve">
+    <value>Narzędzia</value>
+  </data>
+  <data name="web.tools.title" xml:space="preserve">
+    <value>Narzędzia dla stacji wydających</value>
+  </data>
+  <data name="web.tools.explain" xml:space="preserve">
+    <value>Jeden instalator dla stacji, która wydaje klucze: aplikacja BlinkyLite, wiersz poleceń i moduł PowerShell.</value>
+  </data>
+  <data name="web.tools.client" xml:space="preserve">
+    <value>BlinkyLite dla Windows (x64)</value>
+  </data>
+  <data name="web.tools.version" xml:space="preserve">
+    <value>Wersja {0}</value>
+  </data>
+  <data name="web.tools.download" xml:space="preserve">
+    <value>Pobierz</value>
+  </data>
+  <data name="web.tools.signed-by" xml:space="preserve">
+    <value>Podpisany przez {0}</value>
+  </data>
+  <data name="web.tools.unsigned" xml:space="preserve">
+    <value>Ten pakiet nie jest podpisany. Windows go nie zainstaluje, dopóki nie zostanie zbudowany z certyfikatem do podpisywania kodu.</value>
+  </data>
+  <data name="web.tools.contains" xml:space="preserve">
+    <value>Co zostanie zainstalowane</value>
+  </data>
+  <data name="web.tools.item.app" xml:space="preserve">
+    <value>Aplikacja BlinkyLite, w menu Start i jako skrót na pulpicie.</value>
+  </data>
+  <data name="web.tools.item.cli" xml:space="preserve">
+    <value>Polecenie blinkylite-cardlab w cmd i PowerShell: odczyt, weryfikacja i wydanie klucza.</value>
+  </data>
+  <data name="web.tools.item.module" xml:space="preserve">
+    <value>Moduł PowerShell dla PowerShell 7.6, kopiowany do Twojego profilu przy pierwszym uruchomieniu aplikacji.</value>
+  </data>
+  <data name="web.tools.install" xml:space="preserve">
+    <value>Otwórz pobrany plik albo uruchom w PowerShell:</value>
+  </data>
+  <data name="web.tools.none" xml:space="preserve">
+    <value>Na serwerze nie ma jeszcze instalatora.</value>
+  </data>
 </root>

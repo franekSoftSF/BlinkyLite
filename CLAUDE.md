@@ -41,8 +41,9 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `src/BlinkyLite.Contracts/Resources` | `Messages.resx` + `.de`, `.sv`, `.pl` — jedyny katalog tekstów |
 | `tests/BlinkyLite.UnitTests` | xunit, bez sprzętu i bez bazy |
 | `tests/BlinkyLite.DbTests` | xunit na prawdziwym PostgreSQL — funkcje, uprawnienia, migracje |
-| `tools/BlinkyLite.CardLab` | narzędzie warsztatowe: czyta kartę i uruchamia silnik wydania przy prawdziwym kluczu. Nie wchodzi do żadnego instalatora |
-| `packaging/` | manifesty MSIX (klient bundle x64+ARM64, serwer z usługą) |
+| `tools/BlinkyLite.CardLab` | narzędzie warsztatowe: czyta kartę i uruchamia silnik wydania przy prawdziwym kluczu. Dwa wydania: **Lab** (wszystko, z `reset`) poza instalatorami i **Station** (`-p:CardLabEdition=Station`, bez `reset`, `personalise`, `eobo-probe`) w MSIX klienta (D-35) |
+| `packaging/` | MSIX klienta (`client/Build-Msix.ps1`, manifest, ikony) i instrukcja podpisu; serwer z usługą — 0051 |
+| `brand/` | znak i logo w SVG; PNG/ICO generuje `brand/build-assets.mjs` |
 | `docs/` | numerowane dokumenty + `STATUS.md` i `status.json` |
 
 (Na dziś: fazy 0–1 i większość fazy 2. Pierwszy certyfikat wydany i działający
@@ -128,8 +129,9 @@ dotnet publish tools/BlinkyLite.CardLab -c Release -r win-x64 --self-contained t
 - **Prosto.** BlinkyLite ma być mały. Zanim dodasz ekran, tabelę albo opcję,
   sprawdź, czy nie ma jej w „Poza zakresem” w roadmapie — jeśli jest, nie
   robimy jej. Poza wydaniem BlinkyLite nie pisze na kartę nigdy — **jedyny
-  wyjątek to `reset` w `tools/BlinkyLite.CardLab`** (D-22), narzędziu, które nie
-  wchodzi do żadnego instalatora.
+  wyjątek to `reset` w `tools/BlinkyLite.CardLab`** (D-22), i tylko w wydaniu
+  **Lab**, które nie wchodzi do żadnego instalatora. Wydanie **Station** w MSIX
+  nie ma `reset` ani `personalise` (D-35) — nie dodawaj ich tam.
 - **Serilog** wszędzie. LF, UTF-8, 4 spacje (2 dla json/yml/xml/props/csproj)
   — `.editorconfig` rozstrzyga.
 - **Komentarze mówią dlaczego, nie co.** Jak w Blinky: powód, zwykle dlatego,

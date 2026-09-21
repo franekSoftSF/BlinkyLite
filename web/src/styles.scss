@@ -509,6 +509,71 @@ tr.denied td:nth-child(3) {
   word-break: break-all;
 }
 
+/* ---- tools (0052) ----------------------------------------------------- */
+
+.panel header p {
+  margin: 6px 0 0;
+}
+
+.download {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 20px;
+  border-bottom: 1px solid var(--bl-border);
+}
+
+.download h3,
+.download-details h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+
+.download p {
+  margin: 0 0 12px;
+}
+
+.download-details {
+  padding: 16px 20px 20px;
+}
+
+.download-details ul {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  line-height: 1.7;
+}
+
+.download-details pre {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--bl-background);
+  border: 1px solid var(--bl-border);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+/* A link that is the one action on the page, drawn like the primary button. */
+a.button {
+  display: inline-block;
+  border-radius: 8px;
+  padding: 11px 18px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a.button.primary {
+  background: var(--bl-accent-fill);
+  color: var(--bl-on-accent);
+}
+
+.signed {
+  color: var(--bl-accent-text);
+}
+
+.sha {
+  margin-top: 12px !important;
+}
+
 /* ---- sign-in ---------------------------------------------------------- */
 
 .login {

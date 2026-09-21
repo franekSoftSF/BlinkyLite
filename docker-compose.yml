@@ -155,6 +155,8 @@ services:
         mode: "0400"
     volumes:
       - ./certs:/certs:ro
+      # Installers for the Tools page (0052); filled by Build-Msix.ps1 output.
+      - ./downloads:/usr/share/nginx/downloads:ro
     restart: unless-stopped
 
 volumes:

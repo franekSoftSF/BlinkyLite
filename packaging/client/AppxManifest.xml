@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  BlinkyLite client MSIX (0052, D-35). Build-Msix.ps1 fills in {Version} and
+  {Publisher}; the publisher must be the subject of the signing certificate,
+  character for character, or Windows refuses the package.
+
+  What it gives a station:
+    - BlinkyLite in the Start menu and a shortcut on the desktop;
+    - "blinkylite" and "blinkylite-cardlab" in cmd and PowerShell. An MSIX
+      cannot change PATH; an execution alias is its way of being on it -
+      Windows puts the alias in %LOCALAPPDATA%\Microsoft\WindowsApps, which
+      is on every user's PATH already;
+    - the PowerShell module inside the package, copied for the user by the
+      client on start (ModuleInstaller.cs) - an MSIX has no install step.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
+  xmlns:desktop7="http://schemas.microsoft.com/appx/manifest/desktop/windows10/7"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap3 desktop desktop4 desktop7 rescap">
+
+  <Identity
+    Name="BlinkyLite.Client"
+    Publisher="{Publisher}"
+    Version="{Version}"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>BlinkyLite</DisplayName>
+    <PublisherDisplayName>BlinkyLite</PublisherDisplayName>
+    <Description>Issues YubiKey PIV keys from Microsoft ADCS and verifies them.</Description>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <!-- 19041 (2004): the first build with desktop shortcuts for packaged apps. -->
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+    <Resource Language="pl-pl" />
+    <Resource Language="de-de" />
+    <Resource Language="sv-se" />
+  </Resources>
+
+  <Applications>
+    <Application Id="BlinkyLite" Executable="BlinkyLite.Client.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="BlinkyLite"
+        Description="Issues YubiKey PIV keys from Microsoft ADCS and verifies them."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png" />
+      <Extensions>
+        <desktop7:Extension Category="windows.shortcut">
+          <desktop7:Shortcut File="[{Desktop}]\BlinkyLite.lnk" Icon="[{Package}]\Assets\blinkylite.ico" />
+        </desktop7:Extension>
+        <uap3:Extension Category="windows.appExecutionAlias" Executable="BlinkyLite.Client.exe" EntryPoint="Windows.FullTrustApplication">
+          <uap3:AppExecutionAlias>
+            <desktop:ExecutionAlias Alias="blinkylite.exe" />
+          </uap3:AppExecutionAlias>
+        </uap3:Extension>
+      </Extensions>
+    </Application>
+
+    <!-- The command line only: no tile, a console of its own, and the station
+         edition - no reset, no personalise (D-35). -->
+    <Application
+      Id="CardLab"
+      Executable="BlinkyLite.CardLab.exe"
+      EntryPoint="Windows.FullTrustApplication"
+      desktop4:Subsystem="console"
+      desktop4:SupportsMultipleInstances="true">
+      <uap:VisualElements
+        DisplayName="BlinkyLite CardLab"
+        Description="BlinkyLite command line: read, verify and issue a key."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png"
+        AppListEntry="none" />
+      <Extensions>
+        <uap3:Extension Category="windows.appExecutionAlias" Executable="BlinkyLite.CardLab.exe" EntryPoint="Windows.FullTrustApplication">
+          <uap3:AppExecutionAlias>
+            <desktop:ExecutionAlias Alias="blinkylite-cardlab.exe" />
+          </uap3:AppExecutionAlias>
+        </uap3:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

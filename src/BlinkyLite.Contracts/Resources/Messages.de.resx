@@ -658,4 +658,46 @@
   <data name="client.progress.empty" xml:space="preserve">
     <value>Hier erscheinen die Schritte der Ausstellung oder das Ergebnis einer Prüfung.</value>
   </data>
+  <data name="web.nav.tools" xml:space="preserve">
+    <value>Werkzeuge</value>
+  </data>
+  <data name="web.tools.title" xml:space="preserve">
+    <value>Werkzeuge für Ausstellungs-Arbeitsstationen</value>
+  </data>
+  <data name="web.tools.explain" xml:space="preserve">
+    <value>Ein Installationspaket für eine Arbeitsstation, die Schlüssel ausstellt: die BlinkyLite-Anwendung, die Befehlszeile und das PowerShell-Modul.</value>
+  </data>
+  <data name="web.tools.client" xml:space="preserve">
+    <value>BlinkyLite für Windows (x64)</value>
+  </data>
+  <data name="web.tools.version" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="web.tools.download" xml:space="preserve">
+    <value>Herunterladen</value>
+  </data>
+  <data name="web.tools.signed-by" xml:space="preserve">
+    <value>Signiert von {0}</value>
+  </data>
+  <data name="web.tools.unsigned" xml:space="preserve">
+    <value>Dieses Paket ist nicht signiert. Windows installiert es erst, wenn es mit dem Codesignaturzertifikat erstellt wurde.</value>
+  </data>
+  <data name="web.tools.contains" xml:space="preserve">
+    <value>Was installiert wird</value>
+  </data>
+  <data name="web.tools.item.app" xml:space="preserve">
+    <value>Die BlinkyLite-Anwendung, im Startmenü und als Verknüpfung auf dem Desktop.</value>
+  </data>
+  <data name="web.tools.item.cli" xml:space="preserve">
+    <value>Der Befehl blinkylite-cardlab in cmd und PowerShell: Schlüssel lesen, prüfen und ausstellen.</value>
+  </data>
+  <data name="web.tools.item.module" xml:space="preserve">
+    <value>Das PowerShell-Modul für PowerShell 7.6, beim ersten Start der Anwendung in Ihr Profil kopiert.</value>
+  </data>
+  <data name="web.tools.install" xml:space="preserve">
+    <value>Öffnen Sie die heruntergeladene Datei oder führen Sie in PowerShell aus:</value>
+  </data>
+  <data name="web.tools.none" xml:space="preserve">
+    <value>Auf dem Server gibt es noch kein Installationspaket.</value>
+  </data>
 </root>

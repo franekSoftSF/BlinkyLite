@@ -409,6 +409,13 @@
       "state": "locked",
       "decidedOn": "2026-09-21",
       "by": "owner"
+    },
+    {
+      "id": "D-35",
+      "choice": "Instalator stacji: MSIX x64 do pobrania z konsoli web (strona Narzedzia, /downloads/ w nginx). Skrot na pulpicie (desktop7:Shortcut), blinkylite i blinkylite-cardlab w cmd przez alias aplikacji (MSIX nie zmienia PATH), modul PowerShell w paczce kopiowany dla uzytkownika przy starcie aplikacji. CardLab w wydaniu Station bez reset, personalise i eobo-probe. Podpis certyfikatem z firmowego ADCS. Odwoluje .nupkg z D-11",
+      "state": "locked",
+      "decidedOn": "2026-09-21",
+      "by": "owner"
     }
   ],
   "openQuestions": [
@@ -716,9 +723,10 @@
       "id": "0052",
       "phase": 5,
       "title": "Klient — MSIX",
-      "state": "open",
+      "state": "partly-done",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-21: packaging/client/Build-Msix.ps1 buduje MSIX x64 (63 MB): WPF self-contained, CardLab Station w tym samym katalogu (runtime raz), modul PowerShell w Modules/BlinkyLite. makeappx zwalidowal manifest (skrot na pulpicie desktop7, aliasy blinkylite i blinkylite-cardlab, CardLab z konsola). Z paczki: CardLab odmawia reset i personalise, modul laduje sie z 7 cmdletami. Podpis signtool sprawdzony certyfikatem testowym (usunietym). Strona Narzedzia w konsoli web czyta downloads/index.json.",
+      "gap": "Brak certyfikatu z ADCS (szablon BlinkyLiteCodeSigning, packaging/INSTRUKCJA-PODPIS.md), wiec paczka jest niepodpisana i zadna stacja jej nie zainstaluje. Nie sprawdzone na stacji: skrot na pulpicie, alias w cmd, kopia modulu przy pierwszym starcie. ARM64 (bundle) nie ma."
     },
     {
       "id": "0053",

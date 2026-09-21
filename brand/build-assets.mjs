@@ -84,3 +84,12 @@ await write(join(repo, 'web/public/brand/apple-touch-icon.png'), await png(mark,
 // WPF: the application icon (Explorer, taskbar, Alt+Tab) and the window icon.
 await write(join(repo, 'src/BlinkyLite.Client/Assets/blinkylite.ico'), await icoOf([16, 20, 24, 32, 40, 48, 64, 128, 256]));
 await write(join(repo, 'src/BlinkyLite.Client/Assets/blinkylite-mark-128.png'), await png(mark, 128));
+
+// MSIX (0052): the tiles and the list icon Windows asks the package for, and
+// the .ico the desktop shortcut points at.
+const msix = join(repo, 'packaging/client/Assets');
+await write(join(msix, 'Square44x44Logo.png'), await png(source(44), 44));
+await write(join(msix, 'Square44x44Logo.targetsize-24_altform-unplated.png'), await png(source(24), 24));
+await write(join(msix, 'Square150x150Logo.png'), await png(mark, 150));
+await write(join(msix, 'StoreLogo.png'), await png(mark, 50));
+await write(join(msix, 'blinkylite.ico'), await icoOf([16, 20, 24, 32, 40, 48, 64, 128, 256]));
