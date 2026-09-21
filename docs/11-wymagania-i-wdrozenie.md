@@ -108,7 +108,9 @@ jeśli krótka nazwa nie przejdzie, dopisujemy wpis dla niej.*
 **4. Keytab na serwer.** To odpowiednik hasła konta usługi (R-09): nie na
 share, nie do gita, nie w mailu. Na serwer `scp` wprost z kontrolera domeny
 albo stacji administratora, do `/opt/blinkylite/secrets/blinkylite-http.keytab`,
-właściciel `root`, prawa `600`; kontener dostaje go jako Docker secret. Import
+właściciel `1654` (użytkownik serwera w kontenerze, jak przy KEK), prawa `600`;
+kontener dostaje go jako Docker secret. Krok po kroku, ze skryptem:
+[tools/ad/INSTRUKCJA-KERBEROS.md](../tools/ad/INSTRUKCJA-KERBEROS.md). Import
 przez formularz web to 0031, nie teraz.
 
 **5. Przeglądarki.** Edge i Chrome wysyłają bilet Kerberos tylko do witryn ze
