@@ -77,6 +77,10 @@ pokazał. Najczęstsze:
   Admins i AD odmawia zapisu, choć konto uprawnienia ma. Skrypt od tej wersji
   sprawdza to na początku;
 
+- *„Unable to locate account … 0x00000525”* (wersja skryptu sprzed poprawki) —
+  konto powstało na jednym kontrolerze, a `setspn` zapytał inny, do którego
+  jeszcze nie dotarło z replikacji. Obecna wersja robi wszystko na jednym DC
+  (widać go w nagłówku jako `DC:`); można go wskazać `-Server dc01.ems-ad…`;
 - *„jest CNAME”* — zamień rekord w DNS na A;
 - *„jest już na koncie …”* — ten SPN ma inne konto; dwa konta z tym samym SPN
   psują logowanie obu. Usuń go stamtąd (`setspn -D HTTP/<nazwa> <konto>`)

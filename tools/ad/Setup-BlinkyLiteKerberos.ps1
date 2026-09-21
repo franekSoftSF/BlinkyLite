@@ -44,7 +44,11 @@ param(
     [string[]] $Names = @('blinkylite.ems-ad.emsdemolab.pl'),
     [string] $Account = 'svc_blinkylite_http',
     [string] $Path,
-    [string] $OutFile = (Join-Path $PWD 'blinkylite-http.keytab')
+    [string] $OutFile = (Join-Path $PWD 'blinkylite-http.keytab'),
+
+    # Jeden kontroler domeny dla wszystkich krokow. Domyslnie ten, na ktorym
+    # dziala skrypt, jesli jest DC, a inaczej najblizszy.
+    [string] $Server
 )
 
 $ErrorActionPreference = 'Stop'
@@ -54,12 +58,21 @@ function Ok([string] $text) { Write-Host "   OK   $text" -ForegroundColor Green 
 function Warn([string] $text) { Write-Host "   UWAGA $text" -ForegroundColor Yellow }
 function Fail([string] $text) { Write-Host "   BLAD $text" -ForegroundColor Red; exit 1 }
 
-$domain = Get-ADDomain
+# Wszystko na jednym DC. Pierwsze uruchomienie w labie zalozylo konto na
+# jednym kontrolerze, a setspn zapytal inny - ten jeszcze go nie mial z
+# replikacji i odpowiedzial "Unable to locate account" (0x525).
+if (-not $Server) {
+    $local = Get-ADDomainController -Filter "HostName -eq '$([System.Net.Dns]::GetHostEntry('').HostName)'" -ErrorAction SilentlyContinue
+    $Server = if ($local) { $local.HostName } else { (Get-ADDomainController -Discover).HostName[0] }
+}
+
+$domain = Get-ADDomain -Server $Server
 $realm = $domain.DNSRoot.ToUpperInvariant()
 $netbios = $domain.NetBIOSName
 if (-not $Path) { $Path = $domain.UsersContainer }
 
 Write-Host "Domena:  $($domain.DNSRoot)  (realm $realm, NetBIOS $netbios)"
+Write-Host "DC:      $Server"
 Write-Host "Konto:   $netbios\$Account  w  $Path"
 Write-Host "Nazwy:   $($Names -join ', ')"
 Write-Host "Keytab:  $OutFile"
@@ -105,7 +118,7 @@ foreach ($name in $Names) {
 
 # --- 1. Konto ----------------------------------------------------------------
 Step "1. Konto $Account"
-$user = Get-ADUser -Filter "SamAccountName -eq '$Account'" -Properties 'msDS-SupportedEncryptionTypes', servicePrincipalName
+$user = Get-ADUser -Server $Server -Filter "SamAccountName -eq '$Account'" -Properties 'msDS-SupportedEncryptionTypes', servicePrincipalName
 $existed = $null -ne $user
 
 if ($existed) {
@@ -115,19 +128,19 @@ else {
     # Haslo tymczasowe, losowe, nigdzie niezapisane: ktpass w kroku 3 i tak
     # ustawi nowe. Konto nie musi go znac i nikt nie musi go wpisywac.
     $temporary = -join ((33..126) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
-    New-ADUser -Name $Account -SamAccountName $Account -Path $Path `
+    New-ADUser -Server $Server -Name $Account -SamAccountName $Account -Path $Path `
         -Description 'BlinkyLite: SPN HTTP i keytab dla logowania Kerberos (0025). Bez grup i uprawnien.' `
         -AccountPassword (ConvertTo-SecureString $temporary -AsPlainText -Force) `
         -Enabled $true -CannotChangePassword $true -PasswordNeverExpires $true
     $temporary = $null
-    $user = Get-ADUser -Identity $Account -Properties 'msDS-SupportedEncryptionTypes', servicePrincipalName
+    $user = Get-ADUser -Server $Server -Identity $Account -Properties 'msDS-SupportedEncryptionTypes', servicePrincipalName
     Ok "utworzone: $($user.DistinguishedName)"
 }
 
 # AES256 bez RC4: keytab ma tylko klucz AES, wiec bilet RC4 bylby nie do
 # otwarcia - a bez tego ustawienia KDC wystawia wlasnie RC4.
-Set-ADUser -Identity $Account -KerberosEncryptionType AES256
-$user = Get-ADUser -Identity $Account -Properties 'msDS-SupportedEncryptionTypes', servicePrincipalName
+Set-ADUser -Server $Server -Identity $Account -KerberosEncryptionType AES256
+$user = Get-ADUser -Server $Server -Identity $Account -Properties 'msDS-SupportedEncryptionTypes', servicePrincipalName
 if (($user.'msDS-SupportedEncryptionTypes' -band 0x10) -eq 0) {
     Fail 'konto nie ma wlaczonego AES256 (msDS-SupportedEncryptionTypes).'
 }
@@ -137,7 +150,9 @@ Ok "szyfrowanie: msDS-SupportedEncryptionTypes = $($user.'msDS-SupportedEncrypti
 Step '2. SPN HTTP/<nazwa>'
 foreach ($name in $Names) {
     $spn = "HTTP/$name"
-    $owners = Get-ADObject -LDAPFilter "(servicePrincipalName=$spn)" -Properties sAMAccountName
+    # Duplikat szukany w katalogu globalnym (port 3268): SPN musi byc
+    # unikalny w calym lesie, nie tylko w tej domenie.
+    $owners = Get-ADObject -Server "$($Server):3268" -LDAPFilter "(servicePrincipalName=$spn)" -Properties sAMAccountName
 
     $foreign = $owners | Where-Object { $_.sAMAccountName -ne $Account }
     if ($foreign) {
@@ -150,8 +165,9 @@ foreach ($name in $Names) {
         Ok "$spn juz jest na $Account"
     }
     else {
-        & setspn.exe -S $spn "$netbios\$Account" | Out-Null
-        if ($LASTEXITCODE -ne 0) { Fail "setspn -S $spn zwrocil $LASTEXITCODE" }
+        # Set-ADUser zamiast setspn: setspn sam wybiera kontroler i nie da sie
+        # go przypiac do tego, na ktorym konto wlasnie powstalo.
+        Set-ADUser -Server $Server -Identity $Account -ServicePrincipalNames @{ Add = $spn }
         Ok "$spn dodany"
     }
 }
@@ -175,8 +191,9 @@ $principal = "HTTP/$($Names[0])@$realm"
 # Bez -setupn: ktpass ustawia UPN konta na nazwe SPN i liczy klucz AES z ta
 # sama sola, ktorej uzyje KDC. Z -setupn sol sie rozjezdza i keytab ma klucz,
 # ktory nie otworzy zadnego biletu - bez zadnego komunikatu.
+# /target: ten sam DC co reszta - ktpass bez niego tez wybiera sam.
 & ktpass.exe /princ $principal /mapuser "$netbios\$Account" /pass '+rndPass' `
-    /crypto AES256-SHA1 /ptype KRB5_NT_PRINCIPAL /out $OutFile 2>&1 |
+    /crypto AES256-SHA1 /ptype KRB5_NT_PRINCIPAL /target $Server /out $OutFile 2>&1 |
     ForEach-Object { "   ktpass: $_" }
 
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $OutFile)) {
@@ -191,7 +208,7 @@ foreach ($who in 'BUILTIN\Administrators', 'NT AUTHORITY\SYSTEM') {
 }
 Set-Acl -Path $OutFile -AclObject $acl
 
-$user = Get-ADUser -Identity $Account -Properties 'msDS-KeyVersionNumber', userPrincipalName, servicePrincipalName
+$user = Get-ADUser -Server $Server -Identity $Account -Properties 'msDS-KeyVersionNumber', userPrincipalName, servicePrincipalName
 $hash = (Get-FileHash -Path $OutFile -Algorithm SHA256).Hash
 Ok "keytab: $OutFile  ($((Get-Item $OutFile).Length) B)"
 Ok "SHA-256: $hash"
