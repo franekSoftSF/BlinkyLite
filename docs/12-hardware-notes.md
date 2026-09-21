@@ -138,6 +138,44 @@ wersji 4, RFC 4122, ważność `2036…`) → karta na `DPCLIENT02` (tylko stero
 Microsoftu): czy certyfikat trafia do `Cert:\CurrentUser\My`, czy
 `Test-SmartCardDriver.ps1 -TestSignature` przechodzi, i czy logowanie działa.
 
+### 21 września 2026, 9:42: ta sama karta działa na `DPCLIENT01`
+
+`Test-SmartCardDriver.ps1` na `DPCLIENT01`, uruchomiony jako **SYSTEM**, z tą
+samą kartą 39721373 (certyfikat `1ac8…`, cudzy CHUID `E3DD83AC…`/`20300101`) i
+**wyłącznie sterownikiem Microsoftu** (`msclmd.inf`, bez żadnego oprogramowania
+producenta):
+
+```
+Key Container = ac83dde3-87a8-a19d-4725-3609625fc105 [Default Container]
+Public key matching test succeeded
+Logowanie karty inteligentnej: Chain validates   (CERT_CHAIN_POLICY_NT_AUTH)
+```
+
+Wnioski:
+
+- **Wbudowany sterownik PIV Windows obsługuje kartę BlinkyLite.** Karta nie
+  potrzebuje minidrivera Yubico (D-29) — tu nie ma go wcale.
+- **Nazwa kontenera to GUID z CHUID** w microsoftowym układzie bajtów
+  (`E3DD83AC` → `ac83dde3`, `A887` → `87a8`, `9DA1` → `a19d`), z końcówką
+  zastąpioną tagiem obiektu certyfikatu `5FC105`. Windows buduje tożsamość
+  kontenera z CHUID — zmierzone, nie założone.
+- Ta sama karta daje `NTE_BAD_KEYSET` i zero kontenerów na `DPCLIENT02` i
+  `SZYMON-PC`, uruchamiana tam przez **zwykłych użytkowników, którzy widzieli
+  już tę kartę z kluczami z żądań 223 i 224 pod tym samym GUID**. SYSTEM na
+  `DPCLIENT01` tej tożsamości nie znał.
+
+**Wyjaśnienie wiodące:** Windows zapamiętuje stan karty pod jej tożsamością
+(GUID z CHUID); nowy klucz pod starą tożsamością trafia na nieaktualne dane.
+Zgadza się z udanym logowaniem 20 września (pierwsze spotkanie `DPCLIENT01` z
+tą kartą), z porażkami dziś i — najpewniej — z tym, na czym utknął Blinky: ta
+sama reguła „CHUID tylko gdy brak", te same wielokrotnie przepersonalizowywane
+karty. Poprawka (`ReplaceCardIdentity`, świeży CHUID przy każdym wydaniu) jest
+w kodzie od `c17c056`.
+
+**Test potwierdzający, przed ponownym wydaniem:** `Restart-Service SCardSvr`
+na `DPCLIENT02`, potem skrypt jako zwykły użytkownik. Działa → pamięć leży w
+usłudze kart. Nie działa → leży gdzie indziej (profil); poprawka i tak ją omija.
+
 ### Pomiar na `DPCLIENT02` — do zrobienia
 
 Który sterownik obsłużył logowanie kartą 39721373:
