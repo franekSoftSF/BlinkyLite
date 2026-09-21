@@ -330,14 +330,17 @@ Nie istnieje: klient WPF, moduł PowerShell, przeglądarka i weryfikacja.
 | 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `partly-done` |
 | 0010 | 1 | Import `Blinky.Piv` | `done` |
 | 0011 | 1 | Personalizacja i klucz | `done` |
-| 0020 | 2 | API wydań | `done-unverified` |
+| 0020 | 2 | API wydań | `done` |
 | 0021 | 2 | EOBO | `done` |
+| 0026 | 2 | Karta dla wbudowanego sterownika PIV Windows | `open` |
 | 0022 | 2 | Odzyskiwanie | `open` |
 | 0025 | 2 | Logowanie zintegrowane (Negotiate/Kerberos) | `open` |
 | 0023 | 2 | Klient WPF — wydanie | `done` |
-| 0030 | 3 | Przeglądarka i weryfikacja w WPF | `open` |
+| 0030 | 3 | Przeglądarka web (Helpdesk) i weryfikacja karty | `open` |
+| 0031 | 3 | Konfiguracja w aplikacji web: profile i keytab | `open` |
 | 0040 | 4 | Moduł PowerShell | `partly-done` |
 | 0050 | 5 | Docker | `done` |
+| 0055 | 5 | nginx w Dockerze | `open` |
 | 0051 | 5 | Serwer Windows — MSIX | `open` |
 | 0052 | 5 | Klient — MSIX | `open` |
 | 0053 | 5 | Test end-to-end | `open` |
@@ -372,6 +375,11 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-18 | Sekrety serwera (KEK, klucz JWT, hasło LDAP, hasło do bazy) tylko z pliku sekretu (Docker secret / DPAPI maszyny) albo zmiennej; wpisane w `appsettings.json` zatrzymują start |
 | D-19 | Dane BlinkyLite dają się wyeksportować do Blinky; sekrety w paczce zaszyfrowane do certyfikatu Blinky |
 | D-20 | Akcent klienta `#1DB954`, oba motywy wg ustawienia Windows; role koloru rozdzielone dla kontrastu |
+| D-29 | Karta ma działać z **wbudowanym sterownikiem PIV Windows**, bez minidrivera Yubico; najpierw pomiar, potem zmiany |
+| D-28 | Admin konfiguruje w aplikacji web **profile (CA, szablon)** i **importuje keytab** — odwołuje „bez ekranu edycji" z D-21; profile w bazie z audytem, role dalej w `appsettings.json` |
+| D-27 | Kerberos dla **wszystkich** klientów (web, WPF, PowerShell) i dla **każdej** nazwy serwisu |
+| D-26 | Całość w Dockerze **za nginx**; TLS także między nginx a serwerem |
+| D-25 | Przeglądarka jest **aplikacją web** dla Helpdesku; WPF zostaje narzędziem wydania |
 | D-24 | Klient pamięta adres serwera, login, język i motyw w `%APPDATA%\BlinkyLite\client.json`; **nigdy hasła ani tokenu** |
 | D-23 | Stacja loguje się do serwera **tożsamością Windows operatora** (Negotiate/Kerberos); hasło AD zostaje jako droga zapasowa — zmienia „Poza zakresem", gdzie Negotiate był odrzucony |
 | D-22 | Reset karty do stanu fabrycznego **tylko w narzędziu stacji testowej** (`CardLab reset --yes`), nie w kliencie ani w module PowerShell; zakres produktu bez zmian |
@@ -410,6 +418,8 @@ Zamknięte 2026-09-19, decyzje właściciela:
 | R-03 | WinSCard / CertEnroll z .NET 10 na Windows ARM64 nikt nie uruchomił | 0001 publikuje `win-arm64`, 0053 dowodzi na sprzęcie |
 | R-05 | Usługa Windows w MSIX (`desktop6:Service`) na docelowym Windows Server | 0051 z zapisaną rezerwą: skrypt instalacyjny |
 | R-06 | Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na uprawnienia Graph i ruchu wychodzącego z serwera | wymagania spisane w [09](09-expiry-notification.md#co-przygotowuje-administrator-raz); konto bez Entra → audyt, nie awaria |
+| R-10 | Wbudowany sterownik PIV Windows może odrzucić kartę (`NTE_BAD_KEYSET`) z przyczyny, której nie da się przeczytać — w Blinky nikt jej nie ustalił | 0026 zaczyna od pomiaru na `DPCLIENT02`; hipotezy sprawdzane po jednej, z wynikiem w [12](12-hardware-notes.md) |
+| R-09 | Keytab jest równoważny hasłu konta usługi, a D-28 przesyła go przez formularz web | tylko Admin, tylko TLS, zapieczętowany KEK-iem, nigdy nie zwracany ani logowany, na dysk tylko do tmpfs `600`, każda podmiana w audycie; w interfejsie „zastąp", bez „pokaż" |
 | R-08 | Negotiate na Kestrelu w kontenerze linuksowym wymaga keytaba dla SPN `HTTP/blinkylite…` i działającego `krb5.conf`; bez tego stacja dostaje 401 bez wyjaśnienia i wygląda to na błąd klienta | 0025: wymagania keytaba w [11](11-wymagania-i-wdrozenie.md) **przed** kodem; logowanie hasłem zostaje jako droga zapasowa |
 | R-07 | **Rozstrzygnięte** 20 września 2026, na korzyść właściciela: przy EOBO wystarczają prawa agenta. Żądanie 223 przeszło, choć posiadacz karty nie ma `Enroll` na szablonie | zamknięte; zostaje jako zapis, bo błędna diagnoza kosztowałaby nadanie uprawnień, które nie są potrzebne |
 

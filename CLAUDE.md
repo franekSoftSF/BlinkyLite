@@ -33,7 +33,7 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `src/BlinkyLite.Contracts` | DTO API, `Role`, `IssuanceState`, `PinRules` — wszystko, co przechodzi przez sieć |
 | `src/BlinkyLite.Piv` | PC/SC, APDU PIV, atestacja — przeniesione z `Blinky.Piv` |
 | `src/BlinkyLite.Issuance` | silnik wydania: personalizacja, atestacja, CertEnroll CMC, `ICertRequest3`, klient API. `net10.0-windows` |
-| `src/BlinkyLite.Client` | WPF: logowanie, wydanie, przeglądarka |
+| `src/BlinkyLite.Client` | WPF: logowanie i wydanie; przeglądarka jest w aplikacji web (D-25) |
 | `src/BlinkyLite.PowerShell` | moduł binarny, pwsh 7.6+ — cienka powłoka na silniku |
 | `src/BlinkyLite.Server` | Kestrel: `Auth/` (LDAP, JWT, role, polityki), `Api/` (endpointy, ProblemDetails), `Secrets/` (koperty AES-GCM), `Data/` (NHibernate do odczytu, `Procedures` do zapisu), `Startup/` (wiring) |
 | `db/init/00_roles.sql` | role bazy — raz, jako superużytkownik, poza serwerem |
@@ -45,11 +45,13 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `packaging/` | manifesty MSIX (klient bundle x64+ARM64, serwer z usługą) |
 | `docs/` | numerowane dokumenty + `STATUS.md` i `status.json` |
 
-(Na dziś: 0001–0005, 0010 i 0011 — szkielet, baza, serwer z logowaniem AD,
-cztery języki, sekrety poza konfiguracją, warstwa PIV z Blinky i silnik
-personalizacji sprawdzony na dwóch fabrycznych kluczach, 5.4.3 i 5.8.0. Nie ma
-jeszcze wysyłki do CA, klienta, modułu PowerShell ani `packaging/`. Patrz
-STATUS.)
+(Na dziś: fazy 0–1 i większość fazy 2. Pierwszy certyfikat wydany i działający
+przy logowaniu do Windows (0021), karta wydana z klienta WPF (0023), API wydań
+(0020), moduł PowerShell załadowany, ale bez wydania (0040). Przed nami:
+odzyskiwanie (0022), przeglądarka **web** dla Helpdesku za **nginx** (0030,
+0055), konfiguracja profili i keytaba w web (0031), Kerberos dla wszystkich
+klientów (0025) i karta dla wbudowanego sterownika PIV Windows (0026).
+Patrz STATUS.)
 
 ## Komendy
 
