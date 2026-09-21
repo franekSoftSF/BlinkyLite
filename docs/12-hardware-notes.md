@@ -54,6 +54,35 @@ Windows 20 września. Albo sterownik wbudowany tego nie sprawdza, albo logowanie
 obsłużył minidriver Yubico. Poprawka jest potrzebna niezależnie — to wymóg
 normy — ale nie wiadomo jeszcze, czy to ona była przyczyną w Blinky.
 
+### `certutil -scinfo -silent` nie jest miarodajnym testem
+
+Zmierzone 21 września 2026 na `SZYMON-PC` (poza domeną), karta 39721373 w
+czytniku: kartę przejmuje **minidriver Yubico** (wpis „YubiKey Smart Card",
+`ykmd.dll`, dopasowany po ATR), a `certutil -scinfo -silent` i tak kończy się
+`0x80090016 NTE_BAD_KEYSET` na obu dostawcach. Ta sama karta 20 września
+**zalogowała się do Windows** na `DPCLIENT02`.
+
+Czyli ten sam błąd pojawia się z minidriverem Yubico i na karcie, która
+działa. Blinky oparł wniosek „wbudowany sterownik nie działa" właśnie na
+`NTE_BAD_KEYSET` z `certutil -scinfo` — **ten wniosek mógł wynikać ze złego
+przyrządu, a nie ze złego sterownika**. Nie jest to jeszcze rozstrzygnięte:
+trzeba zobaczyć `certutil` na `DPCLIENT02`, gdzie logowanie działa.
+
+Testem jest `certutil -scinfo` **bez** `-silent` (Windows pyta o PIN i
+podpisuje kluczem z karty) — a ostatecznie logowanie kartą. Skrypt stacji
+robi to przełącznikiem `-TestSignature`.
+
+### Skrypt stacji: `tools/station/Test-SmartCardDriver.ps1`
+
+Bez przełączników tylko czyta i raportuje: ATR kart w czytnikach (prosto z
+winscard), wpisy w `Calais\SmartCards`, które **przejmują włożoną kartę**
+(liczone jak w Winscard — ATR z maską), programy, sterownik przypięty do
+urządzenia karty, pamięć podręczna ATR, zasada sterowników z Windows Update i
+wynik `certutil`. `-Apply` usuwa tylko to, co przejmuje **tę** kartę; bez
+karty w czytniku odmawia. Pierwsza wersja wybierała po nazwie producenta i
+na `SZYMON-PC` oznaczyła do usunięcia wszystkie wpisy HID Crescendo — innej
+karty, z innym ATR. Złapane próbnym odczytem, zanim skrypt trafił na stację.
+
 ### Pomiar na `DPCLIENT02` — do zrobienia
 
 Który sterownik obsłużył logowanie kartą 39721373:
