@@ -625,4 +625,37 @@
   <data name="web.tagline" xml:space="preserve">
     <value>Säkra inloggningsuppgifter. Enkelt.</value>
   </data>
+  <data name="client.log" xml:space="preserve">
+    <value>Logg</value>
+  </data>
+  <data name="client.log.title" xml:space="preserve">
+    <value>BlinkyLite-klientens logg</value>
+  </data>
+  <data name="client.log.explain" xml:space="preserve">
+    <value>De senaste raderna i programmets logg på den här datorn. PIN-kod, lösenord, PUK och koder skrivs aldrig dit.</value>
+  </data>
+  <data name="client.log.copy" xml:space="preserve">
+    <value>Kopiera</value>
+  </data>
+  <data name="client.log.copied" xml:space="preserve">
+    <value>Kopierat till urklipp.</value>
+  </data>
+  <data name="client.log.open-folder" xml:space="preserve">
+    <value>Öppna mapp</value>
+  </data>
+  <data name="client.log.empty" xml:space="preserve">
+    <value>Loggen är fortfarande tom.</value>
+  </data>
+  <data name="client.sign-in.title" xml:space="preserve">
+    <value>Logga in</value>
+  </data>
+  <data name="client.sign-in.explain" xml:space="preserve">
+    <value>Konto från Active Directory. Admin och SecurityOfficer kan utfärda nycklar.</value>
+  </data>
+  <data name="client.issuing.title" xml:space="preserve">
+    <value>Utfärda en nyckel</value>
+  </data>
+  <data name="client.progress.empty" xml:space="preserve">
+    <value>Här visas utfärdningens steg eller resultatet av en verifiering.</value>
+  </data>
 </root>

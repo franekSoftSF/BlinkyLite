@@ -174,7 +174,11 @@ public sealed class NoHardCodedTextTests
             foreach (Match match in Regex.Matches(text, @"(?:Text|Content|Header|Title|ToolTip)=""(?<value>[^""{}]+)"""))
             {
                 var value = match.Groups["value"].Value.Trim();
-                if (value.Length > 1 && !Allowed.Contains(value, StringComparer.Ordinal))
+                // An icon from Segoe Fluent Icons is one character from the
+                // Private Use Area (U+E000-U+F8FF), written as an entity. It is
+                // a picture, not words; nothing else is let through.
+                var icon = Regex.IsMatch(value, "^&#x[EFef][0-9A-Fa-f]{3};$");
+                if (value.Length > 1 && !icon && !Allowed.Contains(value, StringComparer.Ordinal))
                 {
                     literals.Add($"{Path.GetFileName(file)}: {value}");
                 }

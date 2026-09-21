@@ -4,251 +4,323 @@
         xmlns:l="clr-namespace:BlinkyLite.Client.Localisation"
         Title="BlinkyLite"
         Icon="Assets/blinkylite.ico"
-        Width="980"
-        Height="700"
-        MinWidth="820"
-        MinHeight="620"
+        Width="1100"
+        Height="760"
+        MinWidth="900"
+        MinHeight="640"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource Background}"
         Foreground="{DynamicResource Text}"
+        FontFamily="Segoe UI"
         FontSize="14">
 
-    <Grid Margin="20">
+    <!-- The layout of the web console: a bar on top, the work in cards, the
+         messages in a bar at the bottom - so an operator who knows one finds
+         their way in the other. -->
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <DockPanel Grid.Row="0" Margin="0,0,0,16">
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Button x:Name="ThemeButton"
-                        Content="{l:Loc client.theme}"
-                        Padding="10,6"
-                        Margin="0,0,8,0"
-                        Click="ThemeToggled" />
-
-                <ComboBox x:Name="LanguagePicker"
-                          Width="130"
-                          DisplayMemberPath="Name"
-                          SelectionChanged="LanguageChanged"
-                          ToolTip="{l:Loc common.language}" />
-
-                <Button x:Name="SignOutButton"
-                        Content="{l:Loc client.sign-out}"
-                        Padding="10,6"
-                        Margin="8,0,0,0"
-                        Visibility="Collapsed"
-                        Click="SignedOut" />
-            </StackPanel>
-
-            <!-- The mark and the wordmark: "Blinky" in the text colour, "Lite" in
-                 the accent, as on the logo (brand/). A proper name, not a text
-                 to translate. -->
-            <DockPanel>
-                <Image DockPanel.Dock="Left"
-                       Source="Assets/blinkylite-mark-128.png"
-                       Width="44"
-                       Height="44"
-                       Margin="0,0,12,0"
-                       VerticalAlignment="Center"
-                       RenderOptions.BitmapScalingMode="HighQuality" />
-
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock FontSize="22" FontWeight="Bold">
-                        <Run Text="Blinky" /><Run Text="Lite" Foreground="{DynamicResource AccentText}" />
-                    </TextBlock>
-                    <TextBlock x:Name="Who" Foreground="{DynamicResource MutedText}" />
-                </StackPanel>
-            </DockPanel>
-        </DockPanel>
-
-        <!-- Signing in. The token lives in the process and goes nowhere else. -->
-        <!-- A card in the middle of the window, like the web sign-in: the
-             first thing on the screen is the one thing to do. -->
-        <Border x:Name="SignIn"
-                Grid.Row="1"
-                Width="440"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Padding="28"
-                CornerRadius="12"
+        <!-- Top bar -->
+        <Border Grid.Row="0"
                 Background="{DynamicResource Surface}"
                 BorderBrush="{DynamicResource Border}"
-                BorderThickness="1">
-            <!-- Fields on the window background, not on the card's: the
-                 implicit styles give them Surface, which is the card itself,
-                 and a text box the colour of its card is not a text box. -->
-            <Border.Resources>
-                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                    <Setter Property="Background" Value="{DynamicResource Background}" />
-                </Style>
-                <Style TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
-                    <Setter Property="Background" Value="{DynamicResource Background}" />
-                </Style>
-                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                    <Setter Property="Background" Value="{DynamicResource Background}" />
-                </Style>
-            </Border.Resources>
-        <StackPanel>
-            <TextBlock Text="{l:Loc client.server}" />
-            <TextBox x:Name="ServerBox" Margin="0,4,0,2" Padding="8" />
+                BorderThickness="0,0,0,1"
+                Padding="20,12">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- The log, from any screen: the first thing somebody asks
+                         for when a card did not come out right. -->
+                    <Button x:Name="LogButton" Style="{StaticResource Quiet}" Click="LogOpened" ToolTip="{l:Loc client.log.title}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE9F9;" FontFamily="{StaticResource Icons}" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="{l:Loc client.log}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
 
-            <!-- What the address looks like, spelled out: the first operator
-                 to use this window guessed the port wrong and was told that
-                 the server had a problem. -->
-            <TextBlock Text="{l:Loc client.server-hint}"
-                       Margin="0,0,0,12"
-                       FontSize="12"
-                       Foreground="{DynamicResource MutedText}" />
+                    <Button x:Name="ThemeButton" Style="{StaticResource Quiet}" Click="ThemeToggled" ToolTip="{l:Loc client.theme}" Margin="4,0,0,0">
+                        <TextBlock Text="&#xE793;" FontFamily="{StaticResource Icons}" FontSize="16" />
+                    </Button>
 
-            <TextBlock Text="{l:Loc common.user}" />
-            <TextBox x:Name="UserBox" Margin="0,4,0,12" Padding="8" />
+                    <ComboBox x:Name="LanguagePicker"
+                              Width="140"
+                              Margin="8,0,0,0"
+                              DisplayMemberPath="Name"
+                              SelectionChanged="LanguageChanged"
+                              ToolTip="{l:Loc common.language}" />
 
-            <TextBlock Text="{l:Loc client.password}" />
-            <PasswordBox x:Name="PasswordBox" Margin="0,4,0,16" Padding="8" />
+                    <Button x:Name="SignOutButton"
+                            Margin="12,0,0,0"
+                            Visibility="Collapsed"
+                            Click="SignedOut">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xF3B1;" FontFamily="{StaticResource Icons}" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="{l:Loc client.sign-out}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
 
-            <!-- The second step (0027): shown once the password is right. -->
-            <StackPanel x:Name="CodePanel" Visibility="Collapsed">
-                <TextBlock Text="{l:Loc client.totp.prompt}" />
-                <TextBox x:Name="CodeBox" Margin="0,4,0,16" Padding="8" FontSize="18" MaxLength="16" />
-            </StackPanel>
+                <!-- The mark and the wordmark: "Blinky" in the text colour, "Lite" in
+                     the accent, as on the logo (brand/). A proper name, not a text
+                     to translate. -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image Source="Assets/blinkylite-mark-128.png"
+                           Width="40"
+                           Height="40"
+                           Margin="0,0,12,0"
+                           VerticalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
 
-            <Button x:Name="SignInButton"
-                    Content="{l:Loc common.sign-in}"
-                    Padding="12,8"
-                    IsDefault="True"
-                    Background="{DynamicResource AccentFill}"
-                    Foreground="{DynamicResource OnAccent}"
-                    BorderThickness="0"
-                    Click="SignedIn" />
-
-            <!-- Kerberos (0025): the identity this Windows session already
-                 has. The password above stays for when it cannot work. -->
-            <Button x:Name="WindowsSignInButton"
-                    Content="{l:Loc common.sign-in-windows}"
-                    Padding="12,8"
-                    Margin="0,10,0,0"
-                    Click="SignedInWithWindows" />
-        </StackPanel>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock FontSize="20" FontWeight="Bold">
+                            <Run Text="Blinky" /><Run Text="Lite" Foreground="{DynamicResource AccentText}" />
+                        </TextBlock>
+                        <TextBlock x:Name="Who" Style="{StaticResource Hint}" />
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
         </Border>
 
-        <!-- Issuing. -->
-        <Grid x:Name="Issuing" Grid.Row="1" Visibility="Collapsed">
+        <!-- Signing in: a card in the middle, the one thing to do. The token
+             lives in the process and goes nowhere else. -->
+        <ScrollViewer Grid.Row="1" x:Name="SignIn" VerticalScrollBarVisibility="Auto">
+            <Border Style="{StaticResource Card}"
+                    Width="460"
+                    Margin="20,32"
+                    Padding="32,28"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="{l:Loc client.sign-in.title}" FontSize="22" FontWeight="SemiBold" />
+                    <TextBlock Text="{l:Loc client.sign-in.explain}" Style="{StaticResource Hint}" FontSize="13" Margin="0,6,0,22" />
+
+                    <TextBlock Text="{l:Loc client.server}" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="ServerBox" />
+                    <!-- What the address looks like, spelled out: the first operator
+                         to use this window guessed the port wrong and was told that
+                         the server had a problem. -->
+                    <TextBlock Text="{l:Loc client.server-hint}" Style="{StaticResource Hint}" Margin="2,6,0,16" />
+
+                    <!-- Kerberos (0025) first: on a domain machine it needs nothing
+                         typed. The password below is the way round it. -->
+                    <Button x:Name="WindowsSignInButton"
+                            Style="{StaticResource Primary}"
+                            Click="SignedInWithWindows">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE77B;" FontFamily="{StaticResource Icons}" FontSize="15" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource OnAccent}" />
+                            <TextBlock Text="{l:Loc common.sign-in-windows}" VerticalAlignment="Center" Foreground="{DynamicResource OnAccent}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Grid Margin="0,18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Height="1" Background="{DynamicResource Border}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{l:Loc web.login.or-password}" Style="{StaticResource Hint}" Margin="12,0" />
+                        <Border Grid.Column="2" Height="1" Background="{DynamicResource Border}" VerticalAlignment="Center" />
+                    </Grid>
+
+                    <TextBlock Text="{l:Loc common.user}" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="UserBox" Margin="0,0,0,14" />
+
+                    <TextBlock Text="{l:Loc client.password}" Style="{StaticResource FieldLabel}" />
+                    <PasswordBox x:Name="PasswordBox" Margin="0,0,0,18" />
+
+                    <!-- The second step (0027): shown once the first one is done. -->
+                    <StackPanel x:Name="CodePanel" Visibility="Collapsed">
+                        <TextBlock Text="{l:Loc client.totp.prompt}" Style="{StaticResource FieldLabel}" />
+                        <TextBox x:Name="CodeBox" Margin="0,0,0,18" FontSize="20" FontFamily="{StaticResource Mono}" MaxLength="16" />
+                    </StackPanel>
+
+                    <Button x:Name="SignInButton"
+                            Content="{l:Loc common.sign-in}"
+                            IsDefault="True"
+                            Click="SignedIn" />
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+        <!-- Issuing: what to do on the left, what happened on the right. -->
+        <Grid x:Name="Issuing" Grid.Row="1" Margin="20" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="16" />
-                <ColumnDefinition Width="1.2*" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <DockPanel Grid.Column="0">
-                <TextBlock DockPanel.Dock="Top" Text="{l:Loc client.target}" />
+            <Border Grid.Column="0" Style="{StaticResource Card}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="{l:Loc client.issuing.title}" Style="{StaticResource CardTitle}" />
 
-                <DockPanel DockPanel.Dock="Top" Margin="0,4,0,12">
-                    <Button DockPanel.Dock="Right"
-                            Content="{l:Loc common.search}"
-                            Padding="10,6"
-                            Margin="8,0,0,0"
-                            Click="Searched" />
+                    <Button x:Name="IssueButton"
+                            DockPanel.Dock="Bottom"
+                            Style="{StaticResource Primary}"
+                            FontSize="16"
+                            Padding="16,12"
+                            Margin="0,16,0,0"
+                            IsEnabled="False"
+                            Click="Issued">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE8D7;" FontFamily="{StaticResource Icons}" FontSize="16" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource OnAccent}" />
+                            <TextBlock Text="{l:Loc client.issue}" VerticalAlignment="Center" Foreground="{DynamicResource OnAccent}" />
+                        </StackPanel>
+                    </Button>
 
-                    <TextBox x:Name="SearchBox" Padding="8" KeyDown="SearchKey" />
-                </DockPanel>
-
-                <TextBlock DockPanel.Dock="Top" Text="{l:Loc client.profile}" />
-                <ComboBox x:Name="ProfilePicker"
-                          DockPanel.Dock="Top"
-                          Margin="0,4,0,12"
-                          Padding="8"
-                          DisplayMemberPath="Name" />
-
-                <TextBlock DockPanel.Dock="Top" Text="{l:Loc client.card}" />
-                <DockPanel DockPanel.Dock="Top" Margin="0,4,0,12">
-                    <!-- Read only: compares the token with the record (0030). -->
-                    <Button x:Name="VerifyButton"
-                            DockPanel.Dock="Right"
-                            Content="{l:Loc client.verify}"
-                            Padding="10,6"
-                            Margin="8,0,0,0"
-                            Click="Verified" />
-
-                    <Button DockPanel.Dock="Right"
-                            Content="{l:Loc client.refresh}"
-                            Padding="10,6"
-                            Margin="8,0,0,0"
-                            Click="CardRefreshed" />
-
-                    <Border Background="{DynamicResource Surface}"
-                            BorderBrush="{DynamicResource Border}"
-                            BorderThickness="1"
-                            Padding="10">
-                        <TextBlock x:Name="CardText" TextWrapping="Wrap" />
-                    </Border>
-                </DockPanel>
-
-                <Button x:Name="IssueButton"
-                        DockPanel.Dock="Bottom"
-                        Content="{l:Loc client.issue}"
-                        Padding="14,10"
-                        FontSize="16"
-                        IsEnabled="False"
-                        Background="{DynamicResource AccentFill}"
-                        Foreground="{DynamicResource OnAccent}"
-                        BorderThickness="0"
-                        Click="Issued" />
-
-                <ListBox x:Name="People"
-                         Margin="0,0,0,12"
-                         Background="{DynamicResource Surface}"
-                         BorderBrush="{DynamicResource Border}"
-                         SelectionChanged="PersonChosen">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Margin="2">
-                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding SamAccount}" Foreground="{DynamicResource MutedText}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </DockPanel>
-
-            <DockPanel Grid.Column="2">
-                <TextBlock DockPanel.Dock="Top" Text="{l:Loc client.progress}" />
-
-                <!-- Every step carries a mark as well as a colour. -->
-                <ListBox x:Name="Steps"
-                         Margin="0,4,0,0"
-                         Background="{DynamicResource Surface}"
-                         BorderBrush="{DynamicResource Border}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <DockPanel Margin="2">
-                                <TextBlock DockPanel.Dock="Left"
-                                           Width="26"
-                                           Text="{Binding Mark}"
-                                           FontWeight="Bold"
-                                           Foreground="{Binding Colour}" />
-
-                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                    <!-- 3. The card -->
+                    <StackPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
+                        <TextBlock Text="{l:Loc client.card}" Style="{StaticResource FieldLabel}" />
+                        <Border Background="{DynamicResource Background}"
+                                BorderBrush="{DynamicResource Border}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="12,10">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left" Text="&#xE8CC;" FontFamily="{StaticResource Icons}" FontSize="18"
+                                           Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                                <TextBlock x:Name="CardText" TextWrapping="Wrap" VerticalAlignment="Center" FontFamily="{StaticResource Mono}" FontSize="13" />
                             </DockPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </DockPanel>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Click="CardRefreshed">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE72C;" FontFamily="{StaticResource Icons}" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="{l:Loc client.refresh}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <!-- Read only: compares the token with the record (0030). -->
+                            <Button x:Name="VerifyButton" Margin="8,0,0,0" Click="Verified">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="{l:Loc client.verify}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- 2. The profile -->
+                    <StackPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
+                        <TextBlock Text="{l:Loc client.profile}" Style="{StaticResource FieldLabel}" />
+                        <ComboBox x:Name="ProfilePicker" DisplayMemberPath="Name" />
+                    </StackPanel>
+
+                    <!-- 1. The person -->
+                    <TextBlock DockPanel.Dock="Top" Text="{l:Loc client.target}" Style="{StaticResource FieldLabel}" />
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                        <Button DockPanel.Dock="Right" Margin="8,0,0,0" Click="Searched">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE721;" FontFamily="{StaticResource Icons}" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Text="{l:Loc common.search}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <TextBox x:Name="SearchBox" KeyDown="SearchKey" />
+                    </DockPanel>
+
+                    <ListBox x:Name="People" MinHeight="120" SelectionChanged="PersonChosen">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Left" Text="&#xE77B;" FontFamily="{StaticResource Icons}" FontSize="16"
+                                               VerticalAlignment="Center" Margin="2,0,12,0"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" />
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"
+                                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" />
+                                        <TextBlock Text="{Binding SamAccount}" FontSize="12" Opacity="0.8"
+                                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource Card}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="{l:Loc client.progress}" Style="{StaticResource CardTitle}" />
+
+                    <Grid>
+                        <!-- Every step carries a mark as well as a colour. -->
+                        <ListBox x:Name="Steps"
+                                 ItemContainerStyle="{StaticResource ReadOnlyItem}"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 Padding="0">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel>
+                                        <Border DockPanel.Dock="Left"
+                                                Width="24"
+                                                Height="24"
+                                                CornerRadius="12"
+                                                Margin="0,0,12,0"
+                                                VerticalAlignment="Top"
+                                                Background="{DynamicResource Background}"
+                                                BorderBrush="{Binding Colour}"
+                                                BorderThickness="1.5">
+                                            <TextBlock Text="{Binding Mark}"
+                                                       FontWeight="Bold"
+                                                       FontSize="12"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{Binding Colour}" />
+                                        </Border>
+                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <TextBlock x:Name="StepsEmpty"
+                                   Text="{l:Loc client.progress.empty}"
+                                   Style="{StaticResource Hint}"
+                                   FontSize="13"
+                                   TextAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   MaxWidth="320" />
+                    </Grid>
+                </DockPanel>
+            </Border>
         </Grid>
 
-        <StackPanel Grid.Row="2" Margin="0,14,0,0">
-            <TextBlock x:Name="Message"
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource MutedText}" />
+        <!-- Status bar: the message, the technical line, and where the log is. -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource Border}"
+                BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <DockPanel>
+                <Button x:Name="LogLink"
+                        DockPanel.Dock="Right"
+                        Style="{StaticResource Link}"
+                        FontSize="12"
+                        MaxWidth="420"
+                        Margin="16,0,0,0"
+                        VerticalAlignment="Center"
+                        Click="LogOpened" />
 
-            <!-- The technical line: what threw and why. It is the line
-                 somebody copies into a mail, so it is not tidied up. -->
-            <TextBlock x:Name="Details"
-                       Margin="0,4,0,0"
-                       FontSize="12"
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource MutedText}" />
-        </StackPanel>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="Message"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource MutedText}" />
+
+                    <!-- The technical line: what threw and why. It is the line
+                         somebody copies into a mail, so it is not tidied up. -->
+                    <TextBlock x:Name="Details"
+                               Margin="0,2,0,0"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               FontFamily="{StaticResource Mono}"
+                               Foreground="{DynamicResource MutedText}" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
     </Grid>
 </Window>

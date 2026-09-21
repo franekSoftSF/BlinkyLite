@@ -625,4 +625,37 @@
   <data name="web.tagline" xml:space="preserve">
     <value>Secure credentials. Simply.</value>
   </data>
+  <data name="client.log" xml:space="preserve">
+    <value>Log</value>
+  </data>
+  <data name="client.log.title" xml:space="preserve">
+    <value>BlinkyLite client log</value>
+  </data>
+  <data name="client.log.explain" xml:space="preserve">
+    <value>The latest entries of this application's log on this computer. A PIN, a password, a PUK or a code is never written to it.</value>
+  </data>
+  <data name="client.log.copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="client.log.copied" xml:space="preserve">
+    <value>Copied to the clipboard.</value>
+  </data>
+  <data name="client.log.open-folder" xml:space="preserve">
+    <value>Open folder</value>
+  </data>
+  <data name="client.log.empty" xml:space="preserve">
+    <value>The log is still empty.</value>
+  </data>
+  <data name="client.sign-in.title" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="client.sign-in.explain" xml:space="preserve">
+    <value>Account from Active Directory. Admin and SecurityOfficer can issue keys.</value>
+  </data>
+  <data name="client.issuing.title" xml:space="preserve">
+    <value>Issue a key</value>
+  </data>
+  <data name="client.progress.empty" xml:space="preserve">
+    <value>The steps of the issuance, or the result of a verification, will appear here.</value>
+  </data>
 </root>

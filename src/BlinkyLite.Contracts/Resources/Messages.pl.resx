@@ -625,4 +625,37 @@
   <data name="web.tagline" xml:space="preserve">
     <value>Bezpieczne poświadczenia. Po prostu.</value>
   </data>
+  <data name="client.log" xml:space="preserve">
+    <value>Dziennik</value>
+  </data>
+  <data name="client.log.title" xml:space="preserve">
+    <value>Dziennik klienta BlinkyLite</value>
+  </data>
+  <data name="client.log.explain" xml:space="preserve">
+    <value>Najnowsze wpisy dziennika tej aplikacji na tym komputerze. PIN, hasło, PUK ani kody nigdy do niego nie trafiają.</value>
+  </data>
+  <data name="client.log.copy" xml:space="preserve">
+    <value>Kopiuj</value>
+  </data>
+  <data name="client.log.copied" xml:space="preserve">
+    <value>Skopiowano do schowka.</value>
+  </data>
+  <data name="client.log.open-folder" xml:space="preserve">
+    <value>Otwórz folder</value>
+  </data>
+  <data name="client.log.empty" xml:space="preserve">
+    <value>Dziennik jest jeszcze pusty.</value>
+  </data>
+  <data name="client.sign-in.title" xml:space="preserve">
+    <value>Zaloguj się</value>
+  </data>
+  <data name="client.sign-in.explain" xml:space="preserve">
+    <value>Konto z Active Directory. Klucze wydają Admin i SecurityOfficer.</value>
+  </data>
+  <data name="client.issuing.title" xml:space="preserve">
+    <value>Wydanie klucza</value>
+  </data>
+  <data name="client.progress.empty" xml:space="preserve">
+    <value>Tu pojawią się kroki wydania albo wynik weryfikacji.</value>
+  </data>
 </root>

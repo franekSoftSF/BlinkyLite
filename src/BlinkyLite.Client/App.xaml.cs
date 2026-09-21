@@ -21,6 +21,10 @@ public partial class App : Application
     /// <summary>What was remembered from last time; the window updates it.</summary>
     public static ClientSettings Settings { get; set; } = new();
 
+    /// <summary>Where the log goes; the window shows it and opens it.</summary>
+    public static string LogDirectory { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BlinkyLite");
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -40,8 +44,7 @@ public partial class App : Application
 
         // Under the operator's own profile, so no installer and no rights are
         // needed for a log to exist at all.
-        var directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BlinkyLite");
+        var directory = LogDirectory;
         Directory.CreateDirectory(directory);
 
         Log.Logger = new LoggerConfiguration()

@@ -625,4 +625,37 @@
   <data name="web.tagline" xml:space="preserve">
     <value>Sichere Anmeldedaten. Einfach.</value>
   </data>
+  <data name="client.log" xml:space="preserve">
+    <value>Protokoll</value>
+  </data>
+  <data name="client.log.title" xml:space="preserve">
+    <value>Protokoll des BlinkyLite-Clients</value>
+  </data>
+  <data name="client.log.explain" xml:space="preserve">
+    <value>Die neuesten Einträge im Protokoll dieser Anwendung auf diesem Computer. PIN, Kennwort, PUK und Codes werden nie hineingeschrieben.</value>
+  </data>
+  <data name="client.log.copy" xml:space="preserve">
+    <value>Kopieren</value>
+  </data>
+  <data name="client.log.copied" xml:space="preserve">
+    <value>In die Zwischenablage kopiert.</value>
+  </data>
+  <data name="client.log.open-folder" xml:space="preserve">
+    <value>Ordner öffnen</value>
+  </data>
+  <data name="client.log.empty" xml:space="preserve">
+    <value>Das Protokoll ist noch leer.</value>
+  </data>
+  <data name="client.sign-in.title" xml:space="preserve">
+    <value>Anmelden</value>
+  </data>
+  <data name="client.sign-in.explain" xml:space="preserve">
+    <value>Konto aus dem Active Directory. Admin und SecurityOfficer können Schlüssel ausstellen.</value>
+  </data>
+  <data name="client.issuing.title" xml:space="preserve">
+    <value>Schlüssel ausstellen</value>
+  </data>
+  <data name="client.progress.empty" xml:space="preserve">
+    <value>Hier erscheinen die Schritte der Ausstellung oder das Ergebnis einer Prüfung.</value>
+  </data>
 </root>

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Security.Authentication;
@@ -52,6 +53,12 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         Steps.ItemsSource = steps;
+
+        // The empty card says what will appear there, instead of being a blank.
+        steps.CollectionChanged += (_, _) =>
+            StepsEmpty.Visibility = steps.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        ShowLogFile();
         LanguagePicker.ItemsSource = Text.Languages.Select(l => new { l.Code, l.Name }).ToList();
         LanguagePicker.SelectedIndex = Strings.Supported
             .ToList()
@@ -205,6 +212,9 @@ public partial class MainWindow : Window
         ServerBox.IsEnabled = UserBox.IsEnabled = PasswordBox.IsEnabled = !ask;
         WindowsSignInButton.Visibility = ask ? Visibility.Collapsed : Visibility.Visible;
         SignInButton.Content = Text.Of(ask ? "client.totp.confirm" : "common.sign-in");
+
+        // Once the code is asked for, confirming it is the one thing to do.
+        SignInButton.Style = ask ? (Style)FindResource("Primary") : null;
 
         if (ask)
         {
@@ -396,6 +406,20 @@ public partial class MainWindow : Window
         }
     }
 
+    private void LogOpened(object sender, RoutedEventArgs e)
+    {
+        new LogWindow { Owner = this }.Show();
+        ShowLogFile();
+    }
+
+    /// <summary>The file name in the status bar; the whole path in its tooltip.</summary>
+    private void ShowLogFile()
+    {
+        var file = LogWindow.CurrentFile();
+        LogLink.Content = $"{Text.Of("client.log")}: {(file is null ? App.LogDirectory : Path.GetFileName(file))}";
+        LogLink.ToolTip = file ?? App.LogDirectory;
+    }
+
     private void ThemeToggled(object sender, RoutedEventArgs e) =>
         Remember(App.Settings with { Theme = ThemeManager.Toggle().Name });
 
@@ -411,6 +435,12 @@ public partial class MainWindow : Window
 
         Strings.Current.Culture = CultureInfo.GetCultureInfo(code);
         Remember(App.Settings with { Language = code });
+
+        // What XAML binds follows the language by itself; what this code
+        // wrote does not, and was left in the old one - the window came out
+        // half Polish, half German.
+        SignInButton.Content = Text.Of(pending is null ? "common.sign-in" : "client.totp.confirm");
+        ShowLogFile();
     }
 
     private static void Remember(ClientSettings settings)
