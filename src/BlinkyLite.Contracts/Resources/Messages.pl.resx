@@ -248,7 +248,7 @@
     <value>Serwer</value>
   </data>
   <data name="client.server-hint" xml:space="preserve">
-    <value>na przykład https://blinkylite.corp.example:8443</value>
+    <value>na przykład https://blinkylite.corp.example</value>
   </data>
   <data name="client.password" xml:space="preserve">
     <value>Hasło</value>
@@ -282,6 +282,30 @@
   </data>
   <data name="client.target" xml:space="preserve">
     <value>Dla kogo jest klucz</value>
+  </data>
+  <data name="web.console" xml:space="preserve">
+    <value>Konsola wydań</value>
+  </data>
+  <data name="web.nav.issuances" xml:space="preserve">
+    <value>Wydane klucze</value>
+  </data>
+  <data name="web.login.title" xml:space="preserve">
+    <value>Zaloguj się</value>
+  </data>
+  <data name="web.login.explain" xml:space="preserve">
+    <value>Konto z Active Directory. Dostęp mają Admin, SecurityOfficer i Helpdesk.</value>
+  </data>
+  <data name="web.issuances.title" xml:space="preserve">
+    <value>Wydane klucze</value>
+  </data>
+  <data name="web.issuances.empty" xml:space="preserve">
+    <value>Nie ma jeszcze żadnych wydań do pokazania.</value>
+  </data>
+  <data name="web.api.online" xml:space="preserve">
+    <value>Serwer dostępny</value>
+  </data>
+  <data name="web.api.offline" xml:space="preserve">
+    <value>Serwer niedostępny</value>
   </data>
   <data name="common.cancel" xml:space="preserve">
     <value>Anuluj</value>

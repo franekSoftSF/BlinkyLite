@@ -19,3 +19,11 @@ docs/
 tests/
 packaging/
 *.md
+
+# The web console is built inside the image from package-lock.json; a local
+# node_modules or dist would overwrite that with whatever this machine has -
+# the same mistake Windows obj/ folders once made for the server image.
+web/node_modules
+web/dist
+web/.angular
+web/public/i18n

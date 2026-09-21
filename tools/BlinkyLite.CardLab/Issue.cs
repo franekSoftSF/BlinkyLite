@@ -22,7 +22,7 @@ internal static class Issue
     {
         if (options.Server is not { } address || !Uri.TryCreate(address, UriKind.Absolute, out var server))
         {
-            log.Problem("Podaj --server https://blinkylite.example:8443");
+            log.Problem("Podaj --server https://blinkylite.example");
             return 2;
         }
 

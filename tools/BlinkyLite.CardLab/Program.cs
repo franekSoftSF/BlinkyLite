@@ -105,7 +105,7 @@ static int Help()
           issue                          PELNE WYDANIE: rezerwacja na serwerze,
                                          personalizacja karty, CMC, CA i zapis
                                          certyfikatu na karte:
-            --server https://host:8443     serwer BlinkyLite
+            --server https://host          serwer BlinkyLite (443)
             --operator DOMENA\uzytkownik   kto wydaje (haslo AD zapyta)
             --target <fragment nazwy>      dla kogo jest karta
             --profile <nazwa>              gdy serwer ma wiecej niz jeden

@@ -154,7 +154,7 @@ sudo ./scripts/dev-secrets.sh                   # losowe sekrety do ./secrets, z
 ./scripts/dev-certs.sh blinkylite.corp.example  # albo wgraj własny certyfikat
 cp .env.example .env                            # domena, konto serwisowe, SID-y grup
 docker compose up -d --build                    # baza, migracje, serwer
-curl -k https://localhost:8443/health
+curl -k https://localhost/health
 ```
 
 Pełna lista wymagań (serwer, AD, ADCS, stacja) i kroki wdrożenia:

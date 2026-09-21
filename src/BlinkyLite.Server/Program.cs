@@ -115,6 +115,9 @@ else
     return ServerSetup.ExitConfiguration;
 }
 
+// First, so every later piece - the audit's source address, the per-address
+// login limit - sees the operator's address and not nginx's (0055).
+app.UseBlinkyLiteForwardedHeaders(builder.Configuration);
 app.UseBlinkyLiteExceptions();
 app.UseStatusCodePages();
 app.UseSerilogRequestLogging();

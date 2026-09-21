@@ -248,7 +248,7 @@
     <value>Server</value>
   </data>
   <data name="client.server-hint" xml:space="preserve">
-    <value>for example https://blinkylite.corp.example:8443</value>
+    <value>for example https://blinkylite.corp.example</value>
   </data>
   <data name="client.password" xml:space="preserve">
     <value>Password</value>
@@ -282,6 +282,30 @@
   </data>
   <data name="client.target" xml:space="preserve">
     <value>Who the key is for</value>
+  </data>
+  <data name="web.console" xml:space="preserve">
+    <value>Issuance console</value>
+  </data>
+  <data name="web.nav.issuances" xml:space="preserve">
+    <value>Issued keys</value>
+  </data>
+  <data name="web.login.title" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="web.login.explain" xml:space="preserve">
+    <value>Your Active Directory account. Admin, SecurityOfficer and Helpdesk have access.</value>
+  </data>
+  <data name="web.issuances.title" xml:space="preserve">
+    <value>Issued keys</value>
+  </data>
+  <data name="web.issuances.empty" xml:space="preserve">
+    <value>There are no issuances to show yet.</value>
+  </data>
+  <data name="web.api.online" xml:space="preserve">
+    <value>Server available</value>
+  </data>
+  <data name="web.api.offline" xml:space="preserve">
+    <value>Server unavailable</value>
   </data>
   <data name="common.cancel" xml:space="preserve">
     <value>Cancel</value>

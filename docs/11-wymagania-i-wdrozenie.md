@@ -13,7 +13,7 @@ stacja; serwer trzyma sekrety, audyt i wie, kto co dostał.
 | Docker | Engine 24+ z `docker compose` | `depends_on: service_completed_successfully` dla migracji |
 | CPU / RAM | 2 rdzenie, 2 GB | serwer ~200 MB, PostgreSQL resztę |
 | Dysk | 20 GB na start | baza rośnie z wydaniami; audytu nie kasujemy |
-| Porty | **8443/tcp** przychodzący (stacje) | nic więcej nie musi być wystawione; PostgreSQL zostaje w sieci Dockera |
+| Porty | **443/tcp** przychodzący (stacje i przeglądarki), opcjonalnie 80/tcp tylko z przekierowaniem na 443 | od 0055 publicznie jest tylko nginx; serwer (8443) i PostgreSQL zostają w sieci Dockera |
 | Wychodzące | 636/tcp (LDAPS) do kontrolerów domeny | logowanie i wyszukiwanie użytkownika |
 | Nazwa DNS | rekord A na adres serwera | musi zgadzać się z nazwą w certyfikacie TLS |
 | Certyfikat TLS | para PEM (`.crt` + `.key`) na tę nazwę | serwer **nie wystartuje bez HTTPS** poza deweloperką (kod wyjścia 4) |
@@ -136,7 +136,7 @@ cp .env.example .env                          # domena, konto serwisowe, SID-y g
 nano secrets/blinkylite-ldap-service-password  # prawdziwe hasło konta serwisowego
 
 docker compose up -d --build
-curl -k https://localhost:8443/health
+curl -k https://localhost/health
 ```
 
 Co się dzieje po kolei: PostgreSQL wstaje i tworzy trzy role z
@@ -148,9 +148,9 @@ końcu startuje serwer jako `blinkylite_app`.
 
 ```bash
 docker compose logs api | grep "schema ok"     # mapowania zgadzają się z bazą
-curl -k https://localhost:8443/api/auth/me     # 401 error.auth.required
+curl -k https://localhost/api/auth/me     # 401 error.auth.required
 # i prawdziwe logowanie kontem z grupy:
-curl -k -X POST https://localhost:8443/api/auth/login \
+curl -k -X POST https://localhost/api/auth/login \
      -H 'content-type: application/json' \
      -d '{"username":"CORP\\jkowalski","password":"..."}'
 ```

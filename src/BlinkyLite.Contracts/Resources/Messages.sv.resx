@@ -248,7 +248,7 @@
     <value>Server</value>
   </data>
   <data name="client.server-hint" xml:space="preserve">
-    <value>till exempel https://blinkylite.corp.example:8443</value>
+    <value>till exempel https://blinkylite.corp.example</value>
   </data>
   <data name="client.password" xml:space="preserve">
     <value>Lösenord</value>
@@ -282,6 +282,30 @@
   </data>
   <data name="client.target" xml:space="preserve">
     <value>Vem nyckeln är till</value>
+  </data>
+  <data name="web.console" xml:space="preserve">
+    <value>Utfärdandekonsol</value>
+  </data>
+  <data name="web.nav.issuances" xml:space="preserve">
+    <value>Utfärdade nycklar</value>
+  </data>
+  <data name="web.login.title" xml:space="preserve">
+    <value>Logga in</value>
+  </data>
+  <data name="web.login.explain" xml:space="preserve">
+    <value>Ditt Active Directory-konto. Admin, SecurityOfficer och Helpdesk har åtkomst.</value>
+  </data>
+  <data name="web.issuances.title" xml:space="preserve">
+    <value>Utfärdade nycklar</value>
+  </data>
+  <data name="web.issuances.empty" xml:space="preserve">
+    <value>Det finns inga utfärdanden att visa ännu.</value>
+  </data>
+  <data name="web.api.online" xml:space="preserve">
+    <value>Servern är tillgänglig</value>
+  </data>
+  <data name="web.api.offline" xml:space="preserve">
+    <value>Servern är inte tillgänglig</value>
   </data>
   <data name="common.cancel" xml:space="preserve">
     <value>Avbryt</value>

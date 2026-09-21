@@ -1,0 +1,363 @@
+/*
+ * BlinkyLite web console. The layout follows Blinky's console - sidebar, top
+ * bar, panels - so an operator of one finds their way in the other; the
+ * colour and the name are BlinkyLite's own (D-30).
+ *
+ * The colour tokens below are Palette.cs from the WPF client, value for value.
+ * PaletteTests counts their contrast (every text pair at least 4.5:1) and
+ * WebPaletteTests checks that this file still says the same thing - edit both
+ * or neither.
+ */
+
+/* palette:light */
+:root,
+html[data-theme='light'] {
+  --bl-background: #FFFFFF;
+  --bl-surface: #F3F3F3;
+  --bl-text: #1A1A1A;
+  --bl-muted: #595959;
+  --bl-border: #C8C8C8;
+  --bl-accent-fill: #1DB954;
+  --bl-on-accent: #000000;
+  --bl-accent-text: #0E7A38;
+  --bl-danger: #A4262C;
+  --bl-warning: #7A4A00;
+  color-scheme: light;
+}
+/* /palette:light */
+
+/* palette:dark */
+html[data-theme='dark'] {
+  --bl-background: #1A1A1A;
+  --bl-surface: #242424;
+  --bl-text: #F2F2F2;
+  --bl-muted: #B4B4B4;
+  --bl-border: #3D3D3D;
+  --bl-accent-fill: #1DB954;
+  --bl-on-accent: #000000;
+  --bl-accent-text: #3DDB74;
+  --bl-danger: #FF8A85;
+  --bl-warning: #F0B429;
+  color-scheme: dark;
+}
+/* /palette:dark */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bl-background);
+  color: var(--bl-text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+}
+
+.muted {
+  color: var(--bl-muted);
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+input,
+select {
+  background: var(--bl-background);
+  border: 1px solid var(--bl-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--bl-accent-fill);
+  outline-offset: 2px;
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid var(--bl-border);
+  background: var(--bl-surface);
+  border-radius: 8px;
+  padding: 8px 14px;
+}
+
+button:disabled {
+  cursor: default;
+  color: var(--bl-muted);
+}
+
+/* The accent carries black text: the one pairing of #1DB954 that reads (D-20). */
+button.primary {
+  background: var(--bl-accent-fill);
+  color: var(--bl-on-accent);
+  border-color: transparent;
+  font-weight: 600;
+  padding: 11px 18px;
+}
+
+button.primary:disabled {
+  opacity: 0.55;
+  color: var(--bl-on-accent);
+}
+
+.icon-button {
+  background: transparent;
+}
+
+.mark {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--bl-accent-fill);
+  color: var(--bl-on-accent);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* ---- shell ------------------------------------------------------------ */
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 16px;
+  background: var(--bl-surface);
+  border-right: 1px solid var(--bl-border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand small,
+.login-brand small {
+  display: block;
+  color: var(--bl-muted);
+  font-size: 13px;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.sidebar nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--bl-text);
+  text-decoration: none;
+}
+
+.sidebar nav a:hover {
+  background: var(--bl-background);
+}
+
+/* Active is marked by a bar and weight, not by colour alone. */
+.sidebar nav a.active {
+  background: var(--bl-background);
+  box-shadow: inset 3px 0 0 var(--bl-accent-fill);
+  color: var(--bl-accent-text);
+  font-weight: 600;
+}
+
+.nav-icon {
+  width: 18px;
+  text-align: center;
+}
+
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--bl-border);
+  font-size: 13px;
+}
+
+/* Filled when the server answers, hollow when it does not: a shape, not just a colour. */
+.status-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--bl-accent-fill);
+  border: 2px solid var(--bl-accent-fill);
+}
+
+.status-dot.offline {
+  background: transparent;
+  border-color: var(--bl-danger);
+}
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--bl-surface);
+  border-bottom: 1px solid var(--bl-border);
+}
+
+.topbar .menu {
+  display: none;
+}
+
+.operator {
+  flex: 1;
+  min-width: 0;
+}
+
+.operator small {
+  display: block;
+  color: var(--bl-muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.content {
+  padding: 24px;
+}
+
+.panel {
+  background: var(--bl-surface);
+  border: 1px solid var(--bl-border);
+  border-radius: 12px;
+}
+
+.panel header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--bl-border);
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 48px 20px;
+  color: var(--bl-muted);
+}
+
+.empty > span {
+  font-size: 28px;
+}
+
+.empty strong {
+  color: var(--bl-text);
+}
+
+.problem {
+  color: var(--bl-danger);
+  margin: 0;
+}
+
+/* ---- sign-in ---------------------------------------------------------- */
+
+.login {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.login-card {
+  width: min(420px, 100%);
+  padding: 32px;
+  background: var(--bl-surface);
+  border: 1px solid var(--bl-border);
+  border-radius: 14px;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.login-card h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+
+.login-card form {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.login-card label {
+  display: grid;
+  gap: 6px;
+}
+
+/* ---- narrow screens --------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .sidebar.open {
+    display: flex;
+    position: fixed;
+    inset: 0 30% 0 0;
+    z-index: 10;
+  }
+
+  .topbar .menu {
+    display: inline-block;
+  }
+
+  .content {
+    padding: 16px;
+  }
+}

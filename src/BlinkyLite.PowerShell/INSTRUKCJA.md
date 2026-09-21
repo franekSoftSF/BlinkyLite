@@ -36,7 +36,7 @@ Import-Module BlinkyLite
 ## Co można
 
 ```powershell
-Connect-BlinkyLite -Server https://blinkylite.ems-ad.emsdemolab.pl:8443
+Connect-BlinkyLite -Server https://blinkylite.ems-ad.emsdemolab.pl
 Get-BlinkyLiteCard
 Get-BlinkyLiteProfile
 Find-BlinkyLiteUser frankiewicz
@@ -45,7 +45,7 @@ New-BlinkyLiteIssuance -User szymon.frankiewicz
 Disconnect-BlinkyLite
 ```
 
-Adres serwera **z portem**. `Connect-BlinkyLite` zapyta o hasło, jeśli nie
+Adres serwera **bez portu** — od 0055 serwer stoi za nginx na porcie 443. `Connect-BlinkyLite` zapyta o hasło, jeśli nie
 podasz `-Credential`. Token żyje w sesji PowerShell i nigdzie indziej — wygasa
 po 30 minutach.
 

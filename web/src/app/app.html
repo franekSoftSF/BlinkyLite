@@ -1,0 +1,57 @@
+@if (auth.signedIn()) {
+  <div class="app-shell">
+    <aside class="sidebar" [class.open]="menuOpen()">
+      <a class="brand" routerLink="/" (click)="menuOpen.set(false)">
+        <span class="mark" aria-hidden="true">BL</span>
+        <span>
+          <strong>BlinkyLite</strong>
+          <small>{{ i18n.t('web.console') }}</small>
+        </span>
+      </a>
+
+      <nav [attr.aria-label]="i18n.t('web.console')">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="menuOpen.set(false)">
+          <span class="nav-icon" aria-hidden="true">▤</span>{{ i18n.t('web.nav.issuances') }}
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <!-- Shape as well as colour: the dot is filled or hollow, not only green or red. -->
+        <span class="status-dot" [class.offline]="!apiOnline()" aria-hidden="true"></span>
+        <strong>{{ apiOnline() ? i18n.t('web.api.online') : i18n.t('web.api.offline') }}</strong>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar">
+        <button class="icon-button menu" type="button" (click)="menuOpen.update(v => !v)" aria-label="Menu">☰</button>
+
+        <div class="operator">
+          <strong>{{ auth.user()?.displayName }}</strong>
+          <small>{{ auth.user()?.upn }} · {{ auth.user()?.roles?.join(', ') }}</small>
+        </div>
+
+        <div class="topbar-actions">
+          <select class="language" [value]="i18n.language()" (change)="changeLanguage($any($event.target).value)"
+                  [attr.aria-label]="i18n.t('common.language')">
+            @for (language of languages; track language.code) {
+              <option [value]="language.code">{{ language.name }}</option>
+            }
+          </select>
+
+          <button class="icon-button" type="button" (click)="theme.toggle()" [attr.aria-label]="i18n.t('client.theme')">
+            {{ theme.theme() === 'light' ? '☾' : '☀' }}
+          </button>
+
+          <button class="icon-button" type="button" (click)="auth.logout()">{{ i18n.t('client.sign-out') }}</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <router-outlet />
+      </main>
+    </section>
+  </div>
+} @else {
+  <router-outlet />
+}

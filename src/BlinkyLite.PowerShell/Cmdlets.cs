@@ -11,7 +11,7 @@ namespace BlinkyLite.PowerShell;
 /// Signs in to a BlinkyLite server and keeps the token for this session.
 /// </summary>
 /// <example>
-///   <code>Connect-BlinkyLite -Server https://blinkylite.corp.example:8443</code>
+///   <code>Connect-BlinkyLite -Server https://blinkylite.corp.example</code>
 /// </example>
 [Cmdlet(VerbsCommunications.Connect, "BlinkyLite")]
 [OutputType(typeof(CurrentUser))]

@@ -7,6 +7,7 @@ using BlinkyLite.Piv.Attestation;
 using BlinkyLite.Server.Issuing;
 using BlinkyLite.Server.Secrets;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
@@ -111,6 +112,47 @@ public static class ServerSetup
         // physical token and this repository is public.
         services.TryAddSingleton(AttestationVerifier.ForYubico());
         services.AddScoped<IssuanceService>();
+    }
+
+    /// <summary>
+    /// Believes <c>X-Forwarded-For</c> - but only when the configuration says
+    /// the server sits behind its own proxy.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The audit records the source address of every sign-in and every PUK
+    /// disclosure. Behind nginx that address would be nginx's container for
+    /// all of them, and the log would stop saying who came from where.
+    /// </para>
+    /// <para>
+    /// Off by default, because a server that believes the header from anybody
+    /// lets anybody write any address into the audit. On in Docker, where the
+    /// server publishes no port and nginx is the only thing that can reach it
+    /// (D-32) - so the one party able to send the header is the one that sets
+    /// it. One hop only: the value nginx writes, not a chain a client could
+    /// have started.
+    /// </para>
+    /// </remarks>
+    public static void UseBlinkyLiteForwardedHeaders(this IApplicationBuilder app, IConfiguration configuration)
+    {
+        if (!configuration.GetValue("ForwardedHeaders:BehindOwnProxy", false))
+        {
+            return;
+        }
+
+        var options = new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+            ForwardLimit = 1,
+        };
+
+        // The proxy's address is assigned by Docker and changes between
+        // deployments; reachability, not an address list, is what restricts
+        // who can send the header here.
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+
+        app.UseForwardedHeaders(options);
     }
 
     public static void AddBlinkyLiteDatabase(this IServiceCollection services, string connectionString)
