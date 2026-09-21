@@ -346,6 +346,7 @@ wersji, przez którą przeszło wydanie.
 | 0026 | 2 | Karta dla wbudowanego sterownika PIV Windows | `done` |
 | 0022 | 2 | Odzyskiwanie | `open` |
 | 0025 | 2 | Logowanie zintegrowane (Negotiate/Kerberos) | `open` |
+| 0027 | 2 | Drugi składnik TOTP dla wszystkich klientów | `open` |
 | 0023 | 2 | Klient WPF — wydanie | `done` |
 | 0030 | 3 | Przeglądarka web (Helpdesk) i weryfikacja karty | `open` |
 | 0031 | 3 | Konfiguracja w aplikacji web: profile i keytab | `open` |
@@ -386,6 +387,9 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-18 | Sekrety serwera (KEK, klucz JWT, hasło LDAP, hasło do bazy) tylko z pliku sekretu (Docker secret / DPAPI maszyny) albo zmiennej; wpisane w `appsettings.json` zatrzymują start |
 | D-19 | Dane BlinkyLite dają się wyeksportować do Blinky; sekrety w paczce zaszyfrowane do certyfikatu Blinky |
 | D-20 | Akcent klienta `#1DB954`, oba motywy wg ustawienia Windows; role koloru rozdzielone dla kontrastu |
+| D-32 | nginx na **443** z tym samym certyfikatem co serwer; serwer tylko w sieci wewnętrznej; token w web tylko w pamięci karty przeglądarki |
+| D-31 | **TOTP obowiązkowy** jak w winch, na logowaniu do API — więc dla web, WPF i PowerShell; kody zapasowe jako hash |
+| D-30 | Aplikacja web w **Angular**, wyglądem podobna do Blinky, ale nie taka sama (akcent `#1DB954`) |
 | D-29 | Karta ma działać z **wbudowanym sterownikiem PIV Windows**, bez minidrivera Yubico; najpierw pomiar, potem zmiany |
 | D-28 | Admin konfiguruje w aplikacji web **profile (CA, szablon)** i **importuje keytab** — odwołuje „bez ekranu edycji" z D-21; profile w bazie z audytem, role dalej w `appsettings.json` |
 | D-27 | Kerberos dla **wszystkich** klientów (web, WPF, PowerShell) i dla **każdej** nazwy serwisu |

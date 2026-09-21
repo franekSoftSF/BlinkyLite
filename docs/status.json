@@ -374,6 +374,27 @@
       "state": "locked",
       "decidedOn": "2026-09-21",
       "by": "owner"
+    },
+    {
+      "id": "D-30",
+      "choice": "Aplikacja web w Angular (standalone, jak frontend Blinky), wygladem podobna do Blinky - pasek boczny, gorny pasek, panele, motyw jasny i ciemny - ale nie taka sama: akcent #1DB954 z D-20, wlasna nazwa i znak. Teksty z tego samego katalogu Messages, ktory serwer udostepnia w czterech jezykach",
+      "state": "locked",
+      "decidedOn": "2026-09-21",
+      "by": "owner"
+    },
+    {
+      "id": "D-31",
+      "choice": "Drugi skladnik TOTP obowiazkowy, jak w winch (ADR 0009 winch): wymuszony przy pierwszym logowaniu, sekret pokazany RAZ, nigdy w logach, audycie ani DTO, zapieczetowany KEK-iem w bazie; kody zapasowe jako hash, jednorazowe. Na logowaniu do API, wiec dla WSZYSTKICH klientow - web, WPF i PowerShell - bo TOTP tylko w przegladarce daloby sie obejsc tym samym API z PowerShella. Kerberos (0025) zastapi haslo, nie drugi skladnik",
+      "state": "locked",
+      "decidedOn": "2026-09-21",
+      "by": "owner"
+    },
+    {
+      "id": "D-32",
+      "choice": "nginx na porcie 443 z TYM SAMYM certyfikatem co serwer; serwer tylko w sieci wewnetrznej Dockera. Klienci WPF i PowerShell lacza sie przez https://<nazwa> bez portu. Token w aplikacji web trzymany tylko w pamieci karty przegladarki, jak w WPF - odswiezenie strony to ponowne logowanie; bez ciasteczek, wiec bez CSRF",
+      "state": "locked",
+      "decidedOn": "2026-09-21",
+      "by": "owner"
     }
   ],
   "openQuestions": [
@@ -618,6 +639,14 @@
       "state": "done",
       "owner": "cloud-ai",
       "proof": "2026-09-21, DPCLIENT01, Windows 11 26100, BEZ zadnego oprogramowania Yubico ani middleware (skrypt tools/station/Test-SmartCardDriver.ps1: zaden wpis Calais nie przejmuje karty po ATR, sterownik urzadzenia karty to Microsoft msclmd.inf). Karta 39721373 (5.8.0), certyfikat 1ac8... z zadania 225, szablon EMSDEMOLABYubicoSmartcardLogon. certutil -scinfo: 'Identity Device (NIST SP 800-73 [PIV])', kontener ac83dde3-87a8-a19d-4725-3609625fc105 - GUID z CHUID karty w ukladzie Microsoftu z koncowka 5FC105 - 'Public key matching test succeeded', 'Private key verifies' po PIN-ie, lancuch waliduje sie pod CERT_CHAIN_POLICY_NT_AUTH. Wlasciciel zalogowal sie ta karta do Windows jako uzytkownik. Jedyny FAILED w certutil (AES256+RSAES_OAEP, CRYPT_E_NO_DECRYPT_CERT) jest oczekiwany: certyfikat ma tylko Key Usage Digital Signature. Po drodze poprawiony GUID w CHUID na UUID RFC 4122 v4 (SP 800-73-5, 3.4.1) i zapis CHUID/CCC od nowa przy kazdym wydaniu."
+    },
+    {
+      "id": "0027",
+      "phase": 2,
+      "title": "Drugi skladnik TOTP dla wszystkich klientow",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": null
     },
     {
       "id": "0030",
