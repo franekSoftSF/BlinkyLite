@@ -45,7 +45,7 @@
           <select class="language" [value]="i18n.language()" (change)="changeLanguage($any($event.target).value)"
                   [attr.aria-label]="i18n.t('common.language')">
             @for (language of languages; track language.code) {
-              <option [value]="language.code">{{ language.name }}</option>
+              <option [value]="language.code" [selected]="language.code === i18n.language()">{{ language.name }}</option>
             }
           </select>
 

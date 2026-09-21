@@ -34,7 +34,7 @@ export class App implements OnInit {
   }
 
   protected async changeLanguage(code: string): Promise<void> {
-    await this.i18n.load(code as Language);
+    await this.i18n.choose(code as Language);
   }
 
   /** /health is anonymous on purpose: the dot in the sidebar works before sign-in. */

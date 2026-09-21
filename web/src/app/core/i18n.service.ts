@@ -12,7 +12,10 @@ export const LANGUAGES = [
 
 export type Language = (typeof LANGUAGES)[number]['code'];
 
-const STORED = 'blinkylite.language';
+// A new key on purpose: the old one was written on every load, so it held
+// whatever the first visit detected and the browser's setting never counted
+// again. Only a language somebody picked is stored now.
+const CHOSEN = 'blinkylite.language.chosen';
 
 /**
  * The message catalogue, in the viewer's language.
@@ -28,16 +31,30 @@ export class I18n {
 
   readonly language = signal<Language>(I18n.initial());
 
+  constructor() {
+    // The browser's language changed and nobody picked one here: follow it,
+    // without a reload.
+    window.addEventListener('languagechange', () => {
+      if (I18n.chosen() === null) {
+        void this.load(I18n.fromBrowser());
+      }
+    });
+  }
+
   async load(language: Language = this.language()): Promise<void> {
     const messages = await firstValueFrom(this.http.get<Record<string, string>>(`/i18n/${language}.json`));
     this.messages.set(messages);
     this.language.set(language);
     document.documentElement.lang = language;
+  }
 
+  /** A language picked from the list: remembered, and it wins over the browser from now on. */
+  async choose(language: Language): Promise<void> {
+    await this.load(language);
     try {
-      localStorage.setItem(STORED, language);
+      localStorage.setItem(CHOSEN, language);
     } catch {
-      // A private window may refuse storage; the language then resets on reload.
+      // A private window may refuse storage; the browser's language then applies after a reload.
     }
   }
 
@@ -60,16 +77,31 @@ export class I18n {
   }
 
   private static initial(): Language {
-    try {
-      const stored = localStorage.getItem(STORED);
-      if (LANGUAGES.some((l) => l.code === stored)) {
-        return stored as Language;
-      }
-    } catch {
-      // Fall through to the browser's language.
-    }
+    return I18n.chosen() ?? I18n.fromBrowser();
+  }
 
-    const browser = navigator.language.slice(0, 2);
-    return (LANGUAGES.find((l) => l.code === browser)?.code ?? 'en') as Language;
+  private static chosen(): Language | null {
+    try {
+      const stored = localStorage.getItem(CHOSEN);
+      return LANGUAGES.some((l) => l.code === stored) ? (stored as Language) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * The first of the browser's languages, in its order of preference, that
+   * BlinkyLite speaks: "de-CH, fr, en" gives German. English when none is.
+   */
+  private static fromBrowser(): Language {
+    const preferred = navigator.languages?.length ? navigator.languages : [navigator.language];
+    for (const tag of preferred) {
+      const code = tag.toLowerCase().split('-')[0];
+      const match = LANGUAGES.find((l) => l.code === code);
+      if (match) {
+        return match.code;
+      }
+    }
+    return 'en';
   }
 }

@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 import { toDataURL } from 'qrcode';
 import { Auth, LoginChallenge, LoginResponse, problemCode } from '../core/auth.service';
 import { Download, Downloads } from '../core/downloads.service';
-import { I18n } from '../core/i18n.service';
+import { I18n, LANGUAGES, Language } from '../core/i18n.service';
 
 type Step = 'password' | 'setup' | 'code' | 'backup';
 
@@ -21,6 +21,17 @@ type Step = 'password' | 'setup' | 'code' | 'backup';
   template: `
     <main class="login">
       <section class="login-card" [class.wide]="step() === 'setup' || step() === 'backup'">
+        <!-- Before signing in too: the person at a strange desk may not read
+             the language the browser was set to. -->
+        <select class="login-language" [value]="i18n.language()" (change)="language($any($event.target).value)"
+                [attr.aria-label]="i18n.t('common.language')">
+          @for (l of languages; track l.code) {
+            <!-- [selected] per option: a [value] on the select is applied before
+                 the options exist, and the list showed the first one instead. -->
+            <option [value]="l.code" [selected]="l.code === i18n.language()">{{ l.name }}</option>
+          }
+        </select>
+
         <div class="login-brand">
           <img class="mark large" src="brand/blinkylite-mark.svg" alt="" width="64" height="64" />
           <span>
@@ -156,6 +167,11 @@ export class LoginPage implements OnInit {
   private readonly router = inject(Router);
   private readonly downloads = inject(Downloads);
   protected readonly installer = signal<Download | null>(null);
+  protected readonly languages = LANGUAGES;
+
+  protected language(code: string): void {
+    void this.i18n.choose(code as Language);
+  }
 
   async ngOnInit(): Promise<void> {
     this.installer.set(await this.downloads.client());
