@@ -159,7 +159,9 @@ public sealed class MessageCatalogueTests
 public sealed class NoHardCodedTextTests
 {
     /// <summary>The product name is the same in every language.</summary>
-    private static readonly string[] Allowed = ["BlinkyLite"];
+    // The product name, and its two halves: the wordmark draws "Blinky" and
+    // "Lite" in two colours (brand/README.md). A proper name, not a sentence.
+    private static readonly string[] Allowed = ["BlinkyLite", "Blinky", "Lite"];
 
     [Fact]
     public void No_XAML_carries_text_for_a_person()
