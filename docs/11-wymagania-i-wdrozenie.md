@@ -41,6 +41,90 @@ SID grupy:
 Get-ADGroup 'BlinkyLite-SecurityOfficers' | Select-Object -ExpandProperty SID
 ```
 
+### Kerberos: SPN i keytab (0025)
+
+Logowanie tożsamością Windows (D-23, D-27) działa tylko wtedy, gdy klient
+dostanie od KDC bilet na **dokładnie tę nazwę**, której użył w adresie, a
+serwer w kontenerze ma klucz, którym ten bilet otworzy. Bez tego przeglądarka,
+WPF i PowerShell dostają 401 bez żadnego wyjaśnienia (R-08) — dlatego to jest
+spisane **przed** kodem. Hasło AD i TOTP zostają drogą zapasową, a drugi
+składnik obowiązuje także po Kerberosie (D-31).
+
+**1. Nazwy.** Każda nazwa, pod którą ktoś otwiera BlinkyLite, potrzebuje SPN
+`HTTP/<nazwa>` na **jednym** koncie:
+
+| Nazwa w adresie | SPN |
+|---|---|
+| `blinkylite.ems-ad.emsdemolab.pl` | `HTTP/blinkylite.ems-ad.emsdemolab.pl` |
+| `blinkylite` (krótka, jeśli ktoś jej używa) | `HTTP/blinkylite` |
+
+- Nazwa ma być rekordem **A**, nie CNAME: Windows przy CNAME prosi o bilet dla
+  nazwy docelowej, a nie tej z paska adresu, i SPN „nie działa” bez powodu,
+  który widać.
+- **Adres IP nie loguje przez Kerberos.** Kto wpisze `https://10.0.20.89`,
+  dostanie formularz hasła. To celowe, nie usterka.
+- Ten sam SPN na dwóch kontach psuje oba — sprawdź przed dodaniem:
+  `setspn -Q HTTP/blinkylite.ems-ad.emsdemolab.pl`.
+
+**2. Konto: osobne, nie `svc_blinkylite`.** `ktpass` ustawia kontu nowe hasło
+i — bez `-setupn` — zmienia jego UPN na nazwę SPN. Na koncie LDAP pierwsze
+zepsułoby wyszukiwanie, a `-setupn` daje klucze AES z niewłaściwą solą, które
+nie otworzą żadnego biletu. Osobne konto nie ma tych kłopotów: jego hasła nikt
+nie musi znać, bo jedynym sekretem jest keytab.
+
+```powershell
+New-ADUser -Name 'svc_blinkylite_http' -SamAccountName 'svc_blinkylite_http' `
+    -Path 'OU=Service Accounts,DC=ems-ad,DC=emsdemolab,DC=pl' `
+    -AccountPassword (Read-Host -AsSecureString 'tymczasowe haslo') -Enabled $true `
+    -CannotChangePassword $true -PasswordNeverExpires $true `
+    -KerberosEncryptionType AES256
+setspn -S HTTP/blinkylite.ems-ad.emsdemolab.pl EMS-AD\svc_blinkylite_http
+setspn -S HTTP/blinkylite EMS-AD\svc_blinkylite_http
+```
+
+Konto nie potrzebuje żadnych uprawnień ani grup. `-KerberosEncryptionType
+AES256` to „This account supports Kerberos AES 256 bit encryption” — bez tego
+KDC wystawi bilet RC4, a keytab ma tylko AES.
+
+**3. Keytab** — raz, na kontrolerze domeny, jako Domain Admin:
+
+```cmd
+ktpass /princ HTTP/blinkylite.ems-ad.emsdemolab.pl@EMS-AD.EMSDEMOLAB.PL ^
+       /mapuser EMS-AD\svc_blinkylite_http /pass +rndPass ^
+       /crypto AES256-SHA1 /ptype KRB5_NT_PRINCIPAL ^
+       /out blinkylite-http.keytab
+```
+
+`+rndPass` ustawia kontu losowe hasło, którego nikt nie zna — keytab jest
+jedynym miejscem, w którym jest ten klucz. Uruchomienie `ktpass` drugi raz
+zmienia hasło i numer klucza (kvno), więc **stary keytab przestaje działać**:
+podmiana keytaba to zawsze nowy plik na serwerze w tej samej chwili.
+
+Jeden wpis wystarcza dla wszystkich SPN konta: bilet na `HTTP/blinkylite` jest
+zaszyfrowany tym samym kluczem konta, a serwer (MIT Kerberos, akceptor bez
+nazwy) próbuje każdego klucza z keytaba. *Do sprawdzenia w labie w 0025 —
+jeśli krótka nazwa nie przejdzie, dopisujemy wpis dla niej.*
+
+**4. Keytab na serwer.** To odpowiednik hasła konta usługi (R-09): nie na
+share, nie do gita, nie w mailu. Na serwer `scp` wprost z kontrolera domeny
+albo stacji administratora, do `/opt/blinkylite/secrets/blinkylite-http.keytab`,
+właściciel `root`, prawa `600`; kontener dostaje go jako Docker secret. Import
+przez formularz web to 0031, nie teraz.
+
+**5. Przeglądarki.** Edge i Chrome wysyłają bilet Kerberos tylko do witryn ze
+strefy **Intranet lokalny** (albo z `AuthServerAllowlist`). GPO:
+*Computer Configuration → Administrative Templates → Windows Components →
+Internet Explorer → Internet Control Panel → Security Page → Site to Zone
+Assignment List*: `https://blinkylite.ems-ad.emsdemolab.pl` = `1`. Bez tego
+przeglądarka pokaże okno logowania albo formularz hasła — nie zaloguje sama.
+
+**Sprawdzenie ze stacji w domenie**, zanim zaczniemy szukać błędu w kodzie:
+
+```powershell
+klist purge
+klist get HTTP/blinkylite.ems-ad.emsdemolab.pl   # bilet musi byc AES256, nie RC4
+```
+
 ## 3. ADCS (potrzebne dopiero do wydawania, patch 0021)
 
 | Rzecz | Wymaganie |
