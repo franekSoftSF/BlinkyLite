@@ -172,6 +172,18 @@ sama reguła „CHUID tylko gdy brak", te same wielokrotnie przepersonalizowywan
 karty. Poprawka (`ReplaceCardIdentity`, świeży CHUID przy każdym wydaniu) jest
 w kodzie od `c17c056`.
 
+**9:47, ten sam przebieg z `-TestSignature` (PIN wpisany):** w sekcji Smart
+Card Key Storage Provider — kontener ten sam, `Public key matching test
+succeeded`, **`Private key verifies`** (podpis kluczem z karty po PIN-ie), łańcuch
+waliduje się pod NT_AUTH. To jest wszystko, czego potrzebuje logowanie kartą.
+
+Jedyny „FAILED" w raporcie jest **oczekiwany**: `AES256+RSAES_OAEP(RSA:CNG) test
+FAILED … CRYPT_E_NO_DECRYPT_CERT (0x8009200c)`. `certutil` próbuje też
+odszyfrować kluczem z karty, a certyfikat z szablonu
+`EMSDEMOLABYubicoSmartcardLogon` ma tylko `Key Usage: Digital Signature` — nie
+może być odbiorcą szyfrowania. PKINIT używa podpisu. Skrypt stacji mówi to
+teraz wprost, żeby ta linia nie była nigdy czytana jako wada karty.
+
 **Test potwierdzający, przed ponownym wydaniem:** `Restart-Service SCardSvr`
 na `DPCLIENT02`, potem skrypt jako zwykły użytkownik. Działa → pamięć leży w
 usłudze kart. Nie działa → leży gdzie indziej (profil); poprawka i tak ją omija.

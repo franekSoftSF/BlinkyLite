@@ -333,7 +333,7 @@ if ($TestSignature) {
 }
 $scinfo = @(Get-Content $scinfoFile -ErrorAction SilentlyContinue)
 $interesting = $scinfo | Where-Object {
-    $_ -match 'Card:|Karta:|Provider|Dostawca|Reader:|Czytnik:|NTE_|0x8009|0x8010|FAILED|passed|Identity Device|YubiKey'
+    $_ -match 'Card:|Karta:|Provider|Dostawca|Reader:|Czytnik:|NTE_|0x8009|0x8010|FAILED|passed|verifies|Key Container|Identity Device|YubiKey'
 }
 foreach ($line in ($interesting | Select-Object -First 30)) {
     Say "  $($line.Trim())"
@@ -342,6 +342,10 @@ Say ''
 
 Say 'WNIOSEK'
 $vendorDriver = @($cards | Where-Object { $_.DriverProviderName -and $_.DriverProviderName -notmatch 'Microsoft' })
+$signs = @($scinfo | Where-Object { $_ -match 'Private key verifies' }).Count -gt 0
+$container = @($scinfo | Where-Object { $_ -match 'Key Container =' }).Count -gt 0
+$noDecrypt = @($scinfo | Where-Object { $_ -match 'CRYPT_E_NO_DECRYPT_CERT|0x8009200c' }).Count -gt 0
+$badKeyset = @($scinfo | Where-Object { $_ -match 'NTE_BAD_KEYSET|0x80090016' }).Count -gt 0
 $inboxInUse = @($scinfo | Where-Object { $_ -match 'Identity Device \(NIST SP 800-73 \[PIV\]\)' }).Count -gt 0
 
 if ($vendorKeys.Count -gt 0) {
@@ -353,6 +357,28 @@ if ($vendorKeys.Count -gt 0) {
     Say '  Karte obsluguje WBUDOWANY sterownik PIV Windows. Jesli logowanie dziala, 0026 zamyka sie pomiarem.'
 } else {
     Say '  Nie da sie rozstrzygnac z tego odczytu - patrz pelny wynik certutil w raporcie.'
+}
+
+if ($signs) {
+    Say '  Klucz na karcie PODPISUJE po PIN-ie ("Private key verifies") - tego potrzebuje logowanie.'
+} elseif ($container -and -not $TestSignature) {
+    Say '  Sterownik widzi kontener klucza. Uruchom z -TestSignature, zeby sprawdzic podpis PIN-em.'
+}
+
+if ($noDecrypt) {
+    # Zmierzone na DPCLIENT01 21.09.2026: certutil probuje tez odszyfrowac,
+    # a certyfikat logowania ma tylko Digital Signature - nie moze byc
+    # odbiorca szyfrowania. PKINIT uzywa podpisu, wiec to nie przeszkadza.
+    Say '  "RSAES_OAEP test FAILED / CRYPT_E_NO_DECRYPT_CERT" jest OCZEKIWANE: certyfikat ma tylko'
+    Say '  Key Usage = Digital Signature i nie sluzy do szyfrowania. Na logowanie nie wplywa.'
+}
+
+if ($badKeyset -and -not $container) {
+    # Zmierzone 21.09.2026: ta sama karta dawala NTE_BAD_KEYSET na dwoch
+    # stacjach i dzialala na trzeciej. Wyjasnienie wiodace: stacja pamieta
+    # te karte (po GUID z CHUID) z innym kluczem - docs/12.
+    Say '  NTE_BAD_KEYSET bez kontenera: jesli ta sama karta dziala na innej stacji, ta stacja'
+    Say '  najpewniej pamieta ja pod tym samym CHUID z poprzednim kluczem. Wydanie z nowym CHUID to omija.'
 }
 Say ''
 
