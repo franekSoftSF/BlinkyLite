@@ -72,6 +72,11 @@ Co skrypt robi i co ma pokazać:
 Jeśli skrypt stanie na `BLAD`, niczego nie poprawiaj ręcznie — napisz, co
 pokazał. Najczęstsze:
 
+- *„New-ADUser : Access is denied”* — okno PowerShell nie jest uruchomione
+  **jako administrator**. Na kontrolerze domeny UAC odcina wtedy grupę Domain
+  Admins i AD odmawia zapisu, choć konto uprawnienia ma. Skrypt od tej wersji
+  sprawdza to na początku;
+
 - *„jest CNAME”* — zamień rekord w DNS na A;
 - *„jest już na koncie …”* — ten SPN ma inne konto; dwa konta z tym samym SPN
   psują logowanie obu. Usuń go stamtąd (`setspn -D HTTP/<nazwa> <konto>`)

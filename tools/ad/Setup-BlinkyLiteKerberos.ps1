@@ -64,6 +64,23 @@ Write-Host "Konto:   $netbios\$Account  w  $Path"
 Write-Host "Nazwy:   $($Names -join ', ')"
 Write-Host "Keytab:  $OutFile"
 
+# Na kontrolerze domeny UAC odcina grupe Domain Admins od tokenu okna, ktore
+# nie jest "Uruchom jako administrator" - AD odpowiada wtedy "Access is denied"
+# przy pierwszym zapisie, jak gdyby konto nie mialo uprawnien. Sprawdzone tu,
+# zanim cokolwiek zostanie zmienione.
+$me = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+if (-not $me.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Fail 'to okno PowerShell nie jest uruchomione jako administrator. Zamknij je, kliknij PowerShell prawym przyciskiem -> "Uruchom jako administrator" i uruchom skrypt ponownie.'
+}
+
+# Po SID (-512), nie po nazwie: na polskim Windows grupa nazywa sie
+# "Administratorzy domeny".
+$domainAdmins = New-Object Security.Principal.SecurityIdentifier("$($domain.DomainSID)-512")
+if (-not $me.IsInRole($domainAdmins)) {
+    Warn "$($me.Identity.Name) nie jest w grupie Domain Admins. Jesli nie masz delegacji do tworzenia kont w $Path,"
+    Warn 'ustawiania SPN i hasla, krok 1 skonczy sie "Access is denied".'
+}
+
 if ($Account -ieq 'svc_blinkylite') {
     Fail 'svc_blinkylite to konto LDAP serwera. ktpass zmieni mu haslo i UPN - uzyj osobnego konta.'
 }
