@@ -105,8 +105,7 @@ public static class PivCardObjects
     /// </param>
     public static byte[] BuildChuid(DateOnly expires)
     {
-        var guid = new byte[16];
-        RandomNumberGenerator.Fill(guid);
+        var guid = CardUuid();
 
         var chuid = new List<byte>();
 
@@ -122,7 +121,8 @@ public static class PivCardObjects
 
         // 34 - GUID. This is what the minidriver keys the card on, so it is
         // random per card rather than derived from anything: two cards sharing
-        // a GUID are one card as far as Windows is concerned.
+        // a GUID are one card as far as Windows is concerned. It is a real
+        // RFC 4122 UUID and not merely sixteen random bytes - see CardUuid.
         chuid.AddRange([0x34, 0x10]);
         chuid.AddRange(guid);
 
@@ -137,6 +137,28 @@ public static class PivCardObjects
 
         return [.. chuid];
     }
+
+    /// <summary>
+    /// The Card UUID: a version 4 RFC 4122 UUID, in network byte order.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// SP 800-73-5 Part 1, 3.4.1: the GUID "SHALL be a 16-byte binary
+    /// representation of a valid UUID [RFC4122]. The UUID SHALL be version 1,
+    /// 4, or 5". This used to be sixteen random bytes, which is a valid UUID
+    /// one time in sixty-four - the version nibble and the variant bits are
+    /// not free to be anything. Card 39721373 went out with version 1 and the
+    /// NCS variant, which is no UUID at all; a strict reader of the CHUID,
+    /// and Windows' inbox PIV driver may be one, is entitled to refuse it.
+    /// </para>
+    /// <para>
+    /// Big-endian, because RFC 4122's binary form is network order. The
+    /// default <see cref="Guid.ToByteArray()"/> is Microsoft's mixed-endian
+    /// layout, which would put the version nibble in the wrong byte and quietly
+    /// produce the same invalid UUID this replaced.
+    /// </para>
+    /// </remarks>
+    public static byte[] CardUuid() => Guid.NewGuid().ToByteArray(bigEndian: true);
 
     /// <summary>
     /// Builds a CCC. The card identifier is fresh; the rest is fixed by the
