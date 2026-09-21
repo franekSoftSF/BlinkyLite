@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:l="clr-namespace:BlinkyLite.Client.Localisation"
         Title="{l:Loc pin.title}"
+        Icon="Assets/blinkylite.ico"
         Width="560"
         Height="440"
         WindowStartupLocation="CenterScreen"

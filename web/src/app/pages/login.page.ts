@@ -21,10 +21,10 @@ type Step = 'password' | 'setup' | 'code' | 'backup';
     <main class="login">
       <section class="login-card" [class.wide]="step() === 'setup' || step() === 'backup'">
         <div class="login-brand">
-          <span class="mark" aria-hidden="true">BL</span>
+          <img class="mark large" src="brand/blinkylite-mark.svg" alt="" width="64" height="64" />
           <span>
-            <strong>BlinkyLite</strong>
-            <small>{{ i18n.t('web.console') }}</small>
+            <strong class="wordmark large">Blinky<span class="lite">Lite</span></strong>
+            <small>{{ i18n.t('web.tagline') }}</small>
           </span>
         </div>
 

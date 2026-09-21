@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:l="clr-namespace:BlinkyLite.Client.Localisation"
         Title="BlinkyLite"
+        Icon="Assets/blinkylite.ico"
         Width="980"
         Height="700"
         MinWidth="820"
@@ -41,10 +42,25 @@
                         Click="SignedOut" />
             </StackPanel>
 
-            <StackPanel>
-                <TextBlock Text="BlinkyLite" FontSize="22" FontWeight="SemiBold" />
-                <TextBlock x:Name="Who" Foreground="{DynamicResource MutedText}" />
-            </StackPanel>
+            <!-- The mark and the wordmark: "Blinky" in the text colour, "Lite" in
+                 the accent, as on the logo (brand/). A proper name, not a text
+                 to translate. -->
+            <DockPanel>
+                <Image DockPanel.Dock="Left"
+                       Source="Assets/blinkylite-mark-128.png"
+                       Width="44"
+                       Height="44"
+                       Margin="0,0,12,0"
+                       VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="HighQuality" />
+
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock FontSize="22" FontWeight="Bold">
+                        <Run Text="Blinky" /><Run Text="Lite" Foreground="{DynamicResource AccentText}" />
+                    </TextBlock>
+                    <TextBlock x:Name="Who" Foreground="{DynamicResource MutedText}" />
+                </StackPanel>
+            </DockPanel>
         </DockPanel>
 
         <!-- Signing in. The token lives in the process and goes nowhere else. -->

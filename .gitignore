@@ -34,3 +34,8 @@ artifacts/
 
 # Worktrees for parallel work
 .worktrees/
+
+# brand/build-assets.mjs installs sharp only for itself (see the script).
+brand/node_modules/
+brand/package.json
+brand/package-lock.json

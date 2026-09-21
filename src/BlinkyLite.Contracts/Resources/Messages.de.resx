@@ -622,4 +622,7 @@
   <data name="web.login.or-password" xml:space="preserve">
     <value>oder mit Ihrem Kennwort</value>
   </data>
+  <data name="web.tagline" xml:space="preserve">
+    <value>Sichere Anmeldedaten. Einfach.</value>
+  </data>
 </root>

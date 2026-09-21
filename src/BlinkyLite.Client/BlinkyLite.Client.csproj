@@ -13,7 +13,16 @@
          crash happened exactly when somebody clicked into the PIN box. It is
          also what lets de-DE, sv-SE and pl-PL formatting exist at all. -->
     <InvariantGlobalization>false</InvariantGlobalization>
+
+    <!-- Explorer, the taskbar and Alt+Tab. Generated from brand/ by
+         brand/build-assets.mjs - edit the SVG, not the .ico. -->
+    <ApplicationIcon>Assets\blinkylite.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\blinkylite.ico" />
+    <Resource Include="Assets\blinkylite-mark-128.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- The client had no log at all, and the first failure on a real station

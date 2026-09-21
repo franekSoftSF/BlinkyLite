@@ -114,16 +114,33 @@ button.primary:disabled {
   background: transparent;
 }
 
+/* The mark from brand/: the key on its dark tile, in both themes - it is a
+   logo, not a surface, so it does not follow the theme. */
 .mark {
-  display: inline-grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--bl-accent-fill);
-  color: var(--bl-on-accent);
-  font-weight: 800;
-  letter-spacing: 0.5px;
+  display: block;
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+
+.mark.large {
+  width: 64px;
+  height: 64px;
+}
+
+/* "Blinky" in the text colour, "Lite" in the accent - the wordmark on the logo. */
+.wordmark {
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.wordmark.large {
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.wordmark .lite {
+  color: var(--bl-accent-text);
 }
 
 /* ---- shell ------------------------------------------------------------ */

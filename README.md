@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="brand/blinkylite-logo.png" alt="BlinkyLite — Secure credentials. Simply." width="640">
+</p>
+
 # BlinkyLite
 
 **Wydaj klucz. Zapisz PUK. Nic więcej.**

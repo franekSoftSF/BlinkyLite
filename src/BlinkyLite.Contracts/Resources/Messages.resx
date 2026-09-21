@@ -622,4 +622,7 @@
   <data name="web.login.or-password" xml:space="preserve">
     <value>or with your password</value>
   </data>
+  <data name="web.tagline" xml:space="preserve">
+    <value>Secure credentials. Simply.</value>
+  </data>
 </root>

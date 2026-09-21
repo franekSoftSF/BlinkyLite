@@ -2,9 +2,9 @@
   <div class="app-shell">
     <aside class="sidebar" [class.open]="menuOpen()">
       <a class="brand" routerLink="/" (click)="menuOpen.set(false)">
-        <span class="mark" aria-hidden="true">BL</span>
+        <img class="mark" src="brand/blinkylite-mark.svg" alt="" width="40" height="40" />
         <span>
-          <strong>BlinkyLite</strong>
+          <strong class="wordmark">Blinky<span class="lite">Lite</span></strong>
           <small>{{ i18n.t('web.console') }}</small>
         </span>
       </a>

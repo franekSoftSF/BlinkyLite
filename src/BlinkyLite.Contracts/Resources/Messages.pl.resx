@@ -622,4 +622,7 @@
   <data name="web.login.or-password" xml:space="preserve">
     <value>albo hasłem</value>
   </data>
+  <data name="web.tagline" xml:space="preserve">
+    <value>Bezpieczne poświadczenia. Po prostu.</value>
+  </data>
 </root>
