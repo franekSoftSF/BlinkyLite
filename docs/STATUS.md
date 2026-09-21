@@ -305,7 +305,18 @@ końcowy z definicji ukończenia i jedyny, który liczy. Znaczy, że SID w
 rozszerzeniu, CHUID i CCC, polityka PIN i łańcuch zaufania zgadzają się na
 tyle, że przyjmuje je kontroler domeny, a nie tylko nasze testy.
 
-Nie istnieje: klient WPF, moduł PowerShell, przeglądarka i weryfikacja.
+**Karta działa z wbudowanym sterownikiem PIV Windows** (0026, 21 września 2026,
+`DPCLIENT01`, bez żadnego oprogramowania Yubico): `certutil` pokazuje „Identity
+Device (NIST SP 800-73 [PIV])", kontener klucza, podpis po PIN-ie i łańcuch pod
+NT_AUTH, a użytkownik zalogował się kartą do Windows. Minidriver Yubico nie jest
+potrzebny. Po drodze wyszły dwie rzeczy: GUID w CHUID nie był UUID-em, czego
+wymaga NIST, i CHUID był pisany tylko wtedy, gdy go brakowało — więc karta
+wydana ponownie zachowywała starą tożsamość, a stacje, które znały ją z
+poprzednim kluczem, nie widziały nowego (R-11). Obie poprawione, druga jeszcze
+niezweryfikowana. Szczegóły i pomiary: [12](12-hardware-notes.md).
+
+Nie istnieje: przeglądarka web i weryfikacja, odzyskiwanie, moduł PowerShell w
+wersji, przez którą przeszło wydanie.
 
 ## Stany
 
@@ -332,7 +343,7 @@ Nie istnieje: klient WPF, moduł PowerShell, przeglądarka i weryfikacja.
 | 0011 | 1 | Personalizacja i klucz | `done` |
 | 0020 | 2 | API wydań | `done` |
 | 0021 | 2 | EOBO | `done` |
-| 0026 | 2 | Karta dla wbudowanego sterownika PIV Windows | `open` |
+| 0026 | 2 | Karta dla wbudowanego sterownika PIV Windows | `done` |
 | 0022 | 2 | Odzyskiwanie | `open` |
 | 0025 | 2 | Logowanie zintegrowane (Negotiate/Kerberos) | `open` |
 | 0023 | 2 | Klient WPF — wydanie | `done` |
@@ -418,6 +429,7 @@ Zamknięte 2026-09-19, decyzje właściciela:
 | R-03 | WinSCard / CertEnroll z .NET 10 na Windows ARM64 nikt nie uruchomił | 0001 publikuje `win-arm64`, 0053 dowodzi na sprzęcie |
 | R-05 | Usługa Windows w MSIX (`desktop6:Service`) na docelowym Windows Server | 0051 z zapisaną rezerwą: skrypt instalacyjny |
 | R-06 | Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na uprawnienia Graph i ruchu wychodzącego z serwera | wymagania spisane w [09](09-expiry-notification.md#co-przygotowuje-administrator-raz); konto bez Entra → audyt, nie awaria |
+| R-11 | Karta wydana ponownie pod **starym CHUID** nie jest rozpoznawana na stacjach, które znały ją z poprzednim kluczem — 21.09 ta sama karta działała na `DPCLIENT01`, a na `DPCLIENT02` i `SZYMON-PC` (też bez minidrivera Yubico) nie | CHUID i CCC od nowa przy każdym wydaniu (`c17c056`); niezweryfikowane — następne wydanie musi zadziałać na `DPCLIENT02` |
 | R-10 | Wbudowany sterownik PIV Windows może odrzucić kartę (`NTE_BAD_KEYSET`) z przyczyny, której nie da się przeczytać — w Blinky nikt jej nie ustalił | 0026 zaczyna od pomiaru na `DPCLIENT02`; hipotezy sprawdzane po jednej, z wynikiem w [12](12-hardware-notes.md) |
 | R-09 | Keytab jest równoważny hasłu konta usługi, a D-28 przesyła go przez formularz web | tylko Admin, tylko TLS, zapieczętowany KEK-iem, nigdy nie zwracany ani logowany, na dysk tylko do tmpfs `600`, każda podmiana w audycie; w interfejsie „zastąp", bez „pokaż" |
 | R-08 | Negotiate na Kestrelu w kontenerze linuksowym wymaga keytaba dla SPN `HTTP/blinkylite…` i działającego `krb5.conf`; bez tego stacja dostaje 401 bez wyjaśnienia i wygląda to na błąd klienta | 0025: wymagania keytaba w [11](11-wymagania-i-wdrozenie.md) **przed** kodem; logowanie hasłem zostaje jako droga zapasowa |

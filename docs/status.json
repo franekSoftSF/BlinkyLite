@@ -41,7 +41,7 @@
     "phase": 2,
     "phaseTitle": "Wydanie",
     "state": "open",
-    "summary": "PIERWSZY CERTYFIKAT WYDANY I DZIALA: 20 wrzesnia 2026 karta 39721373 dostala certyfikat (zadanie 223, EMSDEMOLAB-Sub-CA) i uzytkownik zalogowal sie nia do Windows w domenie. Zamkniete fazy 0 i 1 oraz 0020 i 0021 z fazy 2 - wszystko sprawdzone na prawdziwej domenie, CA i kartach. Zostaje klient WPF (0023), odzyskiwanie (0022), przegladarka (0030), PowerShell (0040) i logowanie zintegrowane (0025). 393 testy jednostkowe, 84 na PostgreSQL 16.",
+    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na DPCLIENT01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), przegladarka web za nginx (0030, 0055), konfiguracja w web (0031), Kerberos (0025), wydanie z PowerShell (0040). 429 testow jednostkowych.",
     "nothingIssuedYet": false
   },
   "stateLegend": {
@@ -493,6 +493,11 @@
       "id": "R-10",
       "impact": "Wbudowany sterownik PIV Windows moze odrzucic karte (NTE_BAD_KEYSET) z przyczyny, ktorej nie da sie przeczytac - w Blinky nikt jej nie ustalil",
       "handling": "0026 zaczyna od pomiaru na DPCLIENT02; jesli karta juz dziala bez minidrivera Yubico, zostaje to zapisane jako regula; jesli nie - kolejne hipotezy (Discovery Object, Key History, CHUID) sprawdzane po jednej, z wynikiem w docs/12"
+    },
+    {
+      "id": "R-11",
+      "impact": "Karta wydana ponownie pod starym CHUID nie jest rozpoznawana na stacjach, ktore znaly ja z poprzednim kluczem: 21.09 ta sama karta dzialala na DPCLIENT01, a na DPCLIENT02 i SZYMON-PC dawala NTE_BAD_KEYSET bez kontenera - obie tylko ze sterownikiem Microsoftu. Brak minidrivera Yubico nie byl roznica",
+      "handling": "ReplaceCardIdentity pisze CHUID i CCC od nowa przy kazdym wydaniu (od c17c056). Niezweryfikowane: nastepne wydanie tej karty musi dzialac takze na DPCLIENT02"
     }
   ],
   "patches": [
@@ -610,9 +615,9 @@
       "id": "0026",
       "phase": 2,
       "title": "Karta zgodna z wbudowanym sterownikiem PIV Windows",
-      "state": "open",
+      "state": "done",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-21, DPCLIENT01, Windows 11 26100, BEZ zadnego oprogramowania Yubico ani middleware (skrypt tools/station/Test-SmartCardDriver.ps1: zaden wpis Calais nie przejmuje karty po ATR, sterownik urzadzenia karty to Microsoft msclmd.inf). Karta 39721373 (5.8.0), certyfikat 1ac8... z zadania 225, szablon EMSDEMOLABYubicoSmartcardLogon. certutil -scinfo: 'Identity Device (NIST SP 800-73 [PIV])', kontener ac83dde3-87a8-a19d-4725-3609625fc105 - GUID z CHUID karty w ukladzie Microsoftu z koncowka 5FC105 - 'Public key matching test succeeded', 'Private key verifies' po PIN-ie, lancuch waliduje sie pod CERT_CHAIN_POLICY_NT_AUTH. Wlasciciel zalogowal sie ta karta do Windows jako uzytkownik. Jedyny FAILED w certutil (AES256+RSAES_OAEP, CRYPT_E_NO_DECRYPT_CERT) jest oczekiwany: certyfikat ma tylko Key Usage Digital Signature. Po drodze poprawiony GUID w CHUID na UUID RFC 4122 v4 (SP 800-73-5, 3.4.1) i zapis CHUID/CCC od nowa przy kazdym wydaniu."
     },
     {
       "id": "0030",
@@ -711,6 +716,11 @@
       "what": "0003: TLS Kestrela z certyfikatem z magazynu Windows",
       "why": "sprawdzony tylko certyfikat deweloperski z pliku",
       "when": "0051"
+    },
+    {
+      "what": "0026/R-11: swiezy CHUID przy ponownym wydaniu",
+      "why": "poprawka w kodzie, ale zadna karta nie zostala jeszcze wydana ta wersja; DPCLIENT02 i SZYMON-PC dalej nie widza klucza karty 39721373",
+      "when": "reset + wydanie nowym klientem, potem ta sama karta na DPCLIENT02"
     }
   ]
 }

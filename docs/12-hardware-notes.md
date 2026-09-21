@@ -6,7 +6,10 @@ która okaże się błędna, jest tu oznaczana jako błędna, a nie usuwana.
 
 ## Wbudowany sterownik PIV Windows (0026, D-29)
 
-**Stan: otwarte, przed pomiarem.**
+**Stan: rozstrzygnięte 21 września 2026 — działa.** Karta BlinkyLite loguje do
+Windows na `DPCLIENT01` wyłącznie ze sterownikiem Microsoftu (`msclmd`), bez
+minidrivera Yubico. Poniżej droga do tego wyniku, łącznie z pomyłkami po
+drodze, i jedna sprawa otwarta: ponowne wydanie tej samej karty (R-11).
 
 Blinky utknął tu 24 sierpnia 2026: wbudowany sterownik (`msclmd.dll`,
 „Identity Device (NIST SP 800-73 [PIV])") nie tworzył kontenera klucza dla
@@ -187,6 +190,19 @@ teraz wprost, żeby ta linia nie była nigdy czytana jako wada karty.
 **Test potwierdzający, przed ponownym wydaniem:** `Restart-Service SCardSvr`
 na `DPCLIENT02`, potem skrypt jako zwykły użytkownik. Działa → pamięć leży w
 usłudze kart. Nie działa → leży gdzie indziej (profil); poprawka i tak ją omija.
+
+### 21 września 2026: logowanie jako użytkownik — działa
+
+Właściciel zalogował się kartą 39721373 (żądanie 225) do Windows na
+`DPCLIENT01` jako użytkownik. Na tej stacji nie ma oprogramowania Yubico ani
+żadnego middleware. **0026 zamknięty.**
+
+**Ważne dla wniosków na produkcję:** brak minidrivera Yubico **nie był**
+różnicą między „działa" a „nie działa". `DPCLIENT02` też nigdy go nie miał, a
+ta sama karta tam nie działa. Różnica wiodąca: czy stacja lub użytkownik znał
+już tę kartę pod tym samym GUID z CHUID z innym kluczem (R-11). Usunięcie
+minidrivera jest warunkiem D-29, ale samo nie naprawi stacji, które pamiętają
+kartę z poprzedniego wydania.
 
 ### Pomiar na `DPCLIENT02` — do zrobienia
 
