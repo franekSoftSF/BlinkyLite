@@ -18,11 +18,9 @@ server {
     ssl_session_cache   shared:tls:10m;
 
     # The console shows PUKs. Nothing of it may be framed, sniffed or cached
-    # by a proxy on the way.
-    add_header Strict-Transport-Security "max-age=31536000" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "no-referrer" always;
-    add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+    # by a proxy on the way. Repeated in every location below that sets a
+    # header of its own - see security-headers.conf for why.
+    include /etc/nginx/security-headers.conf;
 
     root /usr/share/nginx/html;
 
@@ -39,12 +37,14 @@ server {
     # Translations are generated at build time and change with every release;
     # a stale one shows yesterday's words, so they are not cached for long.
     location /i18n/ {
+        include /etc/nginx/security-headers.conf;
         add_header Cache-Control "no-cache" always;
         try_files $uri =404;
     }
 
     # Angular routes: anything that is not a file is the application.
     location / {
+        include /etc/nginx/security-headers.conf;
         add_header Cache-Control "no-cache" always;
         try_files $uri $uri/ /index.html;
     }

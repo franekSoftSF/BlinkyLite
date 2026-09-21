@@ -23,6 +23,7 @@ FROM nginx:1.29-alpine
 ENV NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
 COPY docker/web/nginx.conf.template /etc/nginx/templates/conf.d/default.conf.template
 COPY docker/web/blinkylite-proxy.conf /etc/nginx/templates/blinkylite-proxy.conf.template
+COPY docker/web/security-headers.conf /etc/nginx/security-headers.conf
 COPY --from=build /src/web/dist/web/browser /usr/share/nginx/html
 
 EXPOSE 443 80
