@@ -1,26 +1,6 @@
-import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Download, Downloads } from '../core/downloads.service';
 import { I18n } from '../core/i18n.service';
-
-/** Mirrors downloads/index.json, written by packaging/client/Build-Msix.ps1. */
-interface DownloadIndex {
-  generated: string;
-  files: Download[];
-}
-
-interface Download {
-  kind: string;
-  file: string;
-  version: string;
-  platform: string;
-  bytes: number;
-  sha256: string;
-  signed: boolean;
-  selfSigned?: boolean;
-  certificate?: string | null;
-  publisher: string;
-}
 
 /**
  * Tools (0052): the station installer, straight from the server that the
@@ -92,22 +72,17 @@ interface Download {
 })
 export class ToolsPage implements OnInit {
   protected readonly i18n = inject(I18n);
-  private readonly http = inject(HttpClient);
+  private readonly downloads = inject(Downloads);
 
   protected readonly client = signal<Download | null>(null);
   protected readonly generated = signal<string | null>(null);
   protected readonly loaded = signal(false);
 
   async ngOnInit(): Promise<void> {
-    try {
-      const index = await firstValueFrom(this.http.get<DownloadIndex>('downloads/index.json'));
-      this.generated.set(index.generated);
-      this.client.set(index.files.find((f) => f.kind === 'client-msix') ?? null);
-    } catch {
-      // No index yet: the page says so instead of showing an error.
-    } finally {
-      this.loaded.set(true);
-    }
+    const index = await this.downloads.index();
+    this.generated.set(index?.generated ?? null);
+    this.client.set(index?.files.find((f) => f.kind === 'client-msix') ?? null);
+    this.loaded.set(true);
   }
 
   protected size(bytes: number): string {

@@ -1,10 +1,11 @@
-import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, inject, signal, viewChild } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { toDataURL } from 'qrcode';
 import { Auth, LoginChallenge, LoginResponse, problemCode } from '../core/auth.service';
+import { Download, Downloads } from '../core/downloads.service';
 import { I18n } from '../core/i18n.service';
 
 type Step = 'password' | 'setup' | 'code' | 'backup';
@@ -125,13 +126,40 @@ type Step = 'password' | 'setup' | 'code' | 'backup';
           </form>
         </ng-template>
       </section>
+
+      <!-- The station installer, before anybody signs in: the machine that
+           needs it most is the one without BlinkyLite on it yet (0052). The
+           same file the Tools page offers, from the same index. -->
+      @if (installer(); as i) {
+        <aside class="login-download" [attr.aria-label]="i18n.t('web.tools.client')">
+          <img class="mark" src="brand/blinkylite-mark.svg" alt="" width="40" height="40" />
+          <div>
+            <strong>{{ i18n.t('web.tools.client') }}</strong>
+            <small class="muted block">{{ i18n.t('web.tools.version', i.version) }} · {{ (i.bytes / 1048576).toFixed(1) }} MB</small>
+          </div>
+          <span class="login-download-actions">
+            @if (i.selfSigned && i.certificate) {
+              <a class="button" [href]="'downloads/' + i.certificate" download [title]="i18n.t('web.tools.self-signed')">
+                {{ i18n.t('web.tools.certificate') }}
+              </a>
+            }
+            <a class="button primary" [href]="'downloads/' + i.file" download>⭳ {{ i18n.t('web.tools.download') }}</a>
+          </span>
+        </aside>
+      }
     </main>
   `,
 })
-export class LoginPage {
+export class LoginPage implements OnInit {
   protected readonly i18n = inject(I18n);
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
+  private readonly downloads = inject(Downloads);
+  protected readonly installer = signal<Download | null>(null);
+
+  async ngOnInit(): Promise<void> {
+    this.installer.set(await this.downloads.client());
+  }
   private readonly codeInput = viewChild<ElementRef<HTMLInputElement>>('codeInput');
 
   protected username = '';

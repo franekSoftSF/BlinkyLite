@@ -589,6 +589,47 @@ a.button.primary {
   padding: 16px;
 }
 
+/* The installer under the sign-in card: same width, quieter. */
+.login {
+  grid-auto-flow: row;
+  align-content: center;
+  gap: 16px;
+}
+
+.login-download {
+  width: min(420px, 100%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bl-surface);
+  border: 1px solid var(--bl-border);
+  border-radius: 14px;
+}
+
+.login-download {
+  flex-wrap: wrap;
+}
+
+/* The name keeps its line; the buttons go under it when there is no room. */
+.login-download > div {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.login-download-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.login-download a.button {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
 .login-card {
   width: min(420px, 100%);
   padding: 32px;
