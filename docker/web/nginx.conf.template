@@ -52,8 +52,9 @@ server {
         alias /usr/share/nginx/downloads/;
         autoindex off;
         types {
-            application/msix     msix;
-            application/json     json;
+            application/msix       msix;
+            application/json       json;
+            application/pkix-cert  cer;
         }
         default_type application/octet-stream;
         include /etc/nginx/security-headers.conf;

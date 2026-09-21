@@ -561,6 +561,12 @@ a.button {
   font-weight: 600;
 }
 
+a.button:not(.primary) {
+  border: 1px solid var(--bl-border);
+  color: var(--bl-text);
+  background: var(--bl-background);
+}
+
 a.button.primary {
   background: var(--bl-accent-fill);
   color: var(--bl-on-accent);

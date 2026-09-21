@@ -700,4 +700,10 @@
   <data name="web.tools.none" xml:space="preserve">
     <value>There is no installer on the server yet.</value>
   </data>
+  <data name="web.tools.self-signed" xml:space="preserve">
+    <value>Signed with BlinkyLite's own certificate, not by a company CA. Before the first installation, the station has to trust this certificate once - as an administrator, in PowerShell:</value>
+  </data>
+  <data name="web.tools.certificate" xml:space="preserve">
+    <value>Download certificate</value>
+  </data>
 </root>

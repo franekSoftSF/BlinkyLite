@@ -700,4 +700,10 @@
   <data name="web.tools.none" xml:space="preserve">
     <value>Det finns inget installationspaket på servern än.</value>
   </data>
+  <data name="web.tools.self-signed" xml:space="preserve">
+    <value>Signerat med BlinkyLites eget certifikat, inte av en företags-CA. Före den första installationen måste stationen lita på certifikatet en gång – som administratör, i PowerShell:</value>
+  </data>
+  <data name="web.tools.certificate" xml:space="preserve">
+    <value>Ladda ned certifikat</value>
+  </data>
 </root>

@@ -135,7 +135,18 @@ if ($certificate) {
 $downloads = Join-Path $Out 'downloads'
 New-Item -ItemType Directory $downloads -Force | Out-Null
 Get-ChildItem $downloads -Filter 'BlinkyLite-Client-*.msix' | Remove-Item -Force
+Get-ChildItem $downloads -Filter '*.cer' | Remove-Item -Force
 Copy-Item $package $downloads
+
+# Self-signed (issuer = subject): no station trusts it on its own, so the
+# public certificate goes next to the package and the Tools page says how to
+# trust it. Only the public part - the private key stays in this profile.
+$selfSigned = $certificate -and $certificate.Subject -eq $certificate.Issuer
+$certificateFile = $null
+if ($selfSigned) {
+    $certificateFile = 'BlinkyLite-SelfSigned.cer'
+    [IO.File]::WriteAllBytes((Join-Path $downloads $certificateFile), $certificate.Export('Cert'))
+}
 
 $item = Get-Item (Join-Path $downloads $name)
 [ordered]@{
@@ -147,12 +158,14 @@ $item = Get-Item (Join-Path $downloads $name)
         platform  = 'win-x64'
         bytes     = $item.Length
         sha256    = (Get-FileHash $item.FullName -Algorithm SHA256).Hash
-        signed    = [bool] $certificate
-        publisher = $publisher
+        signed      = [bool] $certificate
+        selfSigned  = [bool] $selfSigned
+        certificate = $certificateFile
+        publisher   = $publisher
     })
 } | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $downloads 'index.json') -Encoding utf8NoBOM
 
 Write-Host ""
 Write-Host "Package:   $package ($([math]::Round($item.Length / 1MB, 1)) MB)"
-Write-Host "Signed:    $([bool] $certificate)"
+Write-Host "Signed:    $([bool] $certificate)$(if ($selfSigned) { ' (self-signed - stations must trust ' + $certificateFile + ')' })"
 Write-Host "Downloads: $downloads (msix + index.json, for /opt/blinkylite/downloads)"

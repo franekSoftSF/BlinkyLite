@@ -17,6 +17,8 @@ interface Download {
   bytes: number;
   sha256: string;
   signed: boolean;
+  selfSigned?: boolean;
+  certificate?: string | null;
   publisher: string;
 }
 
@@ -46,7 +48,9 @@ interface Download {
               {{ i18n.t('web.tools.version', c.version) }} · {{ size(c.bytes) }} · {{ i18n.date(generated()) }}
             </p>
 
-            @if (c.signed) {
+            @if (c.signed && c.selfSigned) {
+              <p class="warning" role="note"><span aria-hidden="true">!</span> {{ i18n.t('web.tools.signed-by', c.publisher) }}</p>
+            } @else if (c.signed) {
               <p class="signed"><span aria-hidden="true">✓</span> {{ i18n.t('web.tools.signed-by', c.publisher) }}</p>
             } @else {
               <p class="warning" role="note"><span aria-hidden="true">!</span> {{ i18n.t('web.tools.unsigned') }}</p>
@@ -67,6 +71,15 @@ interface Download {
             <li>{{ i18n.t('web.tools.item.cli') }}</li>
             <li>{{ i18n.t('web.tools.item.module') }}</li>
           </ul>
+
+          @if (c.selfSigned && c.certificate) {
+            <!-- A self-signed package installs only where its certificate is
+                 trusted: one step per station, said before the install step
+                 so nobody meets 0x800B0109 first. -->
+            <p>{{ i18n.t('web.tools.self-signed') }}</p>
+            <pre class="mono">Import-Certificate -FilePath .\\{{ c.certificate }} -CertStoreLocation Cert:\\LocalMachine\\TrustedPeople</pre>
+            <p><a class="button" [href]="'downloads/' + c.certificate" download>⭳ {{ i18n.t('web.tools.certificate') }}</a></p>
+          }
 
           <p>{{ i18n.t('web.tools.install') }}</p>
           <pre class="mono">Add-AppxPackage .\\{{ c.file }}</pre>

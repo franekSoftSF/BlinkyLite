@@ -700,4 +700,10 @@
   <data name="web.tools.none" xml:space="preserve">
     <value>Auf dem Server gibt es noch kein Installationspaket.</value>
   </data>
+  <data name="web.tools.self-signed" xml:space="preserve">
+    <value>Mit einem eigenen BlinkyLite-Zertifikat signiert, nicht von einer Firmen-CA. Vor der ersten Installation muss die Arbeitsstation diesem Zertifikat einmal vertrauen – als Administrator, in PowerShell:</value>
+  </data>
+  <data name="web.tools.certificate" xml:space="preserve">
+    <value>Zertifikat herunterladen</value>
+  </data>
 </root>

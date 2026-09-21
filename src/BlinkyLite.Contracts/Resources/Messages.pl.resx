@@ -700,4 +700,10 @@
   <data name="web.tools.none" xml:space="preserve">
     <value>Na serwerze nie ma jeszcze instalatora.</value>
   </data>
+  <data name="web.tools.self-signed" xml:space="preserve">
+    <value>Podpisany własnym certyfikatem BlinkyLite, nie przez firmowe CA. Przed pierwszą instalacją stacja musi raz zaufać temu certyfikatowi – jako administrator, w PowerShell:</value>
+  </data>
+  <data name="web.tools.certificate" xml:space="preserve">
+    <value>Pobierz certyfikat</value>
+  </data>
 </root>
