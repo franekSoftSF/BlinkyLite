@@ -13,6 +13,16 @@ public sealed class JwtOptions
     public const string Issuer = "BlinkyLite";
     public const string Audience = "BlinkyLite";
 
+    /// <summary>
+    /// The audience of the ticket between the password and the code. Another
+    /// value than <see cref="Audience"/> is the whole protection: the access
+    /// token's validation refuses a ticket, and the ticket's refuses a token.
+    /// </summary>
+    public const string SecondFactorAudience = "BlinkyLite/second-factor";
+
+    /// <summary>Long enough to open an app and type six digits, or to scan a QR code the first time.</summary>
+    public static readonly TimeSpan TicketLifetime = TimeSpan.FromMinutes(5);
+
     /// <summary>Base64, at least 32 bytes. Never in appsettings.json in git - env or a Docker secret.</summary>
     [Required]
     public string SigningKey { get; set; } = "";
@@ -55,8 +65,20 @@ public sealed class TokenService(JwtOptions options, TimeProvider clock)
 
     public LoginResponse Issue(CurrentUser user)
     {
+        var expires = clock.GetUtcNow().AddMinutes(options.LifetimeMinutes);
+        return new LoginResponse(Create(user, JwtOptions.Audience, expires), expires, user);
+    }
+
+    /// <summary>Proof of a correct password, good only for the second step (0027).</summary>
+    public LoginChallenge IssueTicket(CurrentUser user, string next)
+    {
+        var expires = clock.GetUtcNow().Add(JwtOptions.TicketLifetime);
+        return new LoginChallenge(next, Create(user, JwtOptions.SecondFactorAudience, expires), expires);
+    }
+
+    private string Create(CurrentUser user, string audience, DateTimeOffset expires)
+    {
         var now = clock.GetUtcNow();
-        var expires = now.AddMinutes(options.LifetimeMinutes);
 
         var claims = new Dictionary<string, object>
         {
@@ -67,24 +89,22 @@ public sealed class TokenService(JwtOptions options, TimeProvider clock)
             [JwtRegisteredClaimNames.Jti] = Guid.NewGuid().ToString("N"),
         };
 
-        var token = new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
+        return new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
         {
             Issuer = JwtOptions.Issuer,
-            Audience = JwtOptions.Audience,
+            Audience = audience,
             IssuedAt = now.UtcDateTime,
             NotBefore = now.UtcDateTime,
             Expires = expires.UtcDateTime,
             Claims = claims,
             SigningCredentials = credentials,
         });
-
-        return new LoginResponse(token, expires, user);
     }
 
-    public static TokenValidationParameters ValidationParameters(JwtOptions options) => new()
+    public static TokenValidationParameters ValidationParameters(JwtOptions options, string audience = JwtOptions.Audience) => new()
     {
         ValidIssuer = JwtOptions.Issuer,
-        ValidAudience = JwtOptions.Audience,
+        ValidAudience = audience,
         IssuerSigningKey = options.Key(),
         ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
         RequireExpirationTime = true,
@@ -166,6 +186,16 @@ public static class Policies
     public const string CanRevealPuk = nameof(CanRevealPuk);
     public const string CanRevealMgmtKey = nameof(CanRevealMgmtKey);
     public const string CanAudit = nameof(CanAudit);
+    public const string CanResetSecondFactor = nameof(CanResetSecondFactor);
+
+    /// <summary>
+    /// The second sign-in step. Authenticated by the ticket scheme alone, so an
+    /// access token does not reach it and a ticket reaches nothing else.
+    /// </summary>
+    public const string SecondFactor = nameof(SecondFactor);
+
+    /// <summary>The authentication scheme behind <see cref="SecondFactor"/>.</summary>
+    public const string TicketScheme = "Ticket";
 
     public static readonly IReadOnlyDictionary<string, Role[]> Roles = new Dictionary<string, Role[]>
     {
@@ -175,5 +205,7 @@ public static class Policies
         [CanRevealPuk] = [Role.Admin, Role.SecurityOfficer, Role.Helpdesk],
         [CanRevealMgmtKey] = [Role.Admin],
         [CanAudit] = [Role.Admin],
+        [CanResetSecondFactor] = [Role.Admin],
+        [SecondFactor] = [Role.Admin, Role.SecurityOfficer, Role.Helpdesk],
     };
 }

@@ -21,6 +21,9 @@ sequenceDiagram
     SO->>C: login + hasło AD
     C->>S: POST /api/auth/login
     S->>AD: LDAPS bind, tokenGroups
+    S-->>C: bilet drugiego kroku (5 min, nie token)
+    SO->>C: kod z aplikacji uwierzytelniającej
+    C->>S: POST /api/auth/totp (bilet)
     S-->>C: JWT (role)
     C->>C: jest certyfikat EA? (EKU, ważność, klucz)
     SO->>C: wybór użytkownika docelowego

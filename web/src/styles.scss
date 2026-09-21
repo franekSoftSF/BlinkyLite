@@ -335,6 +335,64 @@ button.primary:disabled {
   gap: 6px;
 }
 
+/* ---- second factor (0027) -------------------------------------------- */
+
+.login-card.wide {
+  width: min(560px, 100%);
+}
+
+.login-card form > button:not(.primary) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--bl-muted);
+}
+
+.totp-setup {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+/* Always on white, in both themes: a QR code inverted by a dark theme is one
+   that half the authenticator apps refuse to read. */
+.qr {
+  flex: none;
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 6px;
+}
+
+.secret,
+.backup-codes code {
+  font-family: Consolas, 'Cascadia Mono', monospace;
+  font-size: 16px;
+  letter-spacing: 1px;
+  word-break: break-all;
+}
+
+.small {
+  font-size: 13px;
+}
+
+input.code {
+  font-size: 22px;
+  letter-spacing: 4px;
+  font-family: Consolas, 'Cascadia Mono', monospace;
+}
+
+.backup-codes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 24px;
+  margin: 16px 0 20px;
+  padding-left: 24px;
+}
+
+.warning {
+  color: var(--bl-warning);
+}
+
 /* ---- narrow screens --------------------------------------------------- */
 
 @media (max-width: 760px) {
@@ -359,5 +417,10 @@ button.primary:disabled {
 
   .content {
     padding: 16px;
+  }
+
+  .totp-setup {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

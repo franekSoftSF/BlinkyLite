@@ -31,6 +31,9 @@ public static class Problems
         "BL003" => StatusCodes.Status409Conflict,
         "BL004" => StatusCodes.Status403Forbidden,
         "BL005" => StatusCodes.Status400BadRequest,
+        "BL006" => StatusCodes.Status401Unauthorized,
+        "BL007" => StatusCodes.Status409Conflict,
+        "BL008" => StatusCodes.Status409Conflict,
         _ => StatusCodes.Status500InternalServerError,
     };
 

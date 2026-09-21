@@ -45,16 +45,87 @@ public sealed class ServerClient : IDisposable
 
     public CurrentUser? User { get; private set; }
 
-    /// <summary>Signs in with the operator's AD credentials and keeps the token in memory.</summary>
-    public async Task<CurrentUser> LoginAsync(string username, string password, CancellationToken ct = default)
+    /// <summary>After a sign-in with a backup code: how many are left, so the shell can warn.</summary>
+    public int? BackupCodesLeft { get; private set; }
+
+    /// <summary>
+    /// The password step. Returns the ticket for the code; a ticket for a
+    /// setup is refused here, because only the web console can show the QR
+    /// code a setup needs (0027).
+    /// </summary>
+    public async Task<LoginChallenge> BeginLoginAsync(string username, string password, CancellationToken ct = default)
     {
         var response = await http.PostAsJsonAsync("/api/auth/login", new LoginRequest(username, password), Json, ct);
-        var login = await ReadAsync<LoginResponse>(response, ct);
+        var challenge = await ReadAsync<LoginChallenge>(response, ct);
+
+        if (challenge.Next != LoginNext.Totp)
+        {
+            throw new ServerException(HttpStatusCode.Conflict, ErrorCodes.TotpSetupRequired, $"next step {challenge.Next}");
+        }
+
+        return challenge;
+    }
+
+    /// <summary>
+    /// The code step. A wrong code throws <see cref="ServerException"/> with
+    /// <see cref="ErrorCodes.TotpInvalid"/> and the same challenge may be tried
+    /// again until it expires.
+    /// </summary>
+    public async Task<CurrentUser> CompleteLoginAsync(LoginChallenge challenge, string code, CancellationToken ct = default)
+    {
+        // The ticket goes on this one request, not on the client: it must
+        // never be sent anywhere a token would be.
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/totp")
+        {
+            Content = JsonContent.Create(new SecondFactorRequest(code), options: Json),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", challenge.Ticket);
+
+        var login = await ReadAsync<LoginResponse>(await http.SendAsync(request, ct), ct);
 
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
         User = login.User;
+        BackupCodesLeft = login.BackupCodesLeft;
 
         return login.User;
+    }
+
+    /// <summary>
+    /// Both steps, for a shell that can ask a question and wait: the console
+    /// tool and the PowerShell module.
+    /// </summary>
+    /// <param name="askCode">
+    /// Asked for the code; gets the message key of the previous refusal, or
+    /// null the first time. Returning null gives up.
+    /// </param>
+    public async Task<CurrentUser> LoginAsync(
+        string username, string password, Func<string?, string?> askCode, CancellationToken ct = default)
+    {
+        var challenge = await BeginLoginAsync(username, password, ct);
+        string? refusal = null;
+
+        // Three tries, then back to the password: the server locks the
+        // account after five failures in all, and a shell should not be the
+        // one that spends them.
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            var code = askCode(refusal);
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                throw new OperationCanceledException("No code was given.");
+            }
+
+            try
+            {
+                return await CompleteLoginAsync(challenge, code.Trim(), ct);
+            }
+            catch (ServerException e) when (e.MessageKey == ErrorCodes.TotpInvalid)
+            {
+                refusal = e.MessageKey;
+            }
+        }
+
+        throw new ServerException(HttpStatusCode.Unauthorized, ErrorCodes.TotpInvalid, "three wrong codes");
     }
 
     public async Task<IReadOnlyList<IssuanceProfile>> ProfilesAsync(CancellationToken ct = default) =>

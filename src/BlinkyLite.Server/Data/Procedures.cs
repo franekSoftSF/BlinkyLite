@@ -76,6 +76,9 @@ public sealed record ManagementKeyCandidate(
     byte Algorithm,
     short KekVersion);
 
+/// <summary>An operator's sealed TOTP secret, as <c>bl_totp_state</c> returns it.</summary>
+public sealed record TotpState(byte[] SecretEnvelope, short KekVersion, bool Confirmed);
+
 /// <summary>Events <c>bl_audit</c> accepts; everything else is written by the function that caused it.</summary>
 public enum AuditAction
 {
@@ -96,6 +99,15 @@ public interface IProcedures
     Task<SecretEnvelope> DiscloseSecretAsync(long cardSerial, SecretKind kind, string reason, Actor actor, CancellationToken ct = default);
     Task<IReadOnlyList<ManagementKeyCandidate>> GetManagementKeyCandidatesAsync(long cardSerial, Actor actor, CancellationToken ct = default);
     Task AuditAsync(AuditAction action, object? data, Actor actor, CancellationToken ct = default);
+
+    // Second factor (0027). The actor is always the operator signing in,
+    // except for the reset, which an Admin does to somebody else.
+    Task<TotpState?> GetTotpAsync(Actor actor, CancellationToken ct = default);
+    Task BeginTotpAsync(byte[] envelope, short kekVersion, Actor actor, CancellationToken ct = default);
+    Task ConfirmTotpAsync(long step, IReadOnlyList<byte[]> backupCodeHashes, Actor actor, CancellationToken ct = default);
+    Task AcceptTotpAsync(long step, Actor actor, CancellationToken ct = default);
+    Task<int> UseBackupCodeAsync(byte[] codeHash, Actor actor, CancellationToken ct = default);
+    Task ResetTotpAsync(string operatorSid, string reason, Actor actor, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -181,6 +193,33 @@ public sealed class Procedures(NpgsqlDataSource dataSource) : IProcedures
 
         return ScalarAsync("bl_audit", [Text(name), Json(data)], actor, ct);
     }
+
+    public async Task<TotpState?> GetTotpAsync(Actor actor, CancellationToken ct = default)
+    {
+        var rows = await RowsAsync("bl_totp_state", [Text(actor.Sid)], actor,
+            reader => new TotpState(reader.GetFieldValue<byte[]>(0), reader.GetInt16(1), reader.GetBoolean(2)), ct);
+
+        return rows.SingleOrDefault();
+    }
+
+    public Task BeginTotpAsync(byte[] envelope, short kekVersion, Actor actor, CancellationToken ct = default) =>
+        ScalarAsync("bl_totp_begin", [Bytes(envelope), Smallint(kekVersion)], actor, ct);
+
+    public Task ConfirmTotpAsync(long step, IReadOnlyList<byte[]> backupCodeHashes, Actor actor, CancellationToken ct = default) =>
+        ScalarAsync("bl_totp_confirm",
+        [
+            Bigint(step),
+            new() { NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Bytea, Value = backupCodeHashes.ToArray() },
+        ], actor, ct);
+
+    public Task AcceptTotpAsync(long step, Actor actor, CancellationToken ct = default) =>
+        ScalarAsync("bl_totp_accept", [Bigint(step)], actor, ct);
+
+    public async Task<int> UseBackupCodeAsync(byte[] codeHash, Actor actor, CancellationToken ct = default) =>
+        (int)(await ScalarAsync("bl_totp_backup_use", [Bytes(codeHash)], actor, ct))!;
+
+    public Task ResetTotpAsync(string operatorSid, string reason, Actor actor, CancellationToken ct = default) =>
+        ScalarAsync("bl_totp_reset", [Text(operatorSid), Text(reason)], actor, ct);
 
     private async Task<object?> ScalarAsync(string function, NpgsqlParameter[] args, Actor actor, CancellationToken ct)
     {

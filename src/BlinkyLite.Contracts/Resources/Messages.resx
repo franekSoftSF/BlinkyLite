@@ -376,4 +376,64 @@
   <data name="pin.rule.ok" xml:space="preserve">
     <value>This PIN can be used.</value>
   </data>
+  <data name="error.totp.invalid" xml:space="preserve">
+    <value>The code is wrong or has already been used. Wait for the next code and try again.</value>
+  </data>
+  <data name="error.totp.setup-required" xml:space="preserve">
+    <value>This account has no second factor yet. Open the BlinkyLite web console in a browser, sign in and set it up there.</value>
+  </data>
+  <data name="error.totp.already-configured" xml:space="preserve">
+    <value>This account already has a second factor. If the phone is lost, an Admin can reset it.</value>
+  </data>
+  <data name="client.totp.prompt" xml:space="preserve">
+    <value>Code from the authenticator app (or a backup code)</value>
+  </data>
+  <data name="client.totp.confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="client.totp.backup-left" xml:space="preserve">
+    <value>You signed in with a backup code. {0} left. When they run out, ask an Admin to reset your second factor.</value>
+  </data>
+  <data name="web.totp.title" xml:space="preserve">
+    <value>Second factor</value>
+  </data>
+  <data name="web.totp.explain" xml:space="preserve">
+    <value>Type the six-digit code from your authenticator app. If you do not have the phone with you, use a backup code.</value>
+  </data>
+  <data name="web.totp.code" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="web.totp.setup.title" xml:space="preserve">
+    <value>Set up the second factor</value>
+  </data>
+  <data name="web.totp.setup.explain" xml:space="preserve">
+    <value>BlinkyLite needs a second factor for every account. Scan the QR code with an authenticator app, for example Microsoft Authenticator, then type the code it shows.</value>
+  </data>
+  <data name="web.totp.setup.manual" xml:space="preserve">
+    <value>Cannot scan? Type this secret into the app:</value>
+  </data>
+  <data name="web.totp.setup.once" xml:space="preserve">
+    <value>The QR code and the secret are shown only now.</value>
+  </data>
+  <data name="web.totp.backup.title" xml:space="preserve">
+    <value>Backup codes</value>
+  </data>
+  <data name="web.totp.backup.explain" xml:space="preserve">
+    <value>Each code signs you in once without the phone. Save them somewhere safe now. They will not be shown again.</value>
+  </data>
+  <data name="web.totp.backup.saved" xml:space="preserve">
+    <value>The codes are saved</value>
+  </data>
+  <data name="web.totp.back" xml:space="preserve">
+    <value>Back to sign-in</value>
+  </data>
+  <data name="audit.totp.setup-started" xml:space="preserve">
+    <value>Second factor setup started</value>
+  </data>
+  <data name="audit.totp.enrolled" xml:space="preserve">
+    <value>Second factor set up</value>
+  </data>
+  <data name="audit.totp.reset" xml:space="preserve">
+    <value>Second factor reset</value>
+  </data>
 </root>

@@ -58,9 +58,18 @@ internal static class Issue
         CurrentUser user;
         try
         {
-            user = await client.LoginAsync(operatorName, password, CancellationToken.None);
+            user = await client.LoginAsync(operatorName, password, refusal =>
+            {
+                if (refusal is not null)
+                {
+                    log.Problem(Strings.Current[refusal]);
+                }
+
+                Console.Write($"{Strings.Current["client.totp.prompt"]}: ");
+                return Console.ReadLine();
+            }, CancellationToken.None);
         }
-        catch (Exception e) when (e is ServerException or HttpRequestException)
+        catch (Exception e) when (e is ServerException or HttpRequestException or OperationCanceledException)
         {
             log.Problem($"Logowanie nie przeszlo: {Explain(e)}", e);
             return 4;
@@ -71,6 +80,10 @@ internal static class Issue
         }
 
         log.Say($"zalogowany:   {user.Upn}, role: {string.Join(", ", user.Roles)}");
+        if (client.BackupCodesLeft is { } left)
+        {
+            log.Say(Strings.Current.Format("client.totp.backup-left", left));
+        }
 
         try
         {

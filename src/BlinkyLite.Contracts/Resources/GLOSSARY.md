@@ -32,5 +32,10 @@ Tłumaczenia pisze autor kodu razem z kluczem (D-15). Ten słowniczek pilnuje,
 | audit trail | Audit-Protokoll | granskningslogg | dziennik audytu |
 | sign in | anmelden | logga in | zalogować się |
 | serial number | Seriennummer | serienummer | numer seryjny |
+| second factor | zweiter Faktor | andra faktor | drugi składnik |
+| authenticator app | Authenticator-App | autentiseringsapp | aplikacja uwierzytelniająca |
+| backup code | Backup-Code | reservkod | kod zapasowy |
+| code (TOTP) | Code | kod | kod |
+| secret (TOTP, not the YubiKey) | Geheimcode | hemlig kod | sekret |
 
 Nowy termin dopisuje się tutaj **zanim** trafi do `Messages.resx`.

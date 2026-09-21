@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -66,6 +67,13 @@ public sealed class ServerFactory : WebApplicationFactory<Program>
         });
     }
 
+    public const string OperatorSid = "S-1-5-21-100-200-300-5000";
+
+    /// <summary>
+    /// Signed in through both steps. The operator's second factor is set up
+    /// afresh each time: signing in twice within thirty seconds with one
+    /// secret is, correctly, a replayed code.
+    /// </summary>
     public async Task<HttpClient> SignedInAs(params Role[] roles)
     {
         var groups = roles.Select(r => r switch
@@ -76,15 +84,77 @@ public sealed class ServerFactory : WebApplicationFactory<Program>
         }).ToArray();
 
         Directory.Accounts["operator"] = new DirectoryAccount(
-            new DirectoryUser(@"CORP\operator", "operator@corp.example", "S-1-5-21-100-200-300-5000", "Op Erator", true),
+            new DirectoryUser(@"CORP\operator", "operator@corp.example", OperatorSid, "Op Erator", true),
             groups);
+        Procedures.Totp.TryRemove(OperatorSid, out _);
 
         var client = CreateClient();
-        var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest("operator", "right"));
-        response.EnsureSuccessStatusCode();
-        var login = (await response.Content.ReadFromJsonAsync<LoginResponse>())!;
+        var challenge = await Challenge(client, "operator");
+        var secret = await SetUp(client, challenge);
+        var login = await SecondStep(client, challenge, TotpCode(secret));
+
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
         return client;
+    }
+
+    public static async Task<LoginChallenge> Challenge(HttpClient client, string username, string password = "right")
+    {
+        var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(username, password));
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<LoginChallenge>())!;
+    }
+
+    /// <summary>Starts a setup with the ticket and returns the raw secret.</summary>
+    public static async Task<byte[]> SetUp(HttpClient client, LoginChallenge challenge)
+    {
+        var response = await client.SendAsync(WithTicket(HttpMethod.Post, "/api/auth/totp/setup", challenge));
+        response.EnsureSuccessStatusCode();
+        var setup = (await response.Content.ReadFromJsonAsync<TotpSetupResponse>())!;
+        return Base32Decode(setup.Secret);
+    }
+
+    public static Task<HttpResponseMessage> SendCode(HttpClient client, LoginChallenge challenge, string code)
+    {
+        var request = WithTicket(HttpMethod.Post, "/api/auth/totp", challenge);
+        request.Content = JsonContent.Create(new SecondFactorRequest(code));
+        return client.SendAsync(request);
+    }
+
+    public static async Task<LoginResponse> SecondStep(HttpClient client, LoginChallenge challenge, string code)
+    {
+        var response = await SendCode(client, challenge, code);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<LoginResponse>())!;
+    }
+
+    public static string TotpCode(byte[] secret, int stepOffset = 0) =>
+        Totp.Code(secret, Totp.StepAt(DateTimeOffset.UtcNow) + stepOffset);
+
+    public static HttpRequestMessage WithTicket(HttpMethod method, string path, LoginChallenge challenge)
+    {
+        var request = new HttpRequestMessage(method, path);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", challenge.Ticket);
+        return request;
+    }
+
+    /// <summary>RFC 4648 base32 back to bytes, as an authenticator app reads it.</summary>
+    public static byte[] Base32Decode(string text)
+    {
+        const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        var output = new List<byte>();
+        int buffer = 0, bits = 0;
+        foreach (var c in text.TrimEnd('='))
+        {
+            buffer = (buffer << 5) | alphabet.IndexOf(c, StringComparison.Ordinal);
+            bits += 5;
+            if (bits >= 8)
+            {
+                output.Add((byte)(buffer >> (bits - 8)));
+                bits -= 8;
+            }
+        }
+
+        return [.. output];
     }
 }
 
@@ -188,9 +258,105 @@ public sealed class RecordingProcedures : IProcedures
         return Task.CompletedTask;
     }
 
+    /// <summary>Operators' second factors, with the same rules as migration 0006.</summary>
+    public ConcurrentDictionary<string, FakeTotp> Totp { get; } = new();
+
+    public Task<TotpState?> GetTotpAsync(Actor actor, CancellationToken ct = default) =>
+        Task.FromResult(Totp.TryGetValue(actor.Sid!, out var t) ? new TotpState(t.Envelope, t.KekVersion, t.Confirmed) : null);
+
+    public Task BeginTotpAsync(byte[] envelope, short kekVersion, Actor actor, CancellationToken ct = default)
+    {
+        if (Totp.TryGetValue(actor.Sid!, out var existing) && existing.Confirmed)
+        {
+            throw Rule("BL007", ErrorCodes.TotpAlreadyConfigured);
+        }
+
+        Totp[actor.Sid!] = new FakeTotp(envelope, kekVersion);
+        return Task.CompletedTask;
+    }
+
+    public Task ConfirmTotpAsync(long step, IReadOnlyList<byte[]> backupCodeHashes, Actor actor, CancellationToken ct = default)
+    {
+        var t = Totp.TryGetValue(actor.Sid!, out var found) ? found : throw Rule("BL008", ErrorCodes.TotpSetupRequired);
+        lock (t)
+        {
+            if (t.Confirmed)
+            {
+                throw Rule("BL007", ErrorCodes.TotpAlreadyConfigured);
+            }
+
+            t.Confirmed = true;
+            t.LastStep = step;
+            t.BackupCodes.Clear();
+            t.BackupCodes.AddRange(backupCodeHashes.Select(h => (Convert.ToHexString(h), false)));
+        }
+
+        Audits.Add((AuditAction.AuthLogin, new { second_factor = "totp" }, actor));
+        return Task.CompletedTask;
+    }
+
+    public Task AcceptTotpAsync(long step, Actor actor, CancellationToken ct = default)
+    {
+        var t = Totp.TryGetValue(actor.Sid!, out var found) && found.Confirmed ? found : throw Rule("BL008", ErrorCodes.TotpSetupRequired);
+        lock (t)
+        {
+            if (t.LastStep is { } last && step <= last)
+            {
+                throw Rule("BL006", ErrorCodes.TotpInvalid);
+            }
+
+            t.LastStep = step;
+        }
+
+        Audits.Add((AuditAction.AuthLogin, new { second_factor = "totp" }, actor));
+        return Task.CompletedTask;
+    }
+
+    public Task<int> UseBackupCodeAsync(byte[] codeHash, Actor actor, CancellationToken ct = default)
+    {
+        var t = Totp.TryGetValue(actor.Sid!, out var found) && found.Confirmed ? found : throw Rule("BL008", ErrorCodes.TotpSetupRequired);
+        lock (t)
+        {
+            var index = t.BackupCodes.FindIndex(c => c.Hash == Convert.ToHexString(codeHash) && !c.Used);
+            if (index < 0)
+            {
+                throw Rule("BL006", ErrorCodes.TotpInvalid);
+            }
+
+            t.BackupCodes[index] = (t.BackupCodes[index].Hash, true);
+            Audits.Add((AuditAction.AuthLogin, new { second_factor = "backup-code" }, actor));
+            return Task.FromResult(t.BackupCodes.Count(c => !c.Used));
+        }
+    }
+
+    public List<(string OperatorSid, string Reason, Actor Actor)> Resets { get; } = [];
+
+    public Task ResetTotpAsync(string operatorSid, string reason, Actor actor, CancellationToken ct = default)
+    {
+        Resets.Add((operatorSid, reason, actor));
+        Totp.TryRemove(operatorSid, out _);
+        return Task.CompletedTask;
+    }
+
+    private static DatabaseRuleException Rule(string sqlState, string key) =>
+        new(sqlState, key, null, new InvalidOperationException(key));
+
     public Task<SecretEnvelope> DiscloseSecretAsync(long cardSerial, SecretKind kind, string reason, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
 
     public Task<IReadOnlyList<ManagementKeyCandidate>> GetManagementKeyCandidatesAsync(long cardSerial, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
+}
+
+public sealed class FakeTotp(byte[] envelope, short kekVersion)
+{
+    public byte[] Envelope { get; } = envelope;
+
+    public short KekVersion { get; } = kekVersion;
+
+    public bool Confirmed { get; set; }
+
+    public long? LastStep { get; set; }
+
+    public List<(string Hash, bool Used)> BackupCodes { get; } = [];
 }
 
 internal static class HttpAssertions

@@ -104,6 +104,23 @@ Grupy po SID, nie po nazwie — zmiana nazwy grupy w AD nie może po cichu
 odebrać ani nadać uprawnień. Wydanie kopiuje nazwę profilu, szablon i CA do
 swojego wiersza, więc późniejsza zmiana konfiguracji nie przepisuje historii.
 
+### `operator_totp` i `operator_backup_codes` — drugi składnik (0027)
+
+| Kolumna | Typ | Uwagi |
+|---|---|---|
+| `operator_sid` | `text` PK | SID operatora z AD |
+| `operator_upn` | `text` | do audytu i do resetu przez Admina |
+| `secret_envelope` | `bytea` | sekret TOTP w kopercie związanej z SID ([koperta](#koperta-sekretu), kontekst `totp\|<SID>`) |
+| `kek_version` | `smallint` | wersja KEK koperty **i** klucza HMAC kodów zapasowych |
+| `confirmed_at` | `timestamptz` null | null = konfiguracja nieskończona, taki sekret nikogo nie loguje |
+| `last_step` | `bigint` null | ostatni przyjęty krok 30 s; starszy lub równy jest odrzucany |
+
+`operator_backup_codes`: `operator_sid` (FK z `ON DELETE CASCADE`),
+`code_hash bytea(32)` (HMAC-SHA256), `used_at`. Nie ma w nich nic, co
+przydałoby się Blinky — nie trafiają do eksportu ([10](10-blinky-export.md)).
+Reset przez Admina **usuwa** wiersz: to nie historia, historią jest audyt
+`totp.reset`.
+
 ### `audit_events` — historia, tylko INSERT
 
 | Kolumna | Typ | Uwagi |
@@ -125,7 +142,12 @@ której dotyczą. Rola aplikacji nie ma `INSERT`, `UPDATE` ani `DELETE` na
 `issuance.attested`, `issuance.submitted`, `issuance.pending`,
 `issuance.issued`, `issuance.failed`, `issuance.superseded`, `puk.disclosed`,
 `mgmt-key.disclosed`, `mgmt-key.used` (MK wydany stacji do ponownego
-wydania).
+wydania), `totp.setup-started`, `totp.enrolled`, `totp.reset`.
+
+`auth.login` pisze od 0027 funkcja drugiego kroku (`bl_totp_confirm`,
+`bl_totp_accept`, `bl_totp_backup_use`), z `data.second_factor` = `totp` albo
+`backup-code` — samo poprawne hasło nie jest już logowaniem i nie ma swojego
+zdarzenia.
 
 ## Koperta sekretu
 

@@ -98,6 +98,12 @@ done
 Każda ścieżka ma mieć `Strict-Transport-Security` i `Content-Security-Policy`;
 `/api` i `/health` dodatkowo `Cache-Control: no-store`.
 
+**I otwórz stronę w przeglądarce.** Nagłówki i kody odpowiedzi były w
+porządku, a konsola i tak wyglądała jak goły HTML: budowa Angulara włączała
+arkusz stylów przez `onload`, a CSP (słusznie) blokuje skrypty inline. W
+`angular.json` jest `inlineCritical: false`; jeśli strona znów wygląda na
+niesformatowaną, konsola przeglądarki pokaże naruszenie CSP.
+
 **Adres w audycie.** Serwer czyta `X-Forwarded-For` tylko przy
 `ForwardedHeaders__BehindOwnProxy=true` (ustawione w compose, bo do serwera
 dochodzi wyłącznie nginx). Sprawdzone 21.09: nieudane logowanie przez nginx
@@ -188,10 +194,24 @@ końcu startuje serwer jako `blinkylite_app`.
 ```bash
 docker compose logs api | grep "schema ok"     # mapowania zgadzają się z bazą
 curl -k https://localhost/api/auth/me     # 401 error.auth.required
-# i prawdziwe logowanie kontem z grupy:
+# i prawdziwe logowanie kontem z grupy - od 0027 odpowiedz to bilet
+# drugiego kroku ("next": "totp" albo "totp-setup"), nie token:
 curl -k -X POST https://localhost/api/auth/login \
      -H 'content-type: application/json' \
      -d '{"username":"CORP\\jkowalski","password":"..."}'
+```
+
+**Pierwsze logowanie każdego operatora jest w przeglądarce** (0027):
+konsola pokaże kod QR do aplikacji uwierzytelniającej, potem 10 kodów
+zapasowych — raz. Dopiero potem to samo konto zaloguje się w WPF, PowerShell
+i CardLab; wcześniej dostanie `error.totp.setup-required`. Operator z
+utraconym telefonem i kodami: reset robi **inny** Admin.
+
+```bash
+# reset drugiego skladnika (token Admina, nie wlasny SID; powod >= 5 znakow)
+curl -X POST https://blinkylite.ems-ad.emsdemolab.pl/api/operators/S-1-5-21-.../totp/reset \
+     -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+     -d '{"reason":"INC-123 zgubiony telefon"}'
 ```
 
 ## 6. Rzeczy, o których łatwo zapomnieć

@@ -376,4 +376,64 @@
   <data name="pin.rule.ok" xml:space="preserve">
     <value>Tego PIN-u można użyć.</value>
   </data>
+  <data name="error.totp.invalid" xml:space="preserve">
+    <value>Kod jest błędny albo został już użyty. Poczekaj na następny kod i spróbuj ponownie.</value>
+  </data>
+  <data name="error.totp.setup-required" xml:space="preserve">
+    <value>To konto nie ma jeszcze drugiego składnika. Otwórz konsolę web BlinkyLite w przeglądarce, zaloguj się i skonfiguruj go tam.</value>
+  </data>
+  <data name="error.totp.already-configured" xml:space="preserve">
+    <value>To konto ma już drugi składnik. Jeśli telefon zginął, Admin może go zresetować.</value>
+  </data>
+  <data name="client.totp.prompt" xml:space="preserve">
+    <value>Kod z aplikacji uwierzytelniającej (albo kod zapasowy)</value>
+  </data>
+  <data name="client.totp.confirm" xml:space="preserve">
+    <value>Potwierdź</value>
+  </data>
+  <data name="client.totp.backup-left" xml:space="preserve">
+    <value>Zalogowano kodem zapasowym. Zostało: {0}. Kiedy się skończą, poproś Admina o zresetowanie drugiego składnika.</value>
+  </data>
+  <data name="web.totp.title" xml:space="preserve">
+    <value>Drugi składnik</value>
+  </data>
+  <data name="web.totp.explain" xml:space="preserve">
+    <value>Wpisz sześciocyfrowy kod z aplikacji uwierzytelniającej. Jeśli nie masz przy sobie telefonu, użyj kodu zapasowego.</value>
+  </data>
+  <data name="web.totp.code" xml:space="preserve">
+    <value>Kod</value>
+  </data>
+  <data name="web.totp.setup.title" xml:space="preserve">
+    <value>Skonfiguruj drugi składnik</value>
+  </data>
+  <data name="web.totp.setup.explain" xml:space="preserve">
+    <value>BlinkyLite wymaga drugiego składnika dla każdego konta. Zeskanuj kod QR aplikacją uwierzytelniającą, na przykład Microsoft Authenticator, i wpisz kod, który pokaże.</value>
+  </data>
+  <data name="web.totp.setup.manual" xml:space="preserve">
+    <value>Nie da się zeskanować? Wpisz w aplikacji ten sekret:</value>
+  </data>
+  <data name="web.totp.setup.once" xml:space="preserve">
+    <value>Kod QR i sekret są pokazywane tylko teraz.</value>
+  </data>
+  <data name="web.totp.backup.title" xml:space="preserve">
+    <value>Kody zapasowe</value>
+  </data>
+  <data name="web.totp.backup.explain" xml:space="preserve">
+    <value>Każdy kod pozwala raz zalogować się bez telefonu. Zapisz je teraz w bezpiecznym miejscu. Nie zostaną pokazane ponownie.</value>
+  </data>
+  <data name="web.totp.backup.saved" xml:space="preserve">
+    <value>Kody są zapisane</value>
+  </data>
+  <data name="web.totp.back" xml:space="preserve">
+    <value>Wróć do logowania</value>
+  </data>
+  <data name="audit.totp.setup-started" xml:space="preserve">
+    <value>Rozpoczęto konfigurację drugiego składnika</value>
+  </data>
+  <data name="audit.totp.enrolled" xml:space="preserve">
+    <value>Skonfigurowano drugi składnik</value>
+  </data>
+  <data name="audit.totp.reset" xml:space="preserve">
+    <value>Zresetowano drugi składnik</value>
+  </data>
 </root>

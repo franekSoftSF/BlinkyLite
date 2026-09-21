@@ -11,7 +11,8 @@ namespace BlinkyLite.DbTests;
 [Collection(DatabaseCollection.Name)]
 public sealed class PrivilegeTests(DatabaseFixture db)
 {
-    private static readonly string[] Tables = ["cards", "issuances", "card_secrets", "audit_events", "schema_migrations"];
+    private static readonly string[] Tables =
+        ["cards", "issuances", "card_secrets", "audit_events", "schema_migrations", "operator_totp", "operator_backup_codes"];
 
     public static TheoryData<string, string> WritesOnEveryTable()
     {
@@ -69,6 +70,20 @@ public sealed class PrivilegeTests(DatabaseFixture db)
         Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, starError.SqlState);
     }
 
+    [DbTheory]
+    [InlineData("app", "operator_totp")]
+    [InlineData("app", "operator_backup_codes")]
+    [InlineData("readonly", "operator_totp")]
+    [InlineData("readonly", "operator_backup_codes")]
+    public async Task Second_factors_cannot_be_read_around_bl_totp_state(string role, string table)
+    {
+        await using var connection = await Open(role);
+
+        var error = await Assert.ThrowsAsync<PostgresException>(() => Execute(connection, $"select * from blinkylite.{table}"));
+
+        Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, error.SqlState);
+    }
+
     [DbFact]
     public async Task The_application_can_execute_exactly_the_bl_API_and_PUBLIC_nothing()
     {
@@ -91,7 +106,8 @@ public sealed class PrivilegeTests(DatabaseFixture db)
         Assert.Equal(
             ["bl_audit", "bl_issuance_attested", "bl_issuance_customised", "bl_issuance_failed", "bl_issuance_issued",
              "bl_issuance_pending", "bl_issuance_reserve", "bl_issuance_submitted", "bl_mgmt_key_candidates",
-             "bl_secret_disclose"],
+             "bl_secret_disclose", "bl_totp_accept", "bl_totp_backup_use", "bl_totp_begin", "bl_totp_confirm",
+             "bl_totp_reset", "bl_totp_state"],
             executable);
         Assert.Empty(publicExecutable);
     }
@@ -154,6 +170,8 @@ public sealed class PrivilegeTests(DatabaseFixture db)
         "cards" => "serial",
         "schema_migrations" => "version",
         "audit_events" => "action",
+        "operator_totp" => "operator_sid",
+        "operator_backup_codes" => "used_at",
         _ => "id",
     };
 

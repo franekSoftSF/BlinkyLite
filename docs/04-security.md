@@ -31,11 +31,61 @@
   (wielokrotny). Brak refresh tokenu — po wygaśnięciu ponowne logowanie;
   wydanie w toku prosi o nie, zanim wyśle kolejny krok.
 - Hasło nie jest nigdzie zapisywane ani logowane; klient trzyma tylko token.
+
+### Drugi składnik (0027, D-31, D-33)
+
+Hasło AD samo nie wystarcza: za tym logowaniem są PUK-i i certyfikaty
+logowania wydawane w imieniu kogokolwiek w domenie. Jak w winch (ADR 0009)
+drugi składnik jest **obowiązkowy**, nie jest opcją.
+
+- **Dwa kroki.** Poprawne hasło daje **bilet**, nie token: JWT z `aud` =
+  `BlinkyLite/second-factor`, ważny 5 minut. Bilet przyjmują tylko
+  `POST /api/auth/totp` i `POST /api/auth/totp/setup` (polityka
+  `SecondFactor`, własny schemat `Ticket`); każdy inny endpoint go odrzuca, a
+  te dwa odrzucają token dostępu — różne `aud` to cała ochrona i test to
+  sprawdza. Lista anonimowych tras się nie zmienia: `/health` i
+  `/api/auth/login`.
+- **Kod** to RFC 6238: HMAC-SHA1, 6 cyfr, 30 s, tolerancja ±1 krok. Kod
+  sprawdza serwer, ale **krok zapisuje funkcja `bl_totp_accept` pod blokadą
+  wiersza** i odrzuca krok nie nowszy niż ostatni (`BL006`) — kod użyty raz
+  nie przejdzie drugi raz, także wysłany dwa razy naraz (test w DbTests).
+- **Nieudane kody liczą się do tego samego limitu** co złe hasła (5 na konto w
+  15 minut, potem 429 nawet dla dobrego kodu). Bez tego pięciominutowy bilet
+  pozwalałby zgadywać milion kodów. Powody w audycie: `totp-invalid`,
+  `totp-replayed`, `backup-code-invalid`, `locked-out`.
+- **Konfiguracja przy pierwszym logowaniu.** Konto bez potwierdzonego
+  składnika dostaje bilet z `next = totp-setup` i nie może zrobić nic poza
+  konfiguracją. Sekret: 160 bitów losowych, zapieczętowany KEK-iem w kopercie
+  związanej z SID operatora (koperta przeniesiona na inny wiersz się nie
+  otwiera), pokazany **raz** — kod QR rysuje przeglądarka, nie zewnętrzny
+  serwis. Staje się ważny dopiero po pierwszym poprawnym kodzie.
+  **Konfiguracja jest tylko w konsoli web**, bo tylko ona pokaże kod QR; WPF,
+  PowerShell i CardLab pytają wyłącznie o kod, a konto bez składnika dostaje
+  `error.totp.setup-required` z odesłaniem do przeglądarki.
+- **Potwierdzonego składnika nie da się zastąpić własnym** (`BL007`) — inaczej
+  ktoś z samym hasłem przeniósłby go na swój telefon. Nowy składnik zaczyna
+  się od resetu przez **innego** Admina: `POST /api/operators/{sid}/totp/reset`
+  z powodem (≥ 5 znaków), audyt `totp.reset`. Admin nie resetuje własnego.
+  Ekranu do tego jeszcze nie ma (0030/0031) — na razie `curl` z tokenem Admina.
+- **10 kodów zapasowych**, jednorazowych, pokazanych raz przy potwierdzeniu.
+  W bazie tylko HMAC-SHA256 kluczem wyprowadzonym z KEK (HKDF,
+  `blinkylite/backup-code/v1|<SID>`): kod ma niecałe 50 bitów i zwykły hash
+  z kopii bazy padłby na GPU w dobę. Po logowaniu kodem zapasowym klient
+  pokazuje, ile zostało.
+- Sekret TOTP i kody zapasowe **nie trafiają do logu, audytu ani DTO** poza
+  jedną odpowiedzią, która je pokazuje; `blinkylite_app` i
+  `blinkylite_readonly` nie mają `SELECT` na tych tabelach — koperta wychodzi
+  tylko przez `bl_totp_state`, i tylko dla samego operatora.
+- **Znane okno:** kto zna hasło, zanim właściciel konta zaloguje się pierwszy
+  raz, może skonfigurować składnik na swoim telefonie (R-12). Ślad zostaje
+  (`totp.enrolled` z adresem źródłowym), a właściciel przy swoim logowaniu
+  dostanie kod zamiast konfiguracji — i ma zgłosić to od razu.
 - **Limit prób:** 10 logowań na minutę z jednego adresu IP (429) oraz 5
   nieudanych prób na konto w 15 minut — po nich serwer odmawia sam, także przy
   poprawnym haśle. Blokada w AD i tak obowiązuje, ale BlinkyLite nie może być
   narzędziem do jej wyczerpywania. Każda odmowa to `auth.denied` z powodem
-  (`invalid-credentials`, `no-role`, `locked-out`).
+  (`invalid-credentials`, `no-role`, `locked-out`; kody drugiego składnika
+  niżej).
 - Konto serwisowe do wyszukiwania użytkowników: tylko odczyt, bez prawa
   bindowania interaktywnego.
 - **Serwer nie wystartuje bez HTTPS** poza środowiskiem deweloperskim (kod

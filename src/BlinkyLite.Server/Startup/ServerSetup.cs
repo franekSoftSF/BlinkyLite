@@ -36,6 +36,7 @@ public static class ServerSetup
         services.AddSingleton<FailedLogins>();
         services.AddSingleton(RoleMap.From(configuration));
         services.AddScoped<LoginService>();
+        services.AddScoped<SecondFactorService>();
 
         var ldap = configuration.GetSection(LdapOptions.Section).Get<LdapOptions>();
         if (ldap is not null && !string.IsNullOrWhiteSpace(ldap.Server))
@@ -63,6 +64,11 @@ public static class ServerSetup
                 // claim name and every lookup of it quietly returns nothing.
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = TokenService.ValidationParameters(jwt);
+            })
+            .AddJwtBearer(Policies.TicketScheme, options =>
+            {
+                options.MapInboundClaims = false;
+                options.TokenValidationParameters = TokenService.ValidationParameters(jwt, JwtOptions.SecondFactorAudience);
             });
 
         services.AddAuthorizationBuilder()
@@ -73,9 +79,22 @@ public static class ServerSetup
         {
             foreach (var (policy, roles) in Policies.Roles)
             {
-                options.AddPolicy(policy, builder => builder
-                    .RequireAuthenticatedUser()
-                    .RequireRole(roles.Select(r => r.ToString())));
+                options.AddPolicy(policy, builder =>
+                {
+                    if (policy == Policies.SecondFactor)
+                    {
+                        builder.AddAuthenticationSchemes(Policies.TicketScheme);
+                    }
+                    else
+                    {
+                        // Named, not left to the default: a policy that listed
+                        // no scheme would also run the ticket handler if one
+                        // were ever made the default.
+                        builder.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+                    }
+
+                    builder.RequireAuthenticatedUser().RequireRole(roles.Select(r => r.ToString()));
+                });
             }
         });
 

@@ -33,7 +33,8 @@ public sealed class KekOptions
 }
 
 /// <summary>
-/// AES-256-GCM envelopes for PUKs and management keys (docs/03-data-model.md):
+/// AES-256-GCM envelopes for PUKs, management keys and operators' TOTP secrets
+/// (docs/03-data-model.md):
 /// <code>
 /// envelope = format(1) ‖ kek_version(2, big-endian) ‖ nonce(12) ‖ ciphertext ‖ tag(16)
 /// key      = HKDF-Expand(KEK_v, "blinkylite/secret/v1|{kind}|{serial}|{hex nonce}", 32)
@@ -89,7 +90,57 @@ public sealed class SecretEnvelopes
 
     public short CurrentVersion { get; }
 
-    public byte[] Seal(ReadOnlySpan<byte> secret, EnvelopeBinding binding)
+    public byte[] Seal(ReadOnlySpan<byte> secret, EnvelopeBinding binding) =>
+        Seal(secret, $"{binding.KindName}|{binding.CardSerial}", Aad(binding));
+
+    /// <summary>Returns the secret; the caller zeroes it when done.</summary>
+    /// <exception cref="CryptographicException">Wrong card, wrong issuance, wrong kind, or tampered.</exception>
+    public byte[] Open(ReadOnlySpan<byte> envelope, EnvelopeBinding binding) =>
+        Open(envelope, $"{binding.KindName}|{binding.CardSerial}", Aad(binding));
+
+    /// <summary>
+    /// An operator's TOTP secret, bound to their SID: an envelope copied onto
+    /// another operator's row does not open (0027).
+    /// </summary>
+    public byte[] SealTotp(ReadOnlySpan<byte> secret, string operatorSid) =>
+        Seal(secret, $"totp|{operatorSid}", Encoding.UTF8.GetBytes($"totp|{operatorSid}"));
+
+    /// <exception cref="CryptographicException">Another operator's envelope, or tampered.</exception>
+    public byte[] OpenTotp(ReadOnlySpan<byte> envelope, string operatorSid) =>
+        Open(envelope, $"totp|{operatorSid}", Encoding.UTF8.GetBytes($"totp|{operatorSid}"));
+
+    /// <summary>
+    /// A backup code as stored: HMAC-SHA256 under a key derived from the KEK
+    /// the operator's secret was sealed with.
+    /// </summary>
+    /// <remarks>
+    /// Keyed, not a plain hash: a backup code has under fifty bits, and a
+    /// stolen database dump would give them up to a GPU in a day. Without the
+    /// KEK the stored values are just as useless as the envelopes next to them.
+    /// </remarks>
+    public byte[] BackupCodeHash(short kekVersion, string operatorSid, string normalisedCode)
+    {
+        if (!keks.TryGetValue(kekVersion, out var kek))
+        {
+            throw new CryptographicException($"KEK version {kekVersion} is not configured.");
+        }
+
+        var key = HKDF.Expand(HashAlgorithmName.SHA256, kek, 32,
+            Encoding.UTF8.GetBytes($"blinkylite/backup-code/v1|{operatorSid}"));
+        try
+        {
+            return HMACSHA256.HashData(key, Encoding.UTF8.GetBytes(normalisedCode));
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+        }
+    }
+
+    // The context goes into the per-envelope key, so for card secrets it is
+    // exactly the string it always was: every envelope already in a database
+    // must still open.
+    private byte[] Seal(ReadOnlySpan<byte> secret, string context, byte[] aad)
     {
         var envelope = new byte[HeaderSize + secret.Length + TagSize];
         envelope[0] = Format;
@@ -97,12 +148,12 @@ public sealed class SecretEnvelopes
         var nonce = envelope.AsSpan(3, NonceSize);
         RandomNumberGenerator.Fill(nonce);
 
-        var key = EnvelopeKey(CurrentVersion, binding, nonce);
+        var key = EnvelopeKey(CurrentVersion, context, nonce);
         try
         {
             using var aes = new AesGcm(key, TagSize);
             aes.Encrypt(nonce, secret, envelope.AsSpan(HeaderSize, secret.Length),
-                envelope.AsSpan(HeaderSize + secret.Length, TagSize), Aad(binding));
+                envelope.AsSpan(HeaderSize + secret.Length, TagSize), aad);
         }
         finally
         {
@@ -112,9 +163,7 @@ public sealed class SecretEnvelopes
         return envelope;
     }
 
-    /// <summary>Returns the secret; the caller zeroes it when done.</summary>
-    /// <exception cref="CryptographicException">Wrong card, wrong issuance, wrong kind, or tampered.</exception>
-    public byte[] Open(ReadOnlySpan<byte> envelope, EnvelopeBinding binding)
+    private byte[] Open(ReadOnlySpan<byte> envelope, string context, byte[] aad)
     {
         if (envelope.Length < HeaderSize + TagSize || envelope[0] != Format)
         {
@@ -126,11 +175,11 @@ public sealed class SecretEnvelopes
         var ciphertext = envelope[HeaderSize..^TagSize];
         var secret = new byte[ciphertext.Length];
 
-        var key = EnvelopeKey(version, binding, nonce);
+        var key = EnvelopeKey(version, context, nonce);
         try
         {
             using var aes = new AesGcm(key, TagSize);
-            aes.Decrypt(nonce, ciphertext, envelope[^TagSize..], secret, Aad(binding));
+            aes.Decrypt(nonce, ciphertext, envelope[^TagSize..], secret, aad);
             return secret;
         }
         catch
@@ -144,15 +193,14 @@ public sealed class SecretEnvelopes
         }
     }
 
-    private byte[] EnvelopeKey(short version, EnvelopeBinding binding, ReadOnlySpan<byte> nonce)
+    private byte[] EnvelopeKey(short version, string context, ReadOnlySpan<byte> nonce)
     {
         if (!keks.TryGetValue(version, out var kek))
         {
             throw new CryptographicException($"The envelope was sealed with KEK version {version}, which is not configured.");
         }
 
-        var info = Encoding.UTF8.GetBytes(
-            $"blinkylite/secret/v1|{binding.KindName}|{binding.CardSerial}|{Convert.ToHexStringLower(nonce)}");
+        var info = Encoding.UTF8.GetBytes($"blinkylite/secret/v1|{context}|{Convert.ToHexStringLower(nonce)}");
         return HKDF.Expand(HashAlgorithmName.SHA256, kek, 32, info);
     }
 

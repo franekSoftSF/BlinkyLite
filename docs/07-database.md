@@ -69,6 +69,12 @@ Każda przyjmuje aktora: `p_actor_upn`, `p_actor_sid`, `p_actor_roles text[]`,
 | `bl_secret_disclose(serial, kind, reason, aktor)` | `(issuance_id uuid, envelope bytea, kek_version smallint)` — `issuance_id`, bo jest częścią AAD koperty | koperta `Active` karty; licznik odsłonięć PUK +1 | `puk.disclosed` / `mgmt-key.disclosed` z powodem |
 | `bl_mgmt_key_candidates(serial, aktor)` | zbiór `(secret_id, issuance_id, secret_state, envelope, mgmt_key_algorithm, kek_version)`: `Active`, potem nowsze `Reserved`, od najnowszej | — | `mgmt-key.used` z listą `secret_ids` |
 | `bl_audit(action, data jsonb, aktor)` | — | — | **tylko** `auth.login` i `auth.denied`; inna akcja → `22023` (otwarta funkcja pozwoliłaby serwerowi podrobić `puk.disclosed`) |
+| `bl_totp_state(operator_sid, aktor)` *(0027)* | `(secret_envelope, kek_version, confirmed)` albo nic | — ; tylko własny: `operator_sid` ≠ SID aktora → `BL004` | — (czytane przy każdym logowaniu; logowanie ma własne zdarzenie) |
+| `bl_totp_begin(envelope, kek_version, aktor)` | — | brak albo niepotwierdzony → nowy niepotwierdzony; potwierdzony → `BL007` | `totp.setup-started` |
+| `bl_totp_confirm(step, backup_hashes bytea[], aktor)` | — | niepotwierdzony → potwierdzony, `last_step`, kody zapasowe zastąpione | `totp.enrolled` + `auth.login` |
+| `bl_totp_accept(step, aktor)` | — | `step` > `last_step` → zapis; inaczej `BL006`; bez potwierdzonego `BL008` | `auth.login` |
+| `bl_totp_backup_use(code_hash, aktor)` | `integer` — ile zostało | nieużyty kod → `used_at`; inaczej `BL006` | `auth.login` z `backup_codes_left` |
+| `bl_totp_reset(operator_sid, reason, aktor)` | — | usuwa składnik i kody; nie własny (`BL004`), powód ≥ 5 znaków (`BL005`) | `totp.reset` z powodem |
 | `bl_expiry_notified(issuance_id, threshold_days, outcome, entra_user_id, error)` *(0060, po 1.0)* | `boolean` — `false`, jeśli ten próg już zapisano | wiersz w `expiry_notifications` (unikalne `issuance_id` + `threshold_days`); `outcome` ∈ `sent`, `skipped`, `failed` | `cert.expiry-notified` / `cert.expiry-notify-failed` |
 
 Aktor `bl_expiry_notified` to stały aktor systemowy `system:expiry-notifier`
@@ -84,6 +90,8 @@ wystarczył (`BL004`):
 | `bl_secret_disclose` dla `puk` | `Admin`, `SecurityOfficer` albo `Helpdesk` |
 | `bl_secret_disclose` dla `mgmt-key` | `Admin` |
 | `bl_audit` | — (odmowa logowania nie ma jeszcze ról) |
+| `bl_totp_begin`, `_confirm`, `_accept`, `_backup_use` | dowolna z trzech ról — bilet dostaje tylko ktoś, kto ją ma |
+| `bl_totp_reset` | `Admin`, i nie dla własnego SID |
 
 Powód krótszy niż 5 znaków (po `trim`) jest odrzucany w bazie (`BL005`), nie
 tylko w UI. `actor_sid` może być pusty wyłącznie dla `auth.denied` — złe
@@ -108,6 +116,9 @@ Funkcje zgłaszają błędy własną klasą SQLSTATE `BL`:
 | `BL003` | `error.card.reserved-elsewhere` — karta ma otwartą rezerwację innego wydania | 409 |
 | `BL004` | `error.forbidden` — rola aktora nie pozwala na tę funkcję | 403 |
 | `BL005` | `error.reason.required` | 400 |
+| `BL006` | `error.totp.invalid` — krok już użyty albo kod zapasowy nieznany lub zużyty | 401 |
+| `BL007` | `error.totp.already-configured` | 409 |
+| `BL008` | `error.totp.setup-required` | 409 |
 
 `MESSAGE` to zawsze klucz komunikatu, a nie zdanie — serwer mapuje SQLSTATE na
 kod HTTP i przekazuje klucz klientowi, który tłumaczy go na język operatora

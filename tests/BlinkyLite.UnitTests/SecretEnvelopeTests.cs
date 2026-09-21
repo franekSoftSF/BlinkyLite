@@ -21,6 +21,32 @@ public sealed class SecretEnvelopeTests
         Assert.Equal(1, envelope[0]);
     }
 
+    [Fact]
+    public void A_TOTP_secret_opens_only_for_the_operator_it_was_sealed_for()
+    {
+        var envelopes = Envelopes((1, 0xA1));
+        var secret = RandomNumberGenerator.GetBytes(20);
+
+        var envelope = envelopes.SealTotp(secret, "S-1-5-21-1-2-3-500");
+
+        Assert.Equal(secret, envelopes.OpenTotp(envelope, "S-1-5-21-1-2-3-500"));
+        Assert.ThrowsAny<CryptographicException>(() => envelopes.OpenTotp(envelope, "S-1-5-21-1-2-3-501"));
+    }
+
+    [Fact]
+    public void A_backup_code_hash_depends_on_the_KEK_and_the_operator()
+    {
+        var envelopes = Envelopes((1, 0xA1));
+        var other = Envelopes((1, 0xB2));
+
+        var hash = envelopes.BackupCodeHash(1, "S-1-5-21-1-2-3-500", "ABCDEFGHJK");
+
+        Assert.Equal(32, hash.Length);
+        Assert.Equal(hash, envelopes.BackupCodeHash(1, "S-1-5-21-1-2-3-500", "ABCDEFGHJK"));
+        Assert.NotEqual(hash, envelopes.BackupCodeHash(1, "S-1-5-21-1-2-3-501", "ABCDEFGHJK"));
+        Assert.NotEqual(hash, other.BackupCodeHash(1, "S-1-5-21-1-2-3-500", "ABCDEFGHJK"));
+    }
+
     public static TheoryData<string, EnvelopeBinding> OtherRows() => new()
     {
         { "another issuance of the same card", Binding with { IssuanceId = Guid.Parse("22222222-2222-2222-2222-222222222222") } },

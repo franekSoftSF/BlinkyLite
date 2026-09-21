@@ -37,6 +37,10 @@ secrets.p7m            CMS EnvelopedData: w środku secrets.jsonl z PUK i manage
 audit.jsonl            dziennik audytu tych kart (tylko do wglądu; Blinky ma własny)
 ```
 
+Drugi składnik operatorów (`operator_totp`, kody zapasowe) **nie** jest
+eksportowany: to logowanie do BlinkyLite, nie dane karty, a Blinky ma własne
+uwierzytelnianie.
+
 `secrets.jsonl` w środku `secrets.p7m`:
 
 ```json

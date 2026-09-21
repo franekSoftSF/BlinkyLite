@@ -62,8 +62,17 @@ public partial class MainWindow : Window
                        ?? Environment.UserDomainName + "\\" + Environment.UserName;
     }
 
+    /// <summary>The first step done, waiting for the code. The ticket expires in five minutes.</summary>
+    private (ServerClient Client, LoginChallenge Challenge)? pending;
+
     private async void SignedIn(object sender, RoutedEventArgs e)
     {
+        if (pending is { } waiting)
+        {
+            await CodeEntered(waiting.Client, waiting.Challenge);
+            return;
+        }
+
         if (!Uri.TryCreate(ServerBox.Text.Trim(), UriKind.Absolute, out var address))
         {
             Say(ErrorCodes.BadRequest, problem: true);
@@ -71,18 +80,46 @@ public partial class MainWindow : Window
         }
 
         SignInButton.IsEnabled = false;
+        var client = new ServerClient(address);
 
         try
         {
-            var client = new ServerClient(address);
-
             // The password is read here and let go of immediately; it is not
             // kept in a field, a property or a view model.
-            var user = await client.LoginAsync(UserBox.Text.Trim(), PasswordBox.Password);
+            var challenge = await client.BeginLoginAsync(UserBox.Text.Trim(), PasswordBox.Password);
             PasswordBox.Clear();
+
+            pending = (client, challenge);
+            AskForCode(true);
+        }
+        catch (Exception problem) when (problem is ServerException or HttpRequestException)
+        {
+            client.Dispose();
+            Say(problem);
+        }
+        finally
+        {
+            SignInButton.IsEnabled = true;
+        }
+    }
+
+    private async Task CodeEntered(ServerClient client, LoginChallenge challenge)
+    {
+        SignInButton.IsEnabled = false;
+
+        try
+        {
+            var user = await client.CompleteLoginAsync(challenge, CodeBox.Text.Trim());
+            AskForCode(false);
 
             server = client;
             Who.Text = $"{user.Upn} — {string.Join(", ", user.Roles)}";
+
+            if (client.BackupCodesLeft is { } left)
+            {
+                Message.Text = Text.Of("client.totp.backup-left", left);
+                Message.SetResourceReference(ForegroundProperty, "Warning");
+            }
 
             // Remembered only once it is known to work: an address that failed
             // is not worth offering again tomorrow.
@@ -96,13 +133,41 @@ public partial class MainWindow : Window
 
             ReadCard();
         }
+        catch (ServerException problem) when (problem.MessageKey == ErrorCodes.TotpInvalid)
+        {
+            // Same ticket, another try; the server counts the failures.
+            CodeBox.Clear();
+            Say(problem);
+        }
         catch (Exception problem) when (problem is ServerException or HttpRequestException)
         {
+            // Anything else - most often a ticket that expired while the phone
+            // was in another room - starts again from the password.
+            AskForCode(false);
+            client.Dispose();
             Say(problem);
         }
         finally
         {
             SignInButton.IsEnabled = true;
+        }
+    }
+
+    private void AskForCode(bool ask)
+    {
+        if (!ask)
+        {
+            pending = null;
+        }
+
+        CodeBox.Clear();
+        CodePanel.Visibility = ask ? Visibility.Visible : Visibility.Collapsed;
+        ServerBox.IsEnabled = UserBox.IsEnabled = PasswordBox.IsEnabled = !ask;
+        SignInButton.Content = Text.Of(ask ? "client.totp.confirm" : "common.sign-in");
+
+        if (ask)
+        {
+            CodeBox.Focus();
         }
     }
 

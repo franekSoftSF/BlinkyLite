@@ -52,10 +52,27 @@ public sealed class ConnectBlinkyLiteCommand : PSCmdlet
         {
             // The password is turned into a string here, at the one call that
             // needs it, and nowhere earlier.
+            // Asked through the host, never a parameter: a backup code in the
+            // command history would be a sign-in for whoever reads it.
             var user = client.LoginAsync(
                     credential.UserName,
-                    credential.GetNetworkCredential().Password)
+                    credential.GetNetworkCredential().Password,
+                    refusal =>
+                    {
+                        if (refusal is not null)
+                        {
+                            Host.UI.WriteWarningLine(Strings.Current[refusal]);
+                        }
+
+                        Host.UI.Write($"{Strings.Current["client.totp.prompt"]}: ");
+                        return Host.UI.ReadLine();
+                    })
                 .GetAwaiter().GetResult();
+
+            if (client.BackupCodesLeft is { } left)
+            {
+                WriteWarning(Strings.Current.Format("client.totp.backup-left", left));
+            }
 
             Session.Open(client, user, Server);
             WriteObject(user);

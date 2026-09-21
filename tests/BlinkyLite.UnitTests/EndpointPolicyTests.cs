@@ -55,5 +55,7 @@ public sealed class EndpointPolicyTests(ServerFactory server) : IClassFixture<Se
         Assert.Equal([Role.Admin, Role.SecurityOfficer, Role.Helpdesk], Policies.Roles[Policies.CanRevealPuk]);
         Assert.Equal([Role.Admin], Policies.Roles[Policies.CanRevealMgmtKey]);
         Assert.Equal([Role.Admin], Policies.Roles[Policies.CanAudit]);
+        Assert.Equal([Role.Admin], Policies.Roles[Policies.CanResetSecondFactor]);
+        Assert.Equal([Role.Admin, Role.SecurityOfficer, Role.Helpdesk], Policies.Roles[Policies.SecondFactor]);
     }
 }

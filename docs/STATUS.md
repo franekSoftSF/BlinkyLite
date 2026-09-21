@@ -1,17 +1,15 @@
 # Status projektu — BlinkyLite
 
-**Ostatnia aktualizacja:** 2026-09-20
+**Ostatnia aktualizacja:** 2026-09-21
 **Faza:** 2 — Wydanie
-**Ogólnie:** pierwszy certyfikat wydany 20 września 2026. Stoi fundament (0001–0005) i warstwa PIV z Blinky (0010):
-logowanie z AD daje JWT z rolami, każdy endpoint ma politykę, sekrety są poza
-konfiguracją i w kopertach AES-256-GCM przywiązanych do karty i wydania, a
-kod rozmawiający z kluczem jest w repozytorium i przechodzi testy na zapisach
-z prawdziwych tokenów — 359 testów jednostkowych i 84 na PostgreSQL 16, CI
-zielone. **Serwer wstaje jednym `docker compose up`** (0050), razem z bazą i
-migracjami, i **loguje z prawdziwej domeny**. **Faza 1 jest zamknięta:**
-personalizacja przeszła na dwóch fabrycznych kluczach — 5.4.3 (3DES) i 5.8.0
-(AES-192) — a `ykman piv info` potwierdził na obu, że management key stoi za
-PIN-em (0011). Nie ma jeszcze kontaktu z CA: żadna karta nie ma certyfikatu.
+**Ogólnie:** certyfikaty wydane z WPF logują do Windows, także przez
+wbudowany sterownik PIV bez minidrivera Yubico (0026). Serwer stoi w Dockerze
+za nginx na 443 z konsolą web (0055, na razie tylko logowanie i pusty widok
+wydań). Logowanie ma obowiązkowy drugi składnik TOTP (0027) — napisany i
+sprawdzony testami, ale jeszcze bez prawdziwego telefonu i konta AD. 486
+testów jednostkowych i 101 na PostgreSQL 16. Otwarte przed 1.0: ponowne
+wydanie znanej karty (R-11), odzyskiwanie (0022), lista wydań i PUK w web
+(0030), konfiguracja w web (0031), Kerberos (0025), instalatory.
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
 się zgadzać; `status.json` czyta build albo dashboard. Definicje ukończenia są
@@ -346,7 +344,7 @@ wersji, przez którą przeszło wydanie.
 | 0026 | 2 | Karta dla wbudowanego sterownika PIV Windows | `done` |
 | 0022 | 2 | Odzyskiwanie | `open` |
 | 0025 | 2 | Logowanie zintegrowane (Negotiate/Kerberos) | `open` |
-| 0027 | 2 | Drugi składnik TOTP dla wszystkich klientów | `open` |
+| 0027 | 2 | Drugi składnik TOTP dla wszystkich klientów | `done-unverified` |
 | 0023 | 2 | Klient WPF — wydanie | `done` |
 | 0030 | 3 | Przeglądarka web (Helpdesk) i weryfikacja karty | `partly-done` |
 | 0031 | 3 | Konfiguracja w aplikacji web: profile i keytab | `open` |
@@ -387,6 +385,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-18 | Sekrety serwera (KEK, klucz JWT, hasło LDAP, hasło do bazy) tylko z pliku sekretu (Docker secret / DPAPI maszyny) albo zmiennej; wpisane w `appsettings.json` zatrzymują start |
 | D-19 | Dane BlinkyLite dają się wyeksportować do Blinky; sekrety w paczce zaszyfrowane do certyfikatu Blinky |
 | D-20 | Akcent klienta `#1DB954`, oba motywy wg ustawienia Windows; role koloru rozdzielone dla kontrastu |
+| D-33 | TOTP po swojemu: bilet 5 min z osobnym `aud` między hasłem a kodem; konfiguracja z QR **tylko w web**; RFC 6238 napisane w repo zamiast Otp.NET; reset tylko przez **innego** Admina |
 | D-32 | nginx na **443** z tym samym certyfikatem co serwer; serwer tylko w sieci wewnętrznej; token w web tylko w pamięci karty przeglądarki |
 | D-31 | **TOTP obowiązkowy** jak w winch, na logowaniu do API — więc dla web, WPF i PowerShell; kody zapasowe jako hash |
 | D-30 | Aplikacja web w **Angular**, wyglądem podobna do Blinky, ale nie taka sama (akcent `#1DB954`) |
@@ -433,6 +432,7 @@ Zamknięte 2026-09-19, decyzje właściciela:
 | R-03 | WinSCard / CertEnroll z .NET 10 na Windows ARM64 nikt nie uruchomił | 0001 publikuje `win-arm64`, 0053 dowodzi na sprzęcie |
 | R-05 | Usługa Windows w MSIX (`desktop6:Service`) na docelowym Windows Server | 0051 z zapisaną rezerwą: skrypt instalacyjny |
 | R-06 | Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na uprawnienia Graph i ruchu wychodzącego z serwera | wymagania spisane w [09](09-expiry-notification.md#co-przygotowuje-administrator-raz); konto bez Entra → audyt, nie awaria |
+| R-12 | Kto zna hasło operatora **przed** jego pierwszym logowaniem, może skonfigurować drugi składnik na swoim telefonie | pierwsze logowanie zaraz po nadaniu roli; `totp.enrolled` w audycie z adresem; właściciel, który zamiast kodu QR dostaje pytanie o kod, zgłasza to — reset robi inny Admin |
 | R-11 | Karta wydana ponownie pod **starym CHUID** nie jest rozpoznawana na stacjach, które znały ją z poprzednim kluczem — 21.09 ta sama karta działała na `DPCLIENT01`, a na `DPCLIENT02` i `SZYMON-PC` (też bez minidrivera Yubico) nie | CHUID i CCC od nowa przy każdym wydaniu (`c17c056`); niezweryfikowane — następne wydanie musi zadziałać na `DPCLIENT02` |
 | R-10 | Wbudowany sterownik PIV Windows może odrzucić kartę (`NTE_BAD_KEYSET`) z przyczyny, której nie da się przeczytać — w Blinky nikt jej nie ustalił | 0026 zaczyna od pomiaru na `DPCLIENT02`; hipotezy sprawdzane po jednej, z wynikiem w [12](12-hardware-notes.md) |
 | R-09 | Keytab jest równoważny hasłu konta usługi, a D-28 przesyła go przez formularz web | tylko Admin, tylko TLS, zapieczętowany KEK-iem, nigdy nie zwracany ani logowany, na dysk tylko do tmpfs `600`, każda podmiana w audycie; w interfejsie „zastąp", bez „pokaż" |

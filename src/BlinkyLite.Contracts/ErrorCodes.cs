@@ -22,6 +22,11 @@ public static class ErrorCodes
     public const string DirectoryUnavailable = "error.directory.unavailable";
     public const string QueryTooShort = "error.query.too-short";
 
+    // Second factor (0027).
+    public const string TotpInvalid = "error.totp.invalid";
+    public const string TotpSetupRequired = "error.totp.setup-required";
+    public const string TotpAlreadyConfigured = "error.totp.already-configured";
+
     // What the issuance engine refuses before anything is written to a card.
     public const string ReaderNone = "error.reader.none";
     public const string CardNone = "error.card.none";

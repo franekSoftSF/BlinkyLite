@@ -7,8 +7,11 @@ using BlinkyLite.Server.Data;
 namespace BlinkyLite.Server.Auth;
 
 /// <summary>
-/// Sign-in: bind to AD as the operator, map group SIDs to roles, audit, issue
-/// a JWT. Every refusal is audited as auth.denied with its reason.
+/// Sign-in, first step: bind to AD as the operator and map group SIDs to
+/// roles. A correct password earns a ticket for the second factor, never a
+/// token (0027) - the token comes from <see cref="SecondFactorService"/>, and
+/// the sign-in is audited there, once it has actually happened. Every refusal
+/// here is audited as auth.denied with its reason.
 /// </summary>
 public sealed class LoginService(
     IDirectory directory,
@@ -56,14 +59,15 @@ public sealed class LoginService(
             return Problems.Of(StatusCodes.Status403Forbidden, ErrorCodes.NoRole);
         }
 
-        failures.Reset(username);
+        // Not reset here: a right password followed by five wrong codes is
+        // still five failures. SecondFactorService resets on a real sign-in.
         var user = new CurrentUser(upn, account.User.Sid, account.User.DisplayName, granted);
 
-        await procedures.AuditAsync(AuditAction.AuthLogin, new { roles = granted.Select(r => r.ToString()) },
-            new Actor(user.Upn, user.Sid, granted, sourceIp), ct);
-        logger.LogInformation("Signed in {Upn} with roles {Roles}", user.Upn, granted);
+        var totp = await procedures.GetTotpAsync(new Actor(user.Upn, user.Sid, granted, sourceIp), ct);
+        var next = totp is { Confirmed: true } ? LoginNext.Totp : LoginNext.TotpSetup;
+        logger.LogInformation("Password accepted for {Upn}; next step {Next}", user.Upn, next);
 
-        return Results.Ok(tokens.Issue(user));
+        return Results.Ok(tokens.IssueTicket(user, next));
     }
 
     private async Task Deny(string upn, string? sid, string reason, IPAddress? sourceIp, CancellationToken ct)

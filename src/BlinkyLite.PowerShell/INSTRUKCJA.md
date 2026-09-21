@@ -49,6 +49,12 @@ Adres serwera **bez portu** — od 0055 serwer stoi za nginx na porcie 443. `Con
 podasz `-Credential`. Token żyje w sesji PowerShell i nigdzie indziej — wygasa
 po 30 minutach.
 
+Po haśle `Connect-BlinkyLite` pyta o **kod z aplikacji uwierzytelniającej**
+(albo kod zapasowy) — od 0027 bez tego nie ma tokenu. Kod nie ma parametru i
+nie dostanie go: kod zapasowy w historii poleceń byłby logowaniem dla każdego,
+kto ją przeczyta. Konto, które jeszcze nie ma drugiego składnika, musi go
+najpierw skonfigurować w przeglądarce, w konsoli web (tam jest kod QR).
+
 ## PIN
 
 `New-BlinkyLiteIssuance` **nie ma parametru `-Pin` i nie będzie go miał**.

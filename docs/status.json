@@ -37,11 +37,11 @@
     "hardware": "YubiKey 5 series (PIV applet)"
   },
   "status": {
-    "updated": "2026-09-20",
+    "updated": "2026-09-21",
     "phase": 2,
     "phaseTitle": "Wydanie",
     "state": "open",
-    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na DPCLIENT01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), przegladarka web za nginx (0030, 0055), konfiguracja w web (0031), Kerberos (0025), wydanie z PowerShell (0040). 429 testow jednostkowych.",
+    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na DPCLIENT01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. nginx na 443 z konsola web wdrozony (0055 partly-done). Drugi skladnik TOTP napisany i przetestowany bez AD (0027 done-unverified). Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), lista wydan w web (0030), konfiguracja w web (0031), Kerberos (0025), wydanie z PowerShell (0040). 486 testow jednostkowych, 101 bazodanowych.",
     "nothingIssuedYet": false
   },
   "stateLegend": {
@@ -390,6 +390,13 @@
       "by": "owner"
     },
     {
+      "id": "D-33",
+      "choice": "TOTP: miedzy haslem a kodem bilet JWT na 5 minut z aud BlinkyLite/second-factor, przyjmowany tylko przez /api/auth/totp i /api/auth/totp/setup. Konfiguracja z kodem QR tylko w konsoli web; WPF, PowerShell i CardLab pytaja o kod. RFC 6238 i base32 napisane w repo (wektory RFC w testach) zamiast Otp.NET. Kody zapasowe jako HMAC kluczem z KEK. Reset tylko przez innego Admina, z powodem",
+      "state": "locked",
+      "decidedOn": "2026-09-21",
+      "by": "cloud-ai"
+    },
+    {
       "id": "D-32",
       "choice": "nginx na porcie 443 z TYM SAMYM certyfikatem co serwer; serwer tylko w sieci wewnetrznej Dockera. Klienci WPF i PowerShell lacza sie przez https://<nazwa> bez portu. Token w aplikacji web trzymany tylko w pamieci karty przegladarki, jak w WPF - odswiezenie strony to ponowne logowanie; bez ciasteczek, wiec bez CSRF",
       "state": "locked",
@@ -519,6 +526,11 @@
       "id": "R-11",
       "impact": "Karta wydana ponownie pod starym CHUID nie jest rozpoznawana na stacjach, ktore znaly ja z poprzednim kluczem: 21.09 ta sama karta dzialala na DPCLIENT01, a na DPCLIENT02 i SZYMON-PC dawala NTE_BAD_KEYSET bez kontenera - obie tylko ze sterownikiem Microsoftu. Brak minidrivera Yubico nie byl roznica",
       "handling": "ReplaceCardIdentity pisze CHUID i CCC od nowa przy kazdym wydaniu (od c17c056). Niezweryfikowane: nastepne wydanie tej karty musi dzialac takze na DPCLIENT02"
+    },
+    {
+      "id": "R-12",
+      "impact": "Kto zna haslo operatora przed jego pierwszym logowaniem, moze skonfigurowac drugi skladnik na swoim telefonie",
+      "handling": "Pierwsze logowanie zaraz po nadaniu roli; totp.enrolled w audycie z adresem; wlasciciel, ktory zamiast QR dostaje pytanie o kod, zglasza to i inny Admin resetuje"
     }
   ],
   "patches": [
@@ -644,9 +656,10 @@
       "id": "0027",
       "phase": 2,
       "title": "Drugi skladnik TOTP dla wszystkich klientow",
-      "state": "open",
+      "state": "done-unverified",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-21: migracja 0006 (operator_totp, operator_backup_codes, bl_totp_state/begin/confirm/accept/backup_use/reset; zadna rola nie ma SELECT na tych tabelach), logowanie dwuetapowe z biletem o osobnym aud, konfiguracja z QR w konsoli web, pytanie o kod w WPF, PowerShell i CardLab. Testy: wektory RFC 6238 i RFC 4648; bilet nie otwiera /api/auth/me ani /api/profiles, token nie otwiera /api/auth/totp; token nie powstaje bez poprawnego kodu; kod uzyty raz i kod starszy od uzytego odrzucone; 8 rownoczesnych prob tym samym krokiem - dokladnie jedna wygrywa (PostgreSQL); kod zapasowy dziala raz; potwierdzonego skladnika nie da sie zastapic; piec zlych kodow blokuje takze dobry; reset tylko przez innego Admina z powodem.",
+      "gap": "Nikt jeszcze nie zalogowal sie z prawdziwym telefonem i kontem AD: konfiguracja w web na blinkylite.ems-ad.emsdemolab.pl, potem kod w WPF i w Connect-BlinkyLite. Reset nie ma ekranu (0030/0031)."
     },
     {
       "id": "0030",

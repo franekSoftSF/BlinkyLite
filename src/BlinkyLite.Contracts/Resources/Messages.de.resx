@@ -376,4 +376,64 @@
   <data name="pin.rule.ok" xml:space="preserve">
     <value>Diese PIN kann verwendet werden.</value>
   </data>
+  <data name="error.totp.invalid" xml:space="preserve">
+    <value>Der Code ist falsch oder wurde schon verwendet. Warten Sie auf den nächsten Code und versuchen Sie es erneut.</value>
+  </data>
+  <data name="error.totp.setup-required" xml:space="preserve">
+    <value>Dieses Konto hat noch keinen zweiten Faktor. Öffnen Sie die BlinkyLite-Webkonsole im Browser, melden Sie sich an und richten Sie ihn dort ein.</value>
+  </data>
+  <data name="error.totp.already-configured" xml:space="preserve">
+    <value>Dieses Konto hat bereits einen zweiten Faktor. Wenn das Telefon verloren ist, kann ein Admin ihn zurücksetzen.</value>
+  </data>
+  <data name="client.totp.prompt" xml:space="preserve">
+    <value>Code aus der Authenticator-App (oder ein Backup-Code)</value>
+  </data>
+  <data name="client.totp.confirm" xml:space="preserve">
+    <value>Bestätigen</value>
+  </data>
+  <data name="client.totp.backup-left" xml:space="preserve">
+    <value>Sie haben sich mit einem Backup-Code angemeldet. Übrig: {0}. Wenn keine mehr übrig sind, bitten Sie einen Admin, Ihren zweiten Faktor zurückzusetzen.</value>
+  </data>
+  <data name="web.totp.title" xml:space="preserve">
+    <value>Zweiter Faktor</value>
+  </data>
+  <data name="web.totp.explain" xml:space="preserve">
+    <value>Geben Sie den sechsstelligen Code aus Ihrer Authenticator-App ein. Wenn Sie das Telefon nicht dabeihaben, verwenden Sie einen Backup-Code.</value>
+  </data>
+  <data name="web.totp.code" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="web.totp.setup.title" xml:space="preserve">
+    <value>Zweiten Faktor einrichten</value>
+  </data>
+  <data name="web.totp.setup.explain" xml:space="preserve">
+    <value>BlinkyLite verlangt für jedes Konto einen zweiten Faktor. Scannen Sie den QR-Code mit einer Authenticator-App, zum Beispiel Microsoft Authenticator, und geben Sie dann den angezeigten Code ein.</value>
+  </data>
+  <data name="web.totp.setup.manual" xml:space="preserve">
+    <value>Scannen nicht möglich? Geben Sie diesen Geheimcode in der App ein:</value>
+  </data>
+  <data name="web.totp.setup.once" xml:space="preserve">
+    <value>QR-Code und Geheimcode werden nur jetzt angezeigt.</value>
+  </data>
+  <data name="web.totp.backup.title" xml:space="preserve">
+    <value>Backup-Codes</value>
+  </data>
+  <data name="web.totp.backup.explain" xml:space="preserve">
+    <value>Jeder Code meldet Sie einmal ohne Telefon an. Speichern Sie die Codes jetzt an einem sicheren Ort. Sie werden nicht noch einmal angezeigt.</value>
+  </data>
+  <data name="web.totp.backup.saved" xml:space="preserve">
+    <value>Die Codes sind gespeichert</value>
+  </data>
+  <data name="web.totp.back" xml:space="preserve">
+    <value>Zurück zur Anmeldung</value>
+  </data>
+  <data name="audit.totp.setup-started" xml:space="preserve">
+    <value>Einrichtung des zweiten Faktors begonnen</value>
+  </data>
+  <data name="audit.totp.enrolled" xml:space="preserve">
+    <value>Zweiter Faktor eingerichtet</value>
+  </data>
+  <data name="audit.totp.reset" xml:space="preserve">
+    <value>Zweiter Faktor zurückgesetzt</value>
+  </data>
 </root>

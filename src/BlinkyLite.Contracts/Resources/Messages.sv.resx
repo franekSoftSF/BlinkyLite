@@ -376,4 +376,64 @@
   <data name="pin.rule.ok" xml:space="preserve">
     <value>Den här PIN-koden kan användas.</value>
   </data>
+  <data name="error.totp.invalid" xml:space="preserve">
+    <value>Koden är fel eller har redan använts. Vänta på nästa kod och försök igen.</value>
+  </data>
+  <data name="error.totp.setup-required" xml:space="preserve">
+    <value>Kontot har ingen andra faktor än. Öppna BlinkyLites webbkonsol i en webbläsare, logga in och konfigurera den där.</value>
+  </data>
+  <data name="error.totp.already-configured" xml:space="preserve">
+    <value>Kontot har redan en andra faktor. Om telefonen har försvunnit kan en Admin återställa den.</value>
+  </data>
+  <data name="client.totp.prompt" xml:space="preserve">
+    <value>Kod från autentiseringsappen (eller en reservkod)</value>
+  </data>
+  <data name="client.totp.confirm" xml:space="preserve">
+    <value>Bekräfta</value>
+  </data>
+  <data name="client.totp.backup-left" xml:space="preserve">
+    <value>Du loggade in med en reservkod. {0} kvar. När de är slut, be en Admin att återställa din andra faktor.</value>
+  </data>
+  <data name="web.totp.title" xml:space="preserve">
+    <value>Andra faktor</value>
+  </data>
+  <data name="web.totp.explain" xml:space="preserve">
+    <value>Skriv den sexsiffriga koden från din autentiseringsapp. Om du inte har telefonen med dig, använd en reservkod.</value>
+  </data>
+  <data name="web.totp.code" xml:space="preserve">
+    <value>Kod</value>
+  </data>
+  <data name="web.totp.setup.title" xml:space="preserve">
+    <value>Konfigurera andra faktor</value>
+  </data>
+  <data name="web.totp.setup.explain" xml:space="preserve">
+    <value>BlinkyLite kräver en andra faktor för varje konto. Skanna QR-koden med en autentiseringsapp, till exempel Microsoft Authenticator, och skriv sedan koden som visas.</value>
+  </data>
+  <data name="web.totp.setup.manual" xml:space="preserve">
+    <value>Går det inte att skanna? Skriv in den här hemliga koden i appen:</value>
+  </data>
+  <data name="web.totp.setup.once" xml:space="preserve">
+    <value>QR-koden och den hemliga koden visas bara nu.</value>
+  </data>
+  <data name="web.totp.backup.title" xml:space="preserve">
+    <value>Reservkoder</value>
+  </data>
+  <data name="web.totp.backup.explain" xml:space="preserve">
+    <value>Varje kod loggar in dig en gång utan telefonen. Spara dem på ett säkert ställe nu. De visas inte igen.</value>
+  </data>
+  <data name="web.totp.backup.saved" xml:space="preserve">
+    <value>Koderna är sparade</value>
+  </data>
+  <data name="web.totp.back" xml:space="preserve">
+    <value>Tillbaka till inloggningen</value>
+  </data>
+  <data name="audit.totp.setup-started" xml:space="preserve">
+    <value>Konfiguration av andra faktor påbörjad</value>
+  </data>
+  <data name="audit.totp.enrolled" xml:space="preserve">
+    <value>Andra faktor konfigurerad</value>
+  </data>
+  <data name="audit.totp.reset" xml:space="preserve">
+    <value>Andra faktor återställd</value>
+  </data>
 </root>
