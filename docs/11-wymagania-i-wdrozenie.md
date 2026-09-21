@@ -120,6 +120,26 @@ Internet Explorer → Internet Control Panel → Security Page → Site to Zone
 Assignment List*: `https://blinkylite.ems-ad.emsdemolab.pl` = `1`. Bez tego
 przeglądarka pokaże okno logowania albo formularz hasła — nie zaloguje sama.
 
+**Konto usługi LDAP musi czytać `tokenGroups` innych kont.** Przy haśle grupy
+czyta bind samego operatora; przy Kerberosie nie ma takiego bindu i czyta je
+`svc_blinkylite`. Jeśli wróci pusta lista, serwer mówi o tym wprost (503,
+w logu „tokenGroups … came back empty”) — wtedy dodaj `svc_blinkylite` do
+grupy **Windows Authorization Access Group**.
+
+**Bez Kerberosa:** zostaw `secrets/blinkylite-http.keytab` jako pusty plik
+(`scripts/dev-secrets.sh` taki tworzy). Sekret compose jest spełniony, a
+przycisk „Zaloguj kontem Windows” odpowiada „nie skonfigurowane”.
+
+**Zmierzone w labie 21.09.2026:** konto `svc_blinkylite_http` w
+`OU=Services,OU=BLINKYLITE,…`, SPN `HTTP/blinkylite.ems-ad.emsdemolab.pl`,
+keytab kvno 3, `aes256-cts-hmac-sha1-96`; `kinit -k` z keytaba na serwerze
+dostał TGT — klucz zgadza się z KDC. Skrypt potrzebował czterech poprawek, każda
+z pomiaru: okno bez „Uruchom jako administrator” (UAC odcina Domain Admins —
+„Access is denied”), DN z przecinkami bez cudzysłowu, `setspn` na innym DC niż
+nowe konto (0x525 — teraz wszystko na jednym DC), `ktpass /target` z
+`DOMENA\konto` w `/mapuser` i stderr `ktpass` kończący skrypt w PowerShell 5.1.
+Serwer z keytabem odpowiada przez nginx `401 WWW-Authenticate: Negotiate`.
+
 **Sprawdzenie ze stacji w domenie**, zanim zaczniemy szukać błędu w kodzie:
 
 ```powershell

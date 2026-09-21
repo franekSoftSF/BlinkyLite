@@ -41,7 +41,7 @@
     "phase": 2,
     "phaseTitle": "Wydanie",
     "state": "open",
-    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na DPCLIENT01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. nginx na 443 z konsola web wdrozony (0055 partly-done). Drugi skladnik TOTP napisany i przetestowany bez AD (0027 done-unverified). Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031), Kerberos (0025), wydanie z PowerShell (0040). Przegladarka web z lista, PUK, szczegolami i audytem oraz weryfikacja klucza w WPF/PowerShell (0030 done-unverified). 517 testow jednostkowych, 104 bazodanowe.",
+    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na DPCLIENT01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. nginx na 443 z konsola web wdrozony (0055 partly-done). Drugi skladnik TOTP napisany i przetestowany bez AD (0027 done-unverified). Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031), wydanie z PowerShell (0040). Przegladarka web z lista, PUK, szczegolami i audytem oraz weryfikacja klucza w WPF/PowerShell (0030 done-unverified). 517 testow jednostkowych, 104 bazodanowe.",
     "nothingIssuedYet": false
   },
   "stateLegend": {
@@ -640,9 +640,10 @@
       "id": "0025",
       "phase": 2,
       "title": "Logowanie zintegrowane (Negotiate/Kerberos)",
-      "state": "open",
+      "state": "done-unverified",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-21: POST /api/auth/negotiate (handler Negotiate, keytab z KRB5_KTNAME) prowadzi ta sama droga co haslo: realm, konto i grupy z AD przez tokenGroups konta uslugi, role z SID, bilet drugiego kroku - TOTP takze po Kerberosie. Brak lub pusty keytab = 503 error.kerberos.unavailable zamiast golego 401. Klienci: przycisk w WPF i w konsoli web, Connect-BlinkyLite bez -Credential najpierw Kerberos, CardLab issue bez --operator. Testy na podmienionym handlerze Negotiate (obcy realm, nieznane i wylaczone konto, principal uslugi, brak roli, pelne logowanie z kodem). W labie: konto svc_blinkylite_http, SPN HTTP/blinkylite.ems-ad.emsdemolab.pl, keytab kvno 3 AES256 zweryfikowany kinit -k na serwerze; serwer przez nginx odpowiada 401 WWW-Authenticate: Negotiate.",
+      "gap": "Nikt jeszcze nie zalogowal sie prawdziwym biletem: klist get ze stacji, przycisk w WPF, Connect-BlinkyLite i przegladarka z GPO strefy intranet. Nie wiadomo, czy konto uslugi LDAP czyta tokenGroups innych kont. Krotka nazwa bez SPN (swiadomie, na razie tylko FQDN)."
     },
     {
       "id": "0026",

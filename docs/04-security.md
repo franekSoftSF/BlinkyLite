@@ -31,6 +31,16 @@
   (wielokrotny). Brak refresh tokenu — po wygaśnięciu ponowne logowanie;
   wydanie w toku prosi o nie, zanim wyśle kolejny krok.
 - Hasło nie jest nigdzie zapisywane ani logowane; klient trzyma tylko token.
+- **Kerberos zamiast hasła (0025):** `POST /api/auth/negotiate`, polityka
+  `WindowsIdentity` — tylko schemat Negotiate, bez ról, bo role przychodzą
+  dopiero z AD. Bilet sprawdza GSSAPI kluczem z keytaba (`KRB5_KTNAME`).
+  Dalej ta sama droga co po haśle: realm musi być nasz (inaczej
+  `kerberos-foreign-realm`), konto i grupy czyta konto usługi przez
+  `tokenGroups`, konto wyłączone i principal usługi (`HTTP/…`) są odrzucane,
+  a odpowiedzią jest **bilet drugiego kroku** — kod TOTP obowiązuje także po
+  Kerberosie. Brak keytaba albo pusty plik daje `503
+  error.kerberos.unavailable` przed handlerem, nie wyzwanie `Negotiate`,
+  którego nikt nie spełni. Hasło zostaje drogą zapasową w każdym kliencie.
 
 ### Drugi składnik (0027, D-31, D-33)
 
