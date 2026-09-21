@@ -191,13 +191,28 @@ $principal = "HTTP/$($Names[0])@$realm"
 # Bez -setupn: ktpass ustawia UPN konta na nazwe SPN i liczy klucz AES z ta
 # sama sola, ktorej uzyje KDC. Z -setupn sol sie rozjezdza i keytab ma klucz,
 # ktory nie otworzy zadnego biletu - bez zadnego komunikatu.
-# /target: ten sam DC co reszta - ktpass bez niego tez wybiera sam.
-& ktpass.exe /princ $principal /mapuser "$netbios\$Account" /pass '+rndPass' `
-    /crypto AES256-SHA1 /ptype KRB5_NT_PRINCIPAL /target $Server /out $OutFile 2>&1 |
-    ForEach-Object { "   ktpass: $_" }
+# /target: ten sam DC co reszta - ktpass bez niego tez wybiera sam. Z /target
+# ktpass bierze /mapuser doslownie jako sAMAccountName, wiec BEZ "DOMENA\" -
+# z prefiksem szukal konta "EMS-AD\svc_blinkylite_http" i go nie znalazl.
+#
+# ErrorActionPreference na chwile Continue: ktpass pisze ostrzezenia na
+# stderr takze wtedy, gdy mu sie udalo, a Windows PowerShell 5.1 przy Stop
+# robi z kazdej linii stderr blad konczacy skrypt. O wyniku mowi kod wyjscia
+# i to, czy plik powstal.
+$previous = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+try {
+    & ktpass.exe /princ $principal /mapuser $Account /pass '+rndPass' `
+        /crypto AES256-SHA1 /ptype KRB5_NT_PRINCIPAL /target $Server /out $OutFile 2>&1 |
+        ForEach-Object { "   ktpass: $_" }
+    $ktpassExit = $LASTEXITCODE
+}
+finally {
+    $ErrorActionPreference = $previous
+}
 
-if ($LASTEXITCODE -ne 0 -or -not (Test-Path $OutFile)) {
-    Fail "ktpass nie utworzyl keytaba (kod $LASTEXITCODE)."
+if ($ktpassExit -ne 0 -or -not (Test-Path $OutFile)) {
+    Fail "ktpass nie utworzyl keytaba (kod $ktpassExit)."
 }
 
 # Tylko Administratorzy i SYSTEM: to jest haslo konta w pliku.
