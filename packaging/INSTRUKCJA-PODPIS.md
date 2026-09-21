@@ -75,6 +75,30 @@ Bez niego podpis przestaje być ważny razem z certyfikatem i nowe instalacje
 starej wersji przestają działać. Serwer znaczników czasu dostaje tylko skrót
 pakietu, nie sam pakiet.
 
+### Albo: podpis na stacji w domenie, bez Windows SDK
+
+Gdy komputer, który buduje, nie jest w domenie (albo nie ma mieć klucza), pakiet
+buduje się **niepodpisany z docelowym wydawcą**, a podpisuje tam, gdzie jest
+certyfikat:
+
+```powershell
+# tam, gdzie jest repozytorium
+./packaging/client/Build-Msix.ps1 -Publisher "CN=BlinkyLite"
+```
+
+Na stację w domenie trafiają: pakiet, `packaging/client/Sign-Msix.ps1` oraz
+`signtool.exe` i `appxsip.dll` z Windows SDK (`bin\<wersja>d` — te dwa pliki
+wystarczą, `makeappx` bez SDK nie działa, dlatego wydawca jest ustalony przy
+budowie). Tam, w Windows PowerShell:
+
+```powershell
+.\Sign-Msix.ps1 -CAConfig "SubCA.dw-ad.digitalworkspace.pl\DIGITALWORKSPACE-Sub-CA"
+```
+
+Skrypt czyta wydawcę z pakietu, szuka certyfikatu o tym podmiocie, a gdy go nie
+ma — prosi o niego CA (kroki 2 robi sam), podpisuje, sprawdza podpis tak, jak
+zobaczy go Windows, i zapisuje `index.json` obok pakietu.
+
 ## Krok 4: na serwer
 
 ```bash

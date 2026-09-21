@@ -20,6 +20,11 @@
     Code signing certificate in CurrentUser\My or LocalMachine\My. Without it,
     the package is left unsigned.
 
+.PARAMETER Publisher
+    The publisher to build an UNSIGNED package for, to be signed elsewhere with
+    Sign-Msix.ps1 - on a domain machine that holds the certificate, whose
+    private key does not leave it. Must be the certificate's subject exactly.
+
 .PARAMETER TimestampUrl
     RFC 3161 timestamp server. Without one the signature stops being valid the
     day the certificate expires, and so does every installed copy's updates.
@@ -30,6 +35,7 @@
 [CmdletBinding()]
 param(
     [string] $CertificateThumbprint,
+    [string] $Publisher,
     [string] $TimestampUrl,
     [string] $Version,
     [string] $Out = (Join-Path $PSScriptRoot '../../artifacts/msix')
@@ -66,6 +72,10 @@ if ($CertificateThumbprint) {
         throw "Certificate $CertificateThumbprint has no Code Signing EKU (1.3.6.1.5.5.7.3.3)."
     }
     $publisher = $certificate.Subject
+}
+elseif ($Publisher) {
+    $publisher = $Publisher
+    Write-Warning "Unsigned, for ${Publisher} - sign it with Sign-Msix.ps1 where that certificate is."
 }
 else {
     $publisher = 'CN=BlinkyLite Unsigned Build'
