@@ -72,6 +72,22 @@ Testem jest `certutil -scinfo` **bez** `-silent` (Windows pyta o PIN i
 podpisuje kluczem z karty) — a ostatecznie logowanie kartą. Skrypt stacji
 robi to przełącznikiem `-TestSignature`.
 
+### Co mówi SP 800-85A-4 (procedury testowe)
+
+To wytyczne dla laboratoriów zgodności FIPS 201 — testują komendy karty i API
+middleware na własnej uprząży, a nie to, co robi Windows. Dwie rzeczy z nich
+są dla nas użyteczne:
+
+- **TE05.12A.01** — karta bez Discovery Object albo z bitem 6 polityki PIN
+  równym zero używa wyłącznie PIN-u aplikacji PIV. Brak `7E` jest więc stanem
+  zgodnym z normą, nie wadą; hipoteza o Discovery Object słabnie.
+- **AS02.01** — siedem obiektów obowiązkowych dla karty federalnej: CCC, CHUID,
+  certyfikat PIV Authentication (`9A`), certyfikat Card Authentication
+  (`9E`), odciski palców, zdjęcie twarzy, Security Object. Piszemy dwa pierwsze
+  i `9A`. Pozostałe dotyczą legitymacji federalnej i Windows ich do logowania
+  nie potrzebuje — ale karta BlinkyLite **nie jest** „zgodna z PIV" w sensie
+  FIPS 201 i nie należy tak o niej mówić. Jest kartą używającą aplikacji PIV.
+
 ### Skrypt stacji: `tools/station/Test-SmartCardDriver.ps1`
 
 Bez przełączników tylko czyta i raportuje: ATR kart w czytnikach (prosto z
@@ -101,5 +117,5 @@ Jeśli nie — hipotezy po jednej, każda z wynikiem w tabeli:
 | wpis ATR sterownika producenta w `Calais\SmartCards` wygrywa, zanim sterownik PIV w ogóle zostanie zapytany | lista kluczy w `Calais\SmartCards` | — |
 | Windows Update sam zainstalował minidriver Yubico | dostawca sterownika urządzenia karty | — |
 | GUID w CHUID nie jest poprawnym UUID | wydać kartę po poprawce, porównać `certutil -scinfo` | poprawione; wpływu na Windows jeszcze nie zmierzono |
-| sterownik czyta Discovery Object (`7E`) i bez niego nie wie, jak używać PIN-u | zapisać Discovery Object z polityką `40 00`, powtórzyć | — |
+| sterownik czyta Discovery Object (`7E`) i bez niego nie wie, jak używać PIN-u | zapisać Discovery Object z polityką `40 00`, powtórzyć | **osłabiona** przez SP 800-85A-4, TE05.12A.01: karta **bez** Discovery Object to poprawny stan, w którym obowiązuje PIN aplikacji PIV — zgodny odbiorca musi go obsłużyć |
 | sterownik wymaga Key History Object (`5FC10C`) | zapisać pusty, powtórzyć | — |
