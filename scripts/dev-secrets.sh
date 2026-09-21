@@ -43,6 +43,11 @@ write blinkylite-ldap-service-password     "${BLINKYLITE_LDAP_SERVICE_PASSWORD:-
 write blinkylite-jwt-signing-key           "$(random_key)"
 write blinkylite-kek-1                     "$(random_key)"
 
+# Kerberos (0025): the keytab comes from AD (tools/ad/INSTRUKCJA-KERBEROS.md),
+# never from here. An empty file satisfies the compose secret and means "no
+# Windows sign-in" - the server says so instead of answering 401.
+write blinkylite-http.keytab               ""
+
 # Two containers, two users, and a bind-mounted secret keeps the host's owner:
 #   - the server runs as uid 1654 (the .NET image's "app"),
 #   - PostgreSQL runs its init scripts as uid 999 ("postgres").
@@ -55,7 +60,7 @@ if [ "$(id -u)" = "0" ]; then
         chown 999:1654 "secrets/$name"
         chmod 640 "secrets/$name"
     done
-    for name in blinkylite-jwt-signing-key blinkylite-kek-1 blinkylite-ldap-service-password; do
+    for name in blinkylite-jwt-signing-key blinkylite-kek-1 blinkylite-ldap-service-password blinkylite-http.keytab; do
         chown 1654:1654 "secrets/$name"
         chmod 600 "secrets/$name"
     done

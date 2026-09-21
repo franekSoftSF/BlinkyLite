@@ -7,7 +7,13 @@ using BlinkyLite.Piv.Attestation;
 using BlinkyLite.Server.Auth;
 using BlinkyLite.Server.Data;
 using ServerIssuance = BlinkyLite.Server.Data.Issuance;
+using System.Security.Claims;
+using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,6 +43,21 @@ public sealed class ServerFactory : WebApplicationFactory<Program>
     /// </summary>
     public AttestationVerifier? Verifier { get; init; }
 
+    public const string Realm = "CORP.EXAMPLE";
+
+    /// <summary>
+    /// A file that stands for the keytab: the server only asks whether one is
+    /// there, the fake Negotiate handler does the rest. Null: no keytab.
+    /// </summary>
+    public string? Keytab { get; init; } = DefaultKeytab.Value;
+
+    private static readonly Lazy<string> DefaultKeytab = new(() =>
+    {
+        var path = Path.Combine(Path.GetTempPath(), "blinkylite-test.keytab");
+        File.WriteAllBytes(path, [0x05, 0x02]);
+        return path;
+    });
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -45,6 +66,8 @@ public sealed class ServerFactory : WebApplicationFactory<Program>
         builder.UseSetting($"Roles:{Role.SecurityOfficer}:0", OfficerGroup);
         builder.UseSetting($"Roles:{Role.Helpdesk}:0", HelpdeskGroup);
         builder.UseSetting("RateLimits:LoginPerMinute", "1000");
+        builder.UseSetting("Kerberos:Realm", Realm);
+        builder.UseSetting("Kerberos:KeytabPath", Keytab ?? Path.Combine(Path.GetTempPath(), "blinkylite-no-such.keytab"));
 
         // One profile, as in the normal case (D-21). A KEK is needed because
         // the server seals the secrets before it writes the reservation.
@@ -64,6 +87,13 @@ public sealed class ServerFactory : WebApplicationFactory<Program>
             {
                 services.AddSingleton(Verifier);
             }
+
+            // No KDC in a unit test: the Negotiate scheme keeps its name and
+            // its place in the pipeline, and gets a handler that believes a
+            // header. Everything after it - realm, AD, roles, ticket - is the
+            // production code.
+            services.Configure<AuthenticationOptions>(options =>
+                options.SchemeMap[NegotiateDefaults.AuthenticationScheme].HandlerType = typeof(FakeKerberosHandler));
         });
     }
 
@@ -158,6 +188,32 @@ public sealed class ServerFactory : WebApplicationFactory<Program>
     }
 }
 
+/// <summary>Stands in for Kerberos: the client name comes from a header, or there is none and the answer is a challenge.</summary>
+public sealed class FakeKerberosHandler(
+    IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
+    : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
+{
+    public const string Header = "X-Test-Kerberos";
+
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        if (!Request.Headers.TryGetValue(Header, out var name))
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
+        var identity = new ClaimsIdentity([new Claim(ClaimTypes.Name, name.ToString())], "Kerberos");
+        return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name)));
+    }
+
+    protected override Task HandleChallengeAsync(AuthenticationProperties properties)
+    {
+        Response.StatusCode = 401;
+        Response.Headers.WWWAuthenticate = "Negotiate";
+        return Task.CompletedTask;
+    }
+}
+
 public sealed class FakeDirectory : IDirectory
 {
     public Dictionary<string, DirectoryAccount> Accounts { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -185,6 +241,16 @@ public sealed class FakeDirectory : IDirectory
 
     public Task<DirectoryUser?> FindBySidAsync(string sid, CancellationToken ct = default) =>
         Task.FromResult(Users.FirstOrDefault(u => u.Sid == sid));
+
+    public Task<DirectoryAccount?> FindForKerberosAsync(string samAccountName, CancellationToken ct = default)
+    {
+        if (Throws is not null)
+        {
+            throw Throws;
+        }
+
+        return Task.FromResult(Accounts.GetValueOrDefault(samAccountName));
+    }
 }
 
 /// <summary>Stands in for the read side; the issuances a test put there.</summary>

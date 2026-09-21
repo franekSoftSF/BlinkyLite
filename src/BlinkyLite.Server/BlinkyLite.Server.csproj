@@ -19,6 +19,7 @@
     <PackageReference Include="Serilog.Sinks.File" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" />
     <PackageReference Include="System.DirectoryServices.Protocols" />
     <PackageReference Include="NHibernate" />
     <PackageReference Include="FluentNHibernate" />

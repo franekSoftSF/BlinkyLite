@@ -26,12 +26,6 @@ internal static class Issue
             return 2;
         }
 
-        if (options.Operator is not { } operatorName)
-        {
-            log.Problem("Podaj --operator DOMENA\\uzytkownik - konto, ktorym logujesz sie do BlinkyLite.");
-            return 2;
-        }
-
         if (options.Target is not { } wanted)
         {
             log.Problem("Podaj --target <fragment nazwy> - osobe, dla ktorej jest ta karta.");
@@ -46,37 +40,44 @@ internal static class Issue
 
         using var client = new ServerClient(server);
 
-        // The operator's own AD password, read here and sent over TLS to their
-        // own server. It is not stored, not logged and not passed on.
-        var password = ConsolePinPrompt.ReadHidden($"Haslo AD dla {operatorName}: ");
-        if (password is null)
+        string? AskCode(string? refusal)
         {
-            log.Problem("Przerwano.");
-            return 2;
+            if (refusal is not null)
+            {
+                log.Problem(Strings.Current[refusal]);
+            }
+
+            Console.Write($"{Strings.Current["client.totp.prompt"]}: ");
+            return Console.ReadLine();
         }
 
         CurrentUser user;
         try
         {
-            user = await client.LoginAsync(operatorName, password, refusal =>
+            if (options.Operator is not { } operatorName)
             {
-                if (refusal is not null)
+                // No --operator: the Windows identity of this session (0025).
+                log.Say("logowanie:    kontem Windows (Kerberos)");
+                user = await client.LoginWithWindowsAsync(AskCode, CancellationToken.None);
+            }
+            else
+            {
+                // The operator's own AD password, read here and sent over TLS to
+                // their own server. It is not stored, not logged and not passed on.
+                var password = ConsolePinPrompt.ReadHidden($"Haslo AD dla {operatorName}: ");
+                if (password is null)
                 {
-                    log.Problem(Strings.Current[refusal]);
+                    log.Problem("Przerwano.");
+                    return 2;
                 }
 
-                Console.Write($"{Strings.Current["client.totp.prompt"]}: ");
-                return Console.ReadLine();
-            }, CancellationToken.None);
+                user = await client.LoginAsync(operatorName, password, AskCode, CancellationToken.None);
+            }
         }
         catch (Exception e) when (e is ServerException or HttpRequestException or OperationCanceledException)
         {
             log.Problem($"Logowanie nie przeszlo: {Explain(e)}", e);
             return 4;
-        }
-        finally
-        {
-            password = null;
         }
 
         log.Say($"zalogowany:   {user.Upn}, role: {string.Join(", ", user.Roles)}");

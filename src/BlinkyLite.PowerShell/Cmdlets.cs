@@ -37,51 +37,84 @@ public sealed class ConnectBlinkyLiteCommand : PSCmdlet
             Strings.Current.Culture = CultureInfo.GetCultureInfo(language);
         }
 
-        var credential = Credential == PSCredential.Empty || Credential is null
+        var client = new ServerClient(Server);
+
+        // Asked through the host, never a parameter: a backup code in the
+        // command history would be a sign-in for whoever reads it.
+        string? AskCode(string? refusal)
+        {
+            if (refusal is not null)
+            {
+                Host.UI.WriteWarningLine(Strings.Current[refusal]);
+            }
+
+            Host.UI.Write($"{Strings.Current["client.totp.prompt"]}: ");
+            return Host.UI.ReadLine();
+        }
+
+        var noCredential = Credential == PSCredential.Empty || Credential is null;
+
+        // Without -Credential, the Windows identity of this session first
+        // (0025). Only when that cannot work - no keytab on the server, no
+        // ticket for this name - is anybody asked for a password.
+        if (noCredential)
+        {
+            try
+            {
+                var user = client.LoginWithWindowsAsync(AskCode).GetAwaiter().GetResult();
+                Finish(client, user);
+                return;
+            }
+            catch (ServerException e) when (e.MessageKey is ErrorCodes.KerberosFailed or ErrorCodes.KerberosUnavailable)
+            {
+                WriteVerbose($"{Strings.Current[e.MessageKey]} ({e.Message})");
+            }
+            catch (Exception e)
+            {
+                client.Dispose();
+                ThrowTerminatingError(Problems.Of(e));
+                return;
+            }
+        }
+
+        var credential = noCredential
             ? Host.UI.PromptForCredential("BlinkyLite", Server.Host, Environment.UserName, Environment.UserDomainName)
             : Credential;
 
         if (credential is null)
         {
+            client.Dispose();
             return;
         }
-
-        var client = new ServerClient(Server);
 
         try
         {
             // The password is turned into a string here, at the one call that
             // needs it, and nowhere earlier.
-            // Asked through the host, never a parameter: a backup code in the
-            // command history would be a sign-in for whoever reads it.
             var user = client.LoginAsync(
                     credential.UserName,
                     credential.GetNetworkCredential().Password,
-                    refusal =>
-                    {
-                        if (refusal is not null)
-                        {
-                            Host.UI.WriteWarningLine(Strings.Current[refusal]);
-                        }
-
-                        Host.UI.Write($"{Strings.Current["client.totp.prompt"]}: ");
-                        return Host.UI.ReadLine();
-                    })
+                    AskCode)
                 .GetAwaiter().GetResult();
 
-            if (client.BackupCodesLeft is { } left)
-            {
-                WriteWarning(Strings.Current.Format("client.totp.backup-left", left));
-            }
-
-            Session.Open(client, user, Server);
-            WriteObject(user);
+            Finish(client, user);
         }
         catch (Exception e)
         {
             client.Dispose();
             ThrowTerminatingError(Problems.Of(e));
         }
+    }
+
+    private void Finish(ServerClient client, CurrentUser user)
+    {
+        if (client.BackupCodesLeft is { } left)
+        {
+            WriteWarning(Strings.Current.Format("client.totp.backup-left", left));
+        }
+
+        Session.Open(client, user, Server);
+        WriteObject(user);
     }
 }
 

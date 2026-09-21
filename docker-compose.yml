@@ -99,6 +99,11 @@ services:
       Roles__SecurityOfficer__0: ${BLINKYLITE_GROUP_SECURITY_OFFICER:-}
       Roles__Helpdesk__0: ${BLINKYLITE_GROUP_HELPDESK:-}
       Secrets__CurrentKekVersion: "1"
+      # Windows sign-in (0025). GSSAPI reads the keytab from here; the server
+      # only checks that it is there and not empty. No Kerberos wanted: leave
+      # secrets/blinkylite-http.keytab as an empty file - the Windows button
+      # then says "not set up" instead of failing with a bare 401 (docs/11).
+      KRB5_KTNAME: /run/secrets/blinkylite-http-keytab
     secrets:
       # Compose outside swarm IGNORES uid and mode: a file secret is a bind
       # mount and keeps the host's owner and permissions. They are kept here
@@ -119,6 +124,9 @@ services:
         uid: "1654"
         mode: "0400"
       - source: blinkylite-tls-key
+        uid: "1654"
+        mode: "0400"
+      - source: blinkylite-http-keytab
         uid: "1654"
         mode: "0400"
     volumes:
@@ -169,3 +177,5 @@ secrets:
     file: ./secrets/blinkylite-ldap-service-password
   blinkylite-tls-key:
     file: ./certs/blinkylite.key
+  blinkylite-http-keytab:
+    file: ./secrets/blinkylite-http.keytab

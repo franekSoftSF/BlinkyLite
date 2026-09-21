@@ -1,5 +1,6 @@
 using System.Reflection;
 using BlinkyLite.Server.Api;
+using BlinkyLite.Server.Auth;
 using BlinkyLite.Server.Data;
 using BlinkyLite.Server.Secrets;
 using BlinkyLite.Server.Startup;
@@ -122,6 +123,7 @@ app.UseBlinkyLiteExceptions();
 app.UseStatusCodePages();
 app.UseSerilogRequestLogging();
 app.UseRateLimiter();
+app.UseBlinkyLiteKerberosGate();
 app.UseAuthentication();
 app.UseAuthorization();
 

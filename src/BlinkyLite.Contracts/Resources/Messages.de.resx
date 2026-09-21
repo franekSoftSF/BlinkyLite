@@ -607,4 +607,19 @@
   <data name="verify.same-key" xml:space="preserve">
     <value>Das Schlüsselpaar hat sich seit der Ausstellung nicht geändert</value>
   </data>
+  <data name="error.kerberos.unavailable" xml:space="preserve">
+    <value>Die Anmeldung mit dem Windows-Konto ist auf diesem Server nicht eingerichtet. Melden Sie sich mit Ihrem Kennwort an.</value>
+  </data>
+  <data name="error.kerberos.failed" xml:space="preserve">
+    <value>Windows konnte Sie nicht an diesem Server anmelden – zum Beispiel ist der Computer nicht in der Domäne oder die Adresse ist nicht der Servername. Melden Sie sich mit Ihrem Kennwort an.</value>
+  </data>
+  <data name="error.kerberos.no-account" xml:space="preserve">
+    <value>Ihr Windows-Konto wurde im Active Directory dieses Servers nicht gefunden.</value>
+  </data>
+  <data name="common.sign-in-windows" xml:space="preserve">
+    <value>Mit dem Windows-Konto anmelden</value>
+  </data>
+  <data name="web.login.or-password" xml:space="preserve">
+    <value>oder mit Ihrem Kennwort</value>
+  </data>
 </root>

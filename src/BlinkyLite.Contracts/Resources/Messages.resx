@@ -607,4 +607,19 @@
   <data name="verify.same-key" xml:space="preserve">
     <value>The key pair has not changed since the issuance</value>
   </data>
+  <data name="error.kerberos.unavailable" xml:space="preserve">
+    <value>Signing in with your Windows account is not set up on this server. Sign in with your password.</value>
+  </data>
+  <data name="error.kerberos.failed" xml:space="preserve">
+    <value>Windows could not sign you in to this server - for example, the computer is not in the domain or the address is not the server name. Sign in with your password.</value>
+  </data>
+  <data name="error.kerberos.no-account" xml:space="preserve">
+    <value>Your Windows account was not found in Active Directory of this server.</value>
+  </data>
+  <data name="common.sign-in-windows" xml:space="preserve">
+    <value>Sign in with your Windows account</value>
+  </data>
+  <data name="web.login.or-password" xml:space="preserve">
+    <value>or with your password</value>
+  </data>
 </root>

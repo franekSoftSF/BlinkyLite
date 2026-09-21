@@ -56,15 +56,44 @@ public sealed class ServerClient : IDisposable
     public async Task<LoginChallenge> BeginLoginAsync(string username, string password, CancellationToken ct = default)
     {
         var response = await http.PostAsJsonAsync("/api/auth/login", new LoginRequest(username, password), Json, ct);
-        var challenge = await ReadAsync<LoginChallenge>(response, ct);
 
-        if (challenge.Next != LoginNext.Totp)
+        return Checked(await ReadAsync<LoginChallenge>(response, ct));
+    }
+
+    /// <summary>
+    /// The first step with the Windows identity of whoever runs this process
+    /// (0025): Kerberos through SSPI, for the SPN <c>HTTP/&lt;host of the
+    /// address&gt;</c>. The code step after it is the same as after a password.
+    /// </summary>
+    /// <remarks>
+    /// A client of its own with default credentials, for this one request:
+    /// the shared client never offers the Windows identity anywhere else, so a
+    /// server that asked for Negotiate on another endpoint would not get it.
+    /// </remarks>
+    public async Task<LoginChallenge> BeginWindowsLoginAsync(CancellationToken ct = default)
+    {
+        using var handler = new SocketsHttpHandler { Credentials = CredentialCache.DefaultCredentials };
+        using var windows = new HttpClient(handler) { BaseAddress = http.BaseAddress, Timeout = http.Timeout };
+
+        var response = await windows.PostAsync("/api/auth/negotiate", content: null, ct);
+
+        // A 401 here is Windows not getting a ticket the server accepts - no
+        // SPN for this name, a machine outside the domain, an IP address in
+        // the URL. The server cannot tell which; it can only say it was not
+        // Kerberos it received.
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
-            throw new ServerException(HttpStatusCode.Conflict, ErrorCodes.TotpSetupRequired, $"next step {challenge.Next}");
+            throw new ServerException(HttpStatusCode.Unauthorized, ErrorCodes.KerberosFailed,
+                $"no Kerberos ticket for HTTP/{http.BaseAddress?.Host} was accepted");
         }
 
-        return challenge;
+        return Checked(await ReadAsync<LoginChallenge>(response, ct));
     }
+
+    private static LoginChallenge Checked(LoginChallenge challenge) =>
+        challenge.Next == LoginNext.Totp
+            ? challenge
+            : throw new ServerException(HttpStatusCode.Conflict, ErrorCodes.TotpSetupRequired, $"next step {challenge.Next}");
 
     /// <summary>
     /// The code step. A wrong code throws <see cref="ServerException"/> with
@@ -101,7 +130,15 @@ public sealed class ServerClient : IDisposable
     public async Task<CurrentUser> LoginAsync(
         string username, string password, Func<string?, string?> askCode, CancellationToken ct = default)
     {
-        var challenge = await BeginLoginAsync(username, password, ct);
+        return await CodeAsync(await BeginLoginAsync(username, password, ct), askCode, ct);
+    }
+
+    /// <summary>Both steps with the Windows identity instead of a password.</summary>
+    public async Task<CurrentUser> LoginWithWindowsAsync(Func<string?, string?> askCode, CancellationToken ct = default) =>
+        await CodeAsync(await BeginWindowsLoginAsync(ct), askCode, ct);
+
+    private async Task<CurrentUser> CodeAsync(LoginChallenge challenge, Func<string?, string?> askCode, CancellationToken ct)
+    {
         string? refusal = null;
 
         // Three tries, then back to the password: the server locks the

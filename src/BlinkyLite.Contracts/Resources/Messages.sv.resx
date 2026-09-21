@@ -607,4 +607,19 @@
   <data name="verify.same-key" xml:space="preserve">
     <value>Nyckelparet har inte ändrats sedan utfärdningen</value>
   </data>
+  <data name="error.kerberos.unavailable" xml:space="preserve">
+    <value>Inloggning med Windows-kontot är inte konfigurerad på den här servern. Logga in med ditt lösenord.</value>
+  </data>
+  <data name="error.kerberos.failed" xml:space="preserve">
+    <value>Windows kunde inte logga in dig på servern – till exempel är datorn inte med i domänen eller adressen är inte serverns namn. Logga in med ditt lösenord.</value>
+  </data>
+  <data name="error.kerberos.no-account" xml:space="preserve">
+    <value>Ditt Windows-konto hittades inte i den här serverns Active Directory.</value>
+  </data>
+  <data name="common.sign-in-windows" xml:space="preserve">
+    <value>Logga in med Windows-kontot</value>
+  </data>
+  <data name="web.login.or-password" xml:space="preserve">
+    <value>eller med ditt lösenord</value>
+  </data>
 </root>

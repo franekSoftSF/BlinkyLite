@@ -65,6 +65,16 @@ export class Auth {
     return this.challenge;
   }
 
+  /**
+   * The first step with the Windows identity (0025). Nothing to send: the
+   * server answers 401 Negotiate, the browser answers with the Kerberos ticket
+   * it holds for this site - if the site is in the Local intranet zone.
+   */
+  async beginWindows(): Promise<LoginChallenge> {
+    this.challenge = await firstValueFrom(this.http.post<LoginChallenge>('/api/auth/negotiate', null));
+    return this.challenge;
+  }
+
   /** A new secret for the authenticator app. Shown once; not kept here. */
   setup(): Promise<TotpSetup> {
     return firstValueFrom(this.http.post<TotpSetup>('/api/auth/totp/setup', null, { headers: this.ticket() }));

@@ -27,6 +27,11 @@ public static class ErrorCodes
     public const string TotpSetupRequired = "error.totp.setup-required";
     public const string TotpAlreadyConfigured = "error.totp.already-configured";
 
+    // Windows sign-in (0025).
+    public const string KerberosUnavailable = "error.kerberos.unavailable";
+    public const string KerberosFailed = "error.kerberos.failed";
+    public const string KerberosNoAccount = "error.kerberos.no-account";
+
     // What the issuance engine refuses before anything is written to a card.
     public const string ReaderNone = "error.reader.none";
     public const string CardNone = "error.card.none";

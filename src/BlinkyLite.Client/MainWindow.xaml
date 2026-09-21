@@ -82,6 +82,16 @@
                     Foreground="{DynamicResource OnAccent}"
                     BorderThickness="0"
                     Click="SignedIn" />
+
+            <!-- Kerberos (0025): the identity this Windows session already
+                 has. The password above stays for when it cannot work. -->
+            <Button x:Name="WindowsSignInButton"
+                    Content="{l:Loc common.sign-in-windows}"
+                    HorizontalAlignment="Left"
+                    MinWidth="160"
+                    Padding="12,8"
+                    Margin="0,10,0,0"
+                    Click="SignedInWithWindows" />
         </StackPanel>
 
         <!-- Issuing. -->

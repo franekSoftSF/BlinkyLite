@@ -32,6 +32,18 @@ public interface IDirectory
     /// account name does not.
     /// </remarks>
     Task<DirectoryUser?> FindBySidAsync(string sid, CancellationToken ct = default);
+
+    /// <summary>
+    /// The account behind a Kerberos principal and its groups, as the
+    /// read-only service account (0025). Null when AD has no such account.
+    /// </summary>
+    /// <remarks>
+    /// With a password the operator's own bind reads their groups; with
+    /// Kerberos there is no bind as the operator, so the service account reads
+    /// <c>tokenGroups</c> for them. Same attribute, same transitive groups - a
+    /// role must not depend on how somebody signed in.
+    /// </remarks>
+    Task<DirectoryAccount?> FindForKerberosAsync(string samAccountName, CancellationToken ct = default);
 }
 
 /// <summary>Stands in when the Ldap section is missing, so the answer is 503 and not a 500.</summary>
@@ -46,6 +58,9 @@ public sealed class UnconfiguredDirectory : IDirectory
         throw new DirectoryUnavailableException(Message);
 
     public Task<DirectoryUser?> FindBySidAsync(string sid, CancellationToken ct = default) =>
+        throw new DirectoryUnavailableException(Message);
+
+    public Task<DirectoryAccount?> FindForKerberosAsync(string samAccountName, CancellationToken ct = default) =>
         throw new DirectoryUnavailableException(Message);
 }
 
@@ -110,6 +125,9 @@ public sealed class LdapDirectory(LdapOptions options) : IDirectory
     public Task<DirectoryUser?> FindBySidAsync(string sid, CancellationToken ct = default) =>
         Task.Run(() => FindBySid(sid), ct);
 
+    public Task<DirectoryAccount?> FindForKerberosAsync(string samAccountName, CancellationToken ct = default) =>
+        Task.Run(() => FindForKerberos(samAccountName), ct);
+
     private DirectoryAccount? Authenticate(string username, string password)
     {
         // An LDAP simple bind with an empty password is an "unauthenticated
@@ -139,14 +157,61 @@ public sealed class LdapDirectory(LdapOptions options) : IDirectory
         var entry = FindOne(connection, name.SearchFilter)
             ?? throw new DirectoryUnavailableException($"Bound as {name.BindName} but found no user object for it.");
 
-        var tokenGroups = (SearchResponse)connection.SendRequest(
+        return new DirectoryAccount(ToUser(entry), TokenGroups(connection, entry));
+    }
+
+    private DirectoryAccount? FindForKerberos(string samAccountName)
+    {
+        // A sAMAccountName has no wildcard and no filter syntax in it; one
+        // that does is not a name Kerberos gave us.
+        if (string.IsNullOrWhiteSpace(samAccountName) || samAccountName.Length > 64
+            || samAccountName.IndexOfAny(['*', '(', ')', '\\', '\0', '/', '@']) >= 0)
+        {
+            return null;
+        }
+
+        using var connection = Connect();
+        try
+        {
+            connection.Bind(new NetworkCredential(options.ServiceAccount, options.ServicePassword));
+        }
+        catch (LdapException e)
+        {
+            throw new DirectoryUnavailableException($"Service account bind failed: {e.Message} ({e.ErrorCode})", e);
+        }
+
+        var entry = FindOne(connection,
+            $"(&(objectCategory=person)(objectClass=user)(sAMAccountName={LdapFilter.Escape(samAccountName)}))");
+        if (entry is null)
+        {
+            return null;
+        }
+
+        var groups = TokenGroups(connection, entry);
+
+        // Every account is at least in Domain Users. None at all means the
+        // service account may not read tokenGroups of other users - and then
+        // everybody would come out without a role, which reads as "you have no
+        // access" rather than as the configuration problem it is.
+        if (groups.Count == 0)
+        {
+            throw new DirectoryUnavailableException(
+                $"tokenGroups of {samAccountName} came back empty for {options.ServiceAccount}. " +
+                "Add the service account to 'Windows Authorization Access Group' (docs/11).");
+        }
+
+        return new DirectoryAccount(ToUser(entry), groups);
+    }
+
+    private static List<string> TokenGroups(LdapConnection connection, SearchResultEntry entry)
+    {
+        var response = (SearchResponse)connection.SendRequest(
             new SearchRequest(entry.DistinguishedName, "(objectClass=*)", SearchScope.Base, "tokenGroups"));
-        var groups = tokenGroups.Entries.Cast<SearchResultEntry>()
+
+        return response.Entries.Cast<SearchResultEntry>()
             .SelectMany(e => Values(e, "tokenGroups"))
             .Select(Sid.FromBinary)
             .ToList();
-
-        return new DirectoryAccount(ToUser(entry), groups);
     }
 
     private IReadOnlyList<DirectoryUser> Search(string query, int limit)

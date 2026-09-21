@@ -7,6 +7,7 @@ using BlinkyLite.Piv.Attestation;
 using BlinkyLite.Server.Issuing;
 using BlinkyLite.Server.Secrets;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -35,6 +36,7 @@ public static class ServerSetup
         services.AddSingleton<TokenService>();
         services.AddSingleton<FailedLogins>();
         services.AddSingleton(RoleMap.From(configuration));
+        services.AddSingleton(KerberosOptions.From(configuration));
         services.AddScoped<LoginService>();
         services.AddScoped<SecondFactorService>();
 
@@ -69,7 +71,11 @@ public static class ServerSetup
             {
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = TokenService.ValidationParameters(jwt, JwtOptions.SecondFactorAudience);
-            });
+            })
+            // Kerberos only, with the keytab from KRB5_KTNAME. No LDAP here:
+            // the handler's own role lookup would be a second, different
+            // answer to "which groups" - the server asks AD itself (0025).
+            .AddNegotiate();
 
         services.AddAuthorizationBuilder()
             .SetFallbackPolicy(new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
@@ -81,6 +87,12 @@ public static class ServerSetup
             {
                 options.AddPolicy(policy, builder =>
                 {
+                    if (policy == Policies.WindowsIdentity)
+                    {
+                        builder.AddAuthenticationSchemes(NegotiateDefaults.AuthenticationScheme).RequireAuthenticatedUser();
+                        return;
+                    }
+
                     if (policy == Policies.SecondFactor)
                     {
                         builder.AddAuthenticationSchemes(Policies.TicketScheme);

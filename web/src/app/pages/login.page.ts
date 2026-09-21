@@ -1,9 +1,10 @@
 import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { toDataURL } from 'qrcode';
-import { Auth, LoginResponse, problemCode } from '../core/auth.service';
+import { Auth, LoginChallenge, LoginResponse, problemCode } from '../core/auth.service';
 import { I18n } from '../core/i18n.service';
 
 type Step = 'password' | 'setup' | 'code' | 'backup';
@@ -32,6 +33,13 @@ type Step = 'password' | 'setup' | 'code' | 'backup';
             <h1>{{ i18n.t('web.login.title') }}</h1>
             <p class="muted">{{ i18n.t('web.login.explain') }}</p>
 
+            <!-- Kerberos first (0025): on a domain machine in the intranet
+                 zone it needs nothing typed. The form is the way round it. -->
+            <button class="windows primary" type="button" (click)="signInWithWindows()" [disabled]="busy()">
+              {{ i18n.t('common.sign-in-windows') }}
+            </button>
+            <div class="or"><span>{{ i18n.t('web.login.or-password') }}</span></div>
+
             <form (ngSubmit)="signIn()" autocomplete="on">
               <label>
                 <span>{{ i18n.t('common.user') }}</span>
@@ -47,7 +55,7 @@ type Step = 'password' | 'setup' | 'code' | 'backup';
                 <p class="problem" role="alert"><span aria-hidden="true">✗</span> {{ i18n.t(problem()!) }}</p>
               }
 
-              <button class="primary" type="submit" [disabled]="busy() || !username || !password">
+              <button type="submit" [disabled]="busy() || !username || !password">
                 {{ i18n.t('common.sign-in') }}
               </button>
             </form>
@@ -143,22 +151,28 @@ export class LoginPage {
   protected async signIn(): Promise<void> {
     await this.run(async () => {
       try {
-        const challenge = await this.auth.begin(this.username.trim(), this.password);
-
-        if (challenge.next === 'totp-setup') {
-          const setup = await this.auth.setup();
-          this.secret.set(setup.secret.replace(/(.{4})/g, '$1 ').trim());
-          // Drawn here, in the page: an online QR service would be handed
-          // the secret along with the picture.
-          this.qr.set(await toDataURL(setup.otpAuthUri, { margin: 1, width: 200, errorCorrectionLevel: 'M' }));
-          this.go('setup');
-        } else {
-          this.go('code');
-        }
+        await this.next(await this.auth.begin(this.username.trim(), this.password));
       } finally {
         // The password is let go of whatever happened: it is not kept for a
         // retry, and it is not kept for anything else either.
         this.password = '';
+      }
+    });
+  }
+
+  protected async signInWithWindows(): Promise<void> {
+    await this.run(async () => {
+      try {
+        await this.next(await this.auth.beginWindows());
+      } catch (error) {
+        // A 401 is the browser having no ticket the server accepts - outside
+        // the intranet zone, not in the domain, no SPN for this name. The
+        // server cannot say which; the message says what to do instead.
+        if (error instanceof HttpErrorResponse && error.status === 401) {
+          this.problem.set('error.kerberos.failed');
+          return;
+        }
+        throw error;
       }
     });
   }
@@ -190,6 +204,19 @@ export class LoginPage {
         this.code = '';
       }
     });
+  }
+
+  private async next(challenge: LoginChallenge): Promise<void> {
+    if (challenge.next === 'totp-setup') {
+      const setup = await this.auth.setup();
+      this.secret.set(setup.secret.replace(/(.{4})/g, '$1 ').trim());
+      // Drawn here, in the page: an online QR service would be handed the
+      // secret along with the picture.
+      this.qr.set(await toDataURL(setup.otpAuthUri, { margin: 1, width: 200, errorCorrectionLevel: 'M' }));
+      this.go('setup');
+    } else {
+      this.go('code');
+    }
   }
 
   protected enter(): void {

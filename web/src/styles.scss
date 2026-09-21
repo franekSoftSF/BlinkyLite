@@ -532,6 +532,29 @@ tr.denied td:nth-child(3) {
   gap: 6px;
 }
 
+/* ---- Windows sign-in (0025) ------------------------------------------ */
+
+.or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 4px;
+  color: var(--bl-muted);
+  font-size: 13px;
+}
+
+.or::before,
+.or::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--bl-border);
+}
+
+button.windows {
+  width: 100%;
+  padding: 11px 18px;
+}
+
 /* ---- second factor (0027) -------------------------------------------- */
 
 .login-card.wide {

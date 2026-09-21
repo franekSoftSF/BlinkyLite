@@ -103,6 +103,35 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void SignedInWithWindows(object sender, RoutedEventArgs e)
+    {
+        if (!Uri.TryCreate(ServerBox.Text.Trim(), UriKind.Absolute, out var address))
+        {
+            Say(ErrorCodes.BadRequest, problem: true);
+            return;
+        }
+
+        SignInButton.IsEnabled = WindowsSignInButton.IsEnabled = false;
+        var client = new ServerClient(address);
+
+        try
+        {
+            var challenge = await client.BeginWindowsLoginAsync();
+
+            pending = (client, challenge);
+            AskForCode(true);
+        }
+        catch (Exception problem) when (problem is ServerException or HttpRequestException)
+        {
+            client.Dispose();
+            Say(problem);
+        }
+        finally
+        {
+            SignInButton.IsEnabled = WindowsSignInButton.IsEnabled = true;
+        }
+    }
+
     private async Task CodeEntered(ServerClient client, LoginChallenge challenge)
     {
         SignInButton.IsEnabled = false;
@@ -134,6 +163,7 @@ public partial class MainWindow : Window
             // Remembered only once it is known to work: an address that failed
             // is not worth offering again tomorrow.
             Remember(App.Settings with { Server = ServerBox.Text.Trim(), Username = UserBox.Text.Trim() });
+            PasswordBox.Clear();
             SignIn.Visibility = Visibility.Collapsed;
             Issuing.Visibility = Visibility.Visible;
             SignOutButton.Visibility = Visibility.Visible;
@@ -173,6 +203,7 @@ public partial class MainWindow : Window
         CodeBox.Clear();
         CodePanel.Visibility = ask ? Visibility.Visible : Visibility.Collapsed;
         ServerBox.IsEnabled = UserBox.IsEnabled = PasswordBox.IsEnabled = !ask;
+        WindowsSignInButton.Visibility = ask ? Visibility.Collapsed : Visibility.Visible;
         SignInButton.Content = Text.Of(ask ? "client.totp.confirm" : "common.sign-in");
 
         if (ask)

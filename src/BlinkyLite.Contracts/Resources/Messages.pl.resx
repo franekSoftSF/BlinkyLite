@@ -607,4 +607,19 @@
   <data name="verify.same-key" xml:space="preserve">
     <value>Para kluczy nie zmieniła się od wydania</value>
   </data>
+  <data name="error.kerberos.unavailable" xml:space="preserve">
+    <value>Logowanie kontem Windows nie jest skonfigurowane na tym serwerze. Zaloguj się hasłem.</value>
+  </data>
+  <data name="error.kerberos.failed" xml:space="preserve">
+    <value>Windows nie zdołał zalogować Cię do tego serwera – na przykład komputer nie jest w domenie albo adres nie jest nazwą serwera. Zaloguj się hasłem.</value>
+  </data>
+  <data name="error.kerberos.no-account" xml:space="preserve">
+    <value>Twojego konta Windows nie ma w Active Directory tego serwera.</value>
+  </data>
+  <data name="common.sign-in-windows" xml:space="preserve">
+    <value>Zaloguj kontem Windows</value>
+  </data>
+  <data name="web.login.or-password" xml:space="preserve">
+    <value>albo hasłem</value>
+  </data>
 </root>

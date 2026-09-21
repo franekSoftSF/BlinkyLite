@@ -25,6 +25,14 @@ public static class Endpoints
             .AllowAnonymous()
             .RequireRateLimiting(LoginRateLimit);
 
+        // The first step without a password (0025): the Negotiate handler has
+        // checked the Kerberos ticket; the answer is the same ticket for the
+        // second factor that a password earns.
+        auth.MapPost("/negotiate", (HttpContext context, LoginService login, CancellationToken ct) =>
+                login.LoginWithKerberosAsync(context.User, context.Connection.RemoteIpAddress, ct))
+            .RequireAuthorization(Policies.WindowsIdentity)
+            .RequireRateLimiting(LoginRateLimit);
+
         // The second step. The ticket from /login is the bearer here and
         // nowhere else (Policies.SecondFactor).
         auth.MapPost("/totp", (SecondFactorRequest? request, HttpContext context, SecondFactorService second, CancellationToken ct) =>

@@ -197,6 +197,13 @@ public static class Policies
     /// <summary>The authentication scheme behind <see cref="SecondFactor"/>.</summary>
     public const string TicketScheme = "Ticket";
 
+    /// <summary>
+    /// The Windows sign-in (0025): a Kerberos ticket and nothing else. No role
+    /// is required, because none is known yet - the roles come from AD after
+    /// the ticket, exactly as after a password.
+    /// </summary>
+    public const string WindowsIdentity = nameof(WindowsIdentity);
+
     public static readonly IReadOnlyDictionary<string, Role[]> Roles = new Dictionary<string, Role[]>
     {
         [CanIssue] = [Role.Admin, Role.SecurityOfficer],
@@ -207,5 +214,6 @@ public static class Policies
         [CanAudit] = [Role.Admin],
         [CanResetSecondFactor] = [Role.Admin],
         [SecondFactor] = [Role.Admin, Role.SecurityOfficer, Role.Helpdesk],
+        [WindowsIdentity] = [],
     };
 }

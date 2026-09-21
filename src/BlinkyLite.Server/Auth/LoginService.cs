@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net;
+using System.Security.Claims;
 using BlinkyLite.Contracts;
 using BlinkyLite.Server.Api;
 using BlinkyLite.Server.Data;
@@ -19,6 +20,7 @@ public sealed class LoginService(
     TokenService tokens,
     IProcedures procedures,
     FailedLogins failures,
+    KerberosOptions kerberos,
     ILogger<LoginService> logger)
 {
     private const int MaxLength = 256;
@@ -50,11 +52,63 @@ public sealed class LoginService(
             return Problems.Of(StatusCodes.Status401Unauthorized, ErrorCodes.InvalidCredentials);
         }
 
+        return await ChallengeFor(account, "password", sourceIp, ct);
+    }
+
+    /// <summary>
+    /// The first step with a Kerberos ticket instead of a password (0025). The
+    /// Negotiate handler has already checked the ticket against the keytab;
+    /// what is left is the same as after a password: who is it in AD, which
+    /// roles, and then the second factor - Kerberos does not replace it (D-31).
+    /// </summary>
+    public async Task<IResult> LoginWithKerberosAsync(ClaimsPrincipal principal, IPAddress? sourceIp, CancellationToken ct)
+    {
+        var name = principal.Identity?.Name ?? "";
+        if (KerberosName.Parse(name) is not { } parsed)
+        {
+            await Deny(name.Length == 0 ? "(kerberos)" : name, sid: null, "kerberos-unreadable-name", sourceIp, ct);
+            return Problems.Of(StatusCodes.Status403Forbidden, ErrorCodes.Forbidden);
+        }
+
+        // A ticket from a trusted realm is still a ticket for somebody this
+        // server's AD does not describe; sAMAccountNames are only unique
+        // within one domain.
+        if (!kerberos.AcceptsRealm(parsed.Realm))
+        {
+            await Deny(name, sid: null, "kerberos-foreign-realm", sourceIp, ct);
+            return Problems.Of(StatusCodes.Status403Forbidden, ErrorCodes.Forbidden);
+        }
+
+        if (failures.IsLockedOut(parsed.Account))
+        {
+            await Deny(name, sid: null, "locked-out", sourceIp, ct);
+            return Problems.Of(StatusCodes.Status429TooManyRequests, ErrorCodes.RateLimited);
+        }
+
+        var account = await directory.FindForKerberosAsync(parsed.Account, ct);
+        if (account is null)
+        {
+            await Deny(name, sid: null, "kerberos-no-account", sourceIp, ct);
+            return Problems.Of(StatusCodes.Status403Forbidden, ErrorCodes.KerberosNoAccount);
+        }
+
+        if (!account.User.Enabled)
+        {
+            await Deny(name, account.User.Sid, "disabled", sourceIp, ct);
+            return Problems.Of(StatusCodes.Status403Forbidden, ErrorCodes.Forbidden);
+        }
+
+        return await ChallengeFor(account, "kerberos", sourceIp, ct);
+    }
+
+    /// <summary>After AD said who it is, by whichever route: roles, then a ticket for the second factor.</summary>
+    private async Task<IResult> ChallengeFor(DirectoryAccount account, string method, IPAddress? sourceIp, CancellationToken ct)
+    {
         var granted = roles.RolesFor(account.GroupSids);
         var upn = string.IsNullOrEmpty(account.User.Upn) ? account.User.SamAccount : account.User.Upn;
         if (granted.Count == 0)
         {
-            // The password was right, so this is not a failed guess.
+            // The identity was proven, so this is not a failed guess.
             await Deny(upn, account.User.Sid, "no-role", sourceIp, ct);
             return Problems.Of(StatusCodes.Status403Forbidden, ErrorCodes.NoRole);
         }
@@ -65,7 +119,7 @@ public sealed class LoginService(
 
         var totp = await procedures.GetTotpAsync(new Actor(user.Upn, user.Sid, granted, sourceIp), ct);
         var next = totp is { Confirmed: true } ? LoginNext.Totp : LoginNext.TotpSetup;
-        logger.LogInformation("Password accepted for {Upn}; next step {Next}", user.Upn, next);
+        logger.LogInformation("First step ({Method}) accepted for {Upn}; next step {Next}", method, user.Upn, next);
 
         return Results.Ok(tokens.IssueTicket(user, next));
     }
