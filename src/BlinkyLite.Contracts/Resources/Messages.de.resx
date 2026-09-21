@@ -436,4 +436,175 @@
   <data name="audit.totp.reset" xml:space="preserve">
     <value>Zweiter Faktor zurückgesetzt</value>
   </data>
+  <data name="issuance.state.Reserved" xml:space="preserve">
+    <value>Reserviert</value>
+  </data>
+  <data name="issuance.state.Customised" xml:space="preserve">
+    <value>Personalisiert</value>
+  </data>
+  <data name="issuance.state.Attested" xml:space="preserve">
+    <value>Attestiert</value>
+  </data>
+  <data name="issuance.state.PendingCa" xml:space="preserve">
+    <value>Wartet auf die CA</value>
+  </data>
+  <data name="issuance.state.Issued" xml:space="preserve">
+    <value>Ausgestellt</value>
+  </data>
+  <data name="issuance.state.Failed" xml:space="preserve">
+    <value>Fehlgeschlagen</value>
+  </data>
+  <data name="issuance.state.Superseded" xml:space="preserve">
+    <value>Durch eine neuere Ausstellung ersetzt</value>
+  </data>
+  <data name="common.yes" xml:space="preserve">
+    <value>Ja</value>
+  </data>
+  <data name="common.no" xml:space="preserve">
+    <value>Nein</value>
+  </data>
+  <data name="common.hide" xml:space="preserve">
+    <value>Ausblenden</value>
+  </data>
+  <data name="common.previous" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="common.next" xml:space="preserve">
+    <value>Weiter</value>
+  </data>
+  <data name="common.page-range" xml:space="preserve">
+    <value>{0}–{1} von {2}</value>
+  </data>
+  <data name="web.issuances.search" xml:space="preserve">
+    <value>Name, Konto oder Seriennummer des Schlüssels</value>
+  </data>
+  <data name="web.issuances.account" xml:space="preserve">
+    <value>Konto</value>
+  </data>
+  <data name="web.issuances.state" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="web.issuances.nothing-found" xml:space="preserve">
+    <value>Nichts passt zur Suche.</value>
+  </data>
+  <data name="web.issuances.pick" xml:space="preserve">
+    <value>Wählen Sie eine Ausstellung in der Liste.</value>
+  </data>
+  <data name="web.details.title" xml:space="preserve">
+    <value>Ausstellung</value>
+  </data>
+  <data name="web.details.current" xml:space="preserve">
+    <value>Aktuelle Ausstellung dieses Schlüssels</value>
+  </data>
+  <data name="web.details.upn" xml:space="preserve">
+    <value>UPN</value>
+  </data>
+  <data name="web.details.firmware" xml:space="preserve">
+    <value>Firmware</value>
+  </data>
+  <data name="web.details.profile" xml:space="preserve">
+    <value>Profil und Vorlage</value>
+  </data>
+  <data name="web.details.ca" xml:space="preserve">
+    <value>CA und Anforderung</value>
+  </data>
+  <data name="web.details.operator" xml:space="preserve">
+    <value>Operator</value>
+  </data>
+  <data name="web.details.workstation" xml:space="preserve">
+    <value>Arbeitsstation und Windows-Konto</value>
+  </data>
+  <data name="web.details.agent" xml:space="preserve">
+    <value>Enrollment-Agent-Zertifikat</value>
+  </data>
+  <data name="web.details.key" xml:space="preserve">
+    <value>Schlüsselalgorithmus, PIN- und Touch-Richtlinie</value>
+  </data>
+  <data name="web.details.certificate" xml:space="preserve">
+    <value>Zertifikat</value>
+  </data>
+  <data name="web.details.valid" xml:space="preserve">
+    <value>Gültig</value>
+  </data>
+  <data name="web.details.error" xml:space="preserve">
+    <value>Was schiefging</value>
+  </data>
+  <data name="web.details.puk-shown" xml:space="preserve">
+    <value>PUK angezeigt</value>
+  </data>
+  <data name="web.details.completed" xml:space="preserve">
+    <value>Abgeschlossen</value>
+  </data>
+  <data name="web.reveal.puk.title" xml:space="preserve">
+    <value>PUK des Schlüssels {0}</value>
+  </data>
+  <data name="web.reveal.puk.explain" xml:space="preserve">
+    <value>Mit dem PUK wird die PIN entsperrt. Geben Sie an, wofür Sie ihn brauchen. Der Grund wird im Audit-Protokoll gespeichert, bevor der PUK angezeigt wird.</value>
+  </data>
+  <data name="web.reveal.mk.title" xml:space="preserve">
+    <value>Management key des Schlüssels {0}</value>
+  </data>
+  <data name="web.reveal.mk.explain" xml:space="preserve">
+    <value>Mit dem Management key lässt sich alles auf dem Schlüssel ändern. Geben Sie an, wofür Sie ihn brauchen. Der Grund wird im Audit-Protokoll gespeichert, bevor er angezeigt wird.</value>
+  </data>
+  <data name="web.reveal.reason-hint" xml:space="preserve">
+    <value>Mindestens 5 Zeichen, zum Beispiel eine Ticketnummer.</value>
+  </data>
+  <data name="web.nav.audit" xml:space="preserve">
+    <value>Audit-Protokoll</value>
+  </data>
+  <data name="web.audit.title" xml:space="preserve">
+    <value>Audit-Protokoll</value>
+  </data>
+  <data name="web.audit.filter" xml:space="preserve">
+    <value>Seriennummer des Schlüssels</value>
+  </data>
+  <data name="web.audit.when" xml:space="preserve">
+    <value>Wann</value>
+  </data>
+  <data name="web.audit.who" xml:space="preserve">
+    <value>Wer</value>
+  </data>
+  <data name="web.audit.what" xml:space="preserve">
+    <value>Was</value>
+  </data>
+  <data name="web.audit.source" xml:space="preserve">
+    <value>Von</value>
+  </data>
+  <data name="web.audit.data" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="web.audit.empty" xml:space="preserve">
+    <value>Keine Ereignisse.</value>
+  </data>
+  <data name="client.use-web-console" xml:space="preserve">
+    <value>Diese Anwendung stellt Schlüssel aus und prüft sie – das dürfen nur Admin und SecurityOfficer. Verwenden Sie die BlinkyLite-Webkonsole im Browser, um einen Schlüssel zu finden und seinen PUK anzuzeigen.</value>
+  </data>
+  <data name="client.verify" xml:space="preserve">
+    <value>Schlüssel prüfen</value>
+  </data>
+  <data name="client.verify.card" xml:space="preserve">
+    <value>Schlüssel {0}</value>
+  </data>
+  <data name="client.verify.passed" xml:space="preserve">
+    <value>Der Schlüssel im Lesegerät ist der von BlinkyLite ausgestellte, mit demselben Zertifikat und demselben Schlüsselpaar.</value>
+  </data>
+  <data name="client.verify.failed" xml:space="preserve">
+    <value>Der Schlüssel im Lesegerät passt nicht zum Eintrag. Siehe die mit ✗ markierten Zeilen.</value>
+  </data>
+  <data name="verify.known" xml:space="preserve">
+    <value>BlinkyLite hat diesen Schlüssel ausgestellt und die Ausstellung ist abgeschlossen</value>
+  </data>
+  <data name="verify.certificate" xml:space="preserve">
+    <value>Das Zertifikat auf dem Schlüssel ist das von der CA ausgestellte</value>
+  </data>
+  <data name="verify.attestation" xml:space="preserve">
+    <value>Yubico bestätigt, dass das Schlüsselpaar auf diesem Schlüssel erzeugt wurde</value>
+  </data>
+  <data name="verify.key-certified" xml:space="preserve">
+    <value>Das Zertifikat gehört zum Schlüsselpaar auf dem Schlüssel</value>
+  </data>
+  <data name="verify.same-key" xml:space="preserve">
+    <value>Das Schlüsselpaar hat sich seit der Ausstellung nicht geändert</value>
+  </data>
 </root>

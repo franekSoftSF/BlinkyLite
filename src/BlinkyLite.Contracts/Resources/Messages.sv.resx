@@ -436,4 +436,175 @@
   <data name="audit.totp.reset" xml:space="preserve">
     <value>Andra faktor återställd</value>
   </data>
+  <data name="issuance.state.Reserved" xml:space="preserve">
+    <value>Reserverad</value>
+  </data>
+  <data name="issuance.state.Customised" xml:space="preserve">
+    <value>Personaliserad</value>
+  </data>
+  <data name="issuance.state.Attested" xml:space="preserve">
+    <value>Attesterad</value>
+  </data>
+  <data name="issuance.state.PendingCa" xml:space="preserve">
+    <value>Väntar på CA</value>
+  </data>
+  <data name="issuance.state.Issued" xml:space="preserve">
+    <value>Utfärdad</value>
+  </data>
+  <data name="issuance.state.Failed" xml:space="preserve">
+    <value>Misslyckad</value>
+  </data>
+  <data name="issuance.state.Superseded" xml:space="preserve">
+    <value>Ersatt av en nyare utfärdning</value>
+  </data>
+  <data name="common.yes" xml:space="preserve">
+    <value>Ja</value>
+  </data>
+  <data name="common.no" xml:space="preserve">
+    <value>Nej</value>
+  </data>
+  <data name="common.hide" xml:space="preserve">
+    <value>Dölj</value>
+  </data>
+  <data name="common.previous" xml:space="preserve">
+    <value>Föregående</value>
+  </data>
+  <data name="common.next" xml:space="preserve">
+    <value>Nästa</value>
+  </data>
+  <data name="common.page-range" xml:space="preserve">
+    <value>{0}–{1} av {2}</value>
+  </data>
+  <data name="web.issuances.search" xml:space="preserve">
+    <value>Namn, konto eller nyckelns serienummer</value>
+  </data>
+  <data name="web.issuances.account" xml:space="preserve">
+    <value>Konto</value>
+  </data>
+  <data name="web.issuances.state" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="web.issuances.nothing-found" xml:space="preserve">
+    <value>Inget matchar sökningen.</value>
+  </data>
+  <data name="web.issuances.pick" xml:space="preserve">
+    <value>Välj en utfärdning i listan.</value>
+  </data>
+  <data name="web.details.title" xml:space="preserve">
+    <value>Utfärdning</value>
+  </data>
+  <data name="web.details.current" xml:space="preserve">
+    <value>Nyckelns aktuella utfärdning</value>
+  </data>
+  <data name="web.details.upn" xml:space="preserve">
+    <value>UPN</value>
+  </data>
+  <data name="web.details.firmware" xml:space="preserve">
+    <value>Firmware</value>
+  </data>
+  <data name="web.details.profile" xml:space="preserve">
+    <value>Profil och mall</value>
+  </data>
+  <data name="web.details.ca" xml:space="preserve">
+    <value>CA och begäran</value>
+  </data>
+  <data name="web.details.operator" xml:space="preserve">
+    <value>Operatör</value>
+  </data>
+  <data name="web.details.workstation" xml:space="preserve">
+    <value>Arbetsstation och Windows-konto</value>
+  </data>
+  <data name="web.details.agent" xml:space="preserve">
+    <value>Enrollment Agent-certifikat</value>
+  </data>
+  <data name="web.details.key" xml:space="preserve">
+    <value>Nyckelalgoritm, PIN- och touch-policy</value>
+  </data>
+  <data name="web.details.certificate" xml:space="preserve">
+    <value>Certifikat</value>
+  </data>
+  <data name="web.details.valid" xml:space="preserve">
+    <value>Giltigt</value>
+  </data>
+  <data name="web.details.error" xml:space="preserve">
+    <value>Vad som gick fel</value>
+  </data>
+  <data name="web.details.puk-shown" xml:space="preserve">
+    <value>PUK visad</value>
+  </data>
+  <data name="web.details.completed" xml:space="preserve">
+    <value>Slutförd</value>
+  </data>
+  <data name="web.reveal.puk.title" xml:space="preserve">
+    <value>PUK för nyckel {0}</value>
+  </data>
+  <data name="web.reveal.puk.explain" xml:space="preserve">
+    <value>PUK låser upp PIN-koden. Skriv varför du behöver den. Skälet sparas i granskningsloggen innan PUK visas.</value>
+  </data>
+  <data name="web.reveal.mk.title" xml:space="preserve">
+    <value>Management key för nyckel {0}</value>
+  </data>
+  <data name="web.reveal.mk.explain" xml:space="preserve">
+    <value>Med management key kan allt på nyckeln ändras. Skriv varför du behöver den. Skälet sparas i granskningsloggen innan den visas.</value>
+  </data>
+  <data name="web.reveal.reason-hint" xml:space="preserve">
+    <value>Minst 5 tecken, till exempel ett ärendenummer.</value>
+  </data>
+  <data name="web.nav.audit" xml:space="preserve">
+    <value>Granskningslogg</value>
+  </data>
+  <data name="web.audit.title" xml:space="preserve">
+    <value>Granskningslogg</value>
+  </data>
+  <data name="web.audit.filter" xml:space="preserve">
+    <value>Nyckelns serienummer</value>
+  </data>
+  <data name="web.audit.when" xml:space="preserve">
+    <value>När</value>
+  </data>
+  <data name="web.audit.who" xml:space="preserve">
+    <value>Vem</value>
+  </data>
+  <data name="web.audit.what" xml:space="preserve">
+    <value>Vad</value>
+  </data>
+  <data name="web.audit.source" xml:space="preserve">
+    <value>Från</value>
+  </data>
+  <data name="web.audit.data" xml:space="preserve">
+    <value>Detaljer</value>
+  </data>
+  <data name="web.audit.empty" xml:space="preserve">
+    <value>Inga händelser.</value>
+  </data>
+  <data name="client.use-web-console" xml:space="preserve">
+    <value>Det här programmet utfärdar och verifierar nycklar, vilket bara Admin och SecurityOfficer får göra. Använd BlinkyLites webbkonsol i en webbläsare för att hitta en nyckel och visa dess PUK.</value>
+  </data>
+  <data name="client.verify" xml:space="preserve">
+    <value>Verifiera nyckel</value>
+  </data>
+  <data name="client.verify.card" xml:space="preserve">
+    <value>Nyckel {0}</value>
+  </data>
+  <data name="client.verify.passed" xml:space="preserve">
+    <value>Nyckeln i läsaren är den som BlinkyLite utfärdade, med samma certifikat och samma nyckelpar.</value>
+  </data>
+  <data name="client.verify.failed" xml:space="preserve">
+    <value>Nyckeln i läsaren stämmer inte med posten. Se raderna markerade med ✗.</value>
+  </data>
+  <data name="verify.known" xml:space="preserve">
+    <value>BlinkyLite har utfärdat nyckeln och utfärdningen är slutförd</value>
+  </data>
+  <data name="verify.certificate" xml:space="preserve">
+    <value>Certifikatet på nyckeln är det som CA utfärdade</value>
+  </data>
+  <data name="verify.attestation" xml:space="preserve">
+    <value>Yubico bekräftar att nyckelparet skapades på den här nyckeln</value>
+  </data>
+  <data name="verify.key-certified" xml:space="preserve">
+    <value>Certifikatet hör till nyckelparet på nyckeln</value>
+  </data>
+  <data name="verify.same-key" xml:space="preserve">
+    <value>Nyckelparet har inte ändrats sedan utfärdningen</value>
+  </data>
 </root>

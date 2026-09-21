@@ -113,6 +113,22 @@ PUK zawsze dotyczy jednej karty (`/api/cards/{serial}/puk`); nie ma
 endpointu zwracającego wiele PUK naraz. Każdy endpoint ma jawną politykę —
 test przechodzi po wszystkich endpointach i nie dopuszcza braku atrybutu.
 
+Endpointy przeglądarki (0030) i kto je dostaje:
+
+| Endpoint | Polityka | Co zwraca |
+|---|---|---|
+| `GET /api/issuances?q=&page=&pageSize=` | `CanList` (trzy role) | `IssuanceListItem`: id, serial, użytkownik, konto, stan, data — test porównuje nazwy pól JSON |
+| `GET /api/issuances/{id}` | `CanViewDetails` | `IssuanceDetails` bez blobów; czy to bieżące wydanie karty, ile razy pokazano PUK |
+| `GET /api/cards/{serial}` | `CanViewDetails` | `CardRecord`: bieżące wydanie + certyfikat i atestacja w DER — dla „Zweryfikuj klucz” w WPF i `Test-BlinkyLiteCard` |
+| `POST /api/cards/{serial}/puk` | `CanRevealPuk` | PUK jednej karty |
+| `POST /api/cards/{serial}/management-key` | `CanRevealMgmtKey` | MK w hex + algorytm z `GET METADATA 9B` |
+| `GET /api/audit?card=&page=` | `CanAudit` | dziennik audytu, najnowsze pierwsze |
+
+Strona na `pageSize` powyżej 100 dostaje 100 — przycięcie, nie odmowa. Konsola
+web chowa „Szczegóły”, MK i „Dziennik audytu” rolom, które ich nie dostaną,
+ale to tylko wygoda: odmawia serwer. Klient WPF wpuszcza tylko Admin i
+SecurityOfficer; Helpdesk dostaje odesłanie do konsoli web (D-25).
+
 Odsłonięcie PUK / MK:
 - `POST /api/cards/{serial}/puk` z `{reason}` — nie `GET`, żeby wartość nie
   lądowała w logach proxy i cache;

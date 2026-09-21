@@ -295,6 +295,203 @@ button.primary:disabled {
   margin: 0;
 }
 
+/* ---- browse (0030) ----------------------------------------------------- */
+
+.browse {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(300px, 2fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.search {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  max-width: 420px;
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+}
+
+.pad {
+  padding: 12px 20px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table.rows {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.rows th,
+table.rows td {
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--bl-border);
+  vertical-align: top;
+}
+
+table.rows th {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bl-muted);
+}
+
+table.rows tbody tr {
+  cursor: pointer;
+}
+
+table.rows.audit tbody tr {
+  cursor: default;
+}
+
+table.rows tbody tr:hover {
+  background: var(--bl-background);
+}
+
+/* Selected by a bar as well as a tint, not by colour alone. */
+table.rows tbody tr.selected {
+  background: var(--bl-background);
+  box-shadow: inset 3px 0 0 var(--bl-accent-fill);
+}
+
+table.rows tbody tr:focus-visible {
+  outline: 3px solid var(--bl-accent-fill);
+  outline-offset: -3px;
+}
+
+.block {
+  display: block;
+}
+
+.mono {
+  font-family: Consolas, 'Cascadia Mono', monospace;
+}
+
+.wrap {
+  word-break: break-all;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* A state is a word first; the marker before it only repeats it. */
+.state::before {
+  content: '●';
+  margin-right: 6px;
+  color: var(--bl-muted);
+}
+
+.state[data-state='Issued']::before {
+  content: '✓';
+  color: var(--bl-accent-text);
+}
+
+.state[data-state='Failed']::before {
+  content: '✗';
+  color: var(--bl-danger);
+}
+
+.state[data-state='PendingCa']::before {
+  content: '…';
+  color: var(--bl-warning);
+}
+
+tr.denied td:nth-child(3) {
+  color: var(--bl-danger);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+.pager span {
+  margin-right: auto;
+}
+
+.detail-panel {
+  position: sticky;
+  top: 16px;
+}
+
+.detail-panel header small {
+  display: block;
+  margin-top: 4px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 16px;
+  margin: 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--bl-border);
+}
+
+.facts dt {
+  color: var(--bl-muted);
+  font-size: 13px;
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.reveal {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--bl-border);
+}
+
+.reveal:last-child {
+  border-bottom: none;
+}
+
+.reveal h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.reveal form {
+  display: grid;
+  gap: 10px;
+}
+
+.reveal label {
+  display: grid;
+  gap: 6px;
+}
+
+.secret-value code {
+  font-family: Consolas, 'Cascadia Mono', monospace;
+  font-size: 28px;
+  letter-spacing: 3px;
+}
+
+.secret-value.long code {
+  font-size: 15px;
+  letter-spacing: 1px;
+  word-break: break-all;
+}
+
 /* ---- sign-in ---------------------------------------------------------- */
 
 .login {
@@ -422,5 +619,13 @@ input.code {
   .totp-setup {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .browse {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-panel {
+    position: static;
   }
 }

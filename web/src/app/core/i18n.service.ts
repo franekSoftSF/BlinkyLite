@@ -50,6 +50,15 @@ export class I18n {
     return args.length === 0 ? text : text.replace(/\{(\d+)\}/g, (_, i) => String(args[Number(i)] ?? ''));
   }
 
+  /** A date and time in the operator's language and time zone; the server sends UTC. */
+  date(value: string | null | undefined, withTime = true): string {
+    if (!value) {
+      return '';
+    }
+    return new Intl.DateTimeFormat(this.language(), withTime ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' })
+      .format(new Date(value));
+  }
+
   private static initial(): Language {
     try {
       const stored = localStorage.getItem(STORED);

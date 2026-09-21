@@ -436,4 +436,175 @@
   <data name="audit.totp.reset" xml:space="preserve">
     <value>Zresetowano drugi składnik</value>
   </data>
+  <data name="issuance.state.Reserved" xml:space="preserve">
+    <value>Zarezerwowane</value>
+  </data>
+  <data name="issuance.state.Customised" xml:space="preserve">
+    <value>Spersonalizowane</value>
+  </data>
+  <data name="issuance.state.Attested" xml:space="preserve">
+    <value>Atestowane</value>
+  </data>
+  <data name="issuance.state.PendingCa" xml:space="preserve">
+    <value>Czeka na CA</value>
+  </data>
+  <data name="issuance.state.Issued" xml:space="preserve">
+    <value>Wydane</value>
+  </data>
+  <data name="issuance.state.Failed" xml:space="preserve">
+    <value>Nieudane</value>
+  </data>
+  <data name="issuance.state.Superseded" xml:space="preserve">
+    <value>Zastąpione nowszym wydaniem</value>
+  </data>
+  <data name="common.yes" xml:space="preserve">
+    <value>Tak</value>
+  </data>
+  <data name="common.no" xml:space="preserve">
+    <value>Nie</value>
+  </data>
+  <data name="common.hide" xml:space="preserve">
+    <value>Ukryj</value>
+  </data>
+  <data name="common.previous" xml:space="preserve">
+    <value>Poprzednia</value>
+  </data>
+  <data name="common.next" xml:space="preserve">
+    <value>Następna</value>
+  </data>
+  <data name="common.page-range" xml:space="preserve">
+    <value>{0}–{1} z {2}</value>
+  </data>
+  <data name="web.issuances.search" xml:space="preserve">
+    <value>Nazwisko, konto albo numer seryjny klucza</value>
+  </data>
+  <data name="web.issuances.account" xml:space="preserve">
+    <value>Konto</value>
+  </data>
+  <data name="web.issuances.state" xml:space="preserve">
+    <value>Stan</value>
+  </data>
+  <data name="web.issuances.nothing-found" xml:space="preserve">
+    <value>Nic nie pasuje do wyszukiwania.</value>
+  </data>
+  <data name="web.issuances.pick" xml:space="preserve">
+    <value>Wybierz wydanie z listy.</value>
+  </data>
+  <data name="web.details.title" xml:space="preserve">
+    <value>Wydanie</value>
+  </data>
+  <data name="web.details.current" xml:space="preserve">
+    <value>Bieżące wydanie tego klucza</value>
+  </data>
+  <data name="web.details.upn" xml:space="preserve">
+    <value>UPN</value>
+  </data>
+  <data name="web.details.firmware" xml:space="preserve">
+    <value>Firmware</value>
+  </data>
+  <data name="web.details.profile" xml:space="preserve">
+    <value>Profil i szablon</value>
+  </data>
+  <data name="web.details.ca" xml:space="preserve">
+    <value>CA i żądanie</value>
+  </data>
+  <data name="web.details.operator" xml:space="preserve">
+    <value>Operator</value>
+  </data>
+  <data name="web.details.workstation" xml:space="preserve">
+    <value>Stacja i konto Windows</value>
+  </data>
+  <data name="web.details.agent" xml:space="preserve">
+    <value>Certyfikat Enrollment Agent</value>
+  </data>
+  <data name="web.details.key" xml:space="preserve">
+    <value>Algorytm klucza, polityka PIN i dotyku</value>
+  </data>
+  <data name="web.details.certificate" xml:space="preserve">
+    <value>Certyfikat</value>
+  </data>
+  <data name="web.details.valid" xml:space="preserve">
+    <value>Ważny</value>
+  </data>
+  <data name="web.details.error" xml:space="preserve">
+    <value>Co poszło nie tak</value>
+  </data>
+  <data name="web.details.puk-shown" xml:space="preserve">
+    <value>PUK pokazany</value>
+  </data>
+  <data name="web.details.completed" xml:space="preserve">
+    <value>Zakończone</value>
+  </data>
+  <data name="web.reveal.puk.title" xml:space="preserve">
+    <value>PUK klucza {0}</value>
+  </data>
+  <data name="web.reveal.puk.explain" xml:space="preserve">
+    <value>PUK odblokowuje PIN. Wpisz, do czego jest potrzebny. Powód trafia do dziennika audytu, zanim PUK zostanie pokazany.</value>
+  </data>
+  <data name="web.reveal.mk.title" xml:space="preserve">
+    <value>Management key klucza {0}</value>
+  </data>
+  <data name="web.reveal.mk.explain" xml:space="preserve">
+    <value>Management key pozwala zmienić wszystko na kluczu. Wpisz, do czego jest potrzebny. Powód trafia do dziennika audytu, zanim zostanie pokazany.</value>
+  </data>
+  <data name="web.reveal.reason-hint" xml:space="preserve">
+    <value>Co najmniej 5 znaków, na przykład numer zgłoszenia.</value>
+  </data>
+  <data name="web.nav.audit" xml:space="preserve">
+    <value>Dziennik audytu</value>
+  </data>
+  <data name="web.audit.title" xml:space="preserve">
+    <value>Dziennik audytu</value>
+  </data>
+  <data name="web.audit.filter" xml:space="preserve">
+    <value>Numer seryjny klucza</value>
+  </data>
+  <data name="web.audit.when" xml:space="preserve">
+    <value>Kiedy</value>
+  </data>
+  <data name="web.audit.who" xml:space="preserve">
+    <value>Kto</value>
+  </data>
+  <data name="web.audit.what" xml:space="preserve">
+    <value>Co</value>
+  </data>
+  <data name="web.audit.source" xml:space="preserve">
+    <value>Skąd</value>
+  </data>
+  <data name="web.audit.data" xml:space="preserve">
+    <value>Szczegóły</value>
+  </data>
+  <data name="web.audit.empty" xml:space="preserve">
+    <value>Brak zdarzeń.</value>
+  </data>
+  <data name="client.use-web-console" xml:space="preserve">
+    <value>Ta aplikacja wydaje i weryfikuje klucze, a to mogą tylko Admin i SecurityOfficer. Aby znaleźć klucz i pokazać jego PUK, użyj konsoli web BlinkyLite w przeglądarce.</value>
+  </data>
+  <data name="client.verify" xml:space="preserve">
+    <value>Zweryfikuj klucz</value>
+  </data>
+  <data name="client.verify.card" xml:space="preserve">
+    <value>Klucz {0}</value>
+  </data>
+  <data name="client.verify.passed" xml:space="preserve">
+    <value>Klucz w czytniku to klucz wydany przez BlinkyLite, z tym samym certyfikatem i tą samą parą kluczy.</value>
+  </data>
+  <data name="client.verify.failed" xml:space="preserve">
+    <value>Klucz w czytniku nie zgadza się z zapisem. Zobacz wiersze oznaczone ✗.</value>
+  </data>
+  <data name="verify.known" xml:space="preserve">
+    <value>BlinkyLite wydał ten klucz i wydanie jest zakończone</value>
+  </data>
+  <data name="verify.certificate" xml:space="preserve">
+    <value>Certyfikat na kluczu to ten wydany przez CA</value>
+  </data>
+  <data name="verify.attestation" xml:space="preserve">
+    <value>Yubico potwierdza, że para kluczy powstała na tym kluczu</value>
+  </data>
+  <data name="verify.key-certified" xml:space="preserve">
+    <value>Certyfikat należy do pary kluczy na kluczu</value>
+  </data>
+  <data name="verify.same-key" xml:space="preserve">
+    <value>Para kluczy nie zmieniła się od wydania</value>
+  </data>
 </root>

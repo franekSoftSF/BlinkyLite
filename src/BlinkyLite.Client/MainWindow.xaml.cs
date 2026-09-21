@@ -112,6 +112,16 @@ public partial class MainWindow : Window
             var user = await client.CompleteLoginAsync(challenge, CodeBox.Text.Trim());
             AskForCode(false);
 
+            // This window issues and verifies keys, which only the issuing
+            // roles may do (D-25). Helpdesk works in the web console; letting
+            // them in here would only show them a window of refusals.
+            if (!user.Roles.Any(r => r is Role.Admin or Role.SecurityOfficer))
+            {
+                client.Dispose();
+                Say("client.use-web-console", problem: true);
+                return;
+            }
+
             server = client;
             Who.Text = $"{user.Upn} — {string.Join(", ", user.Roles)}";
 
@@ -221,6 +231,57 @@ public partial class MainWindow : Window
     }
 
     private void CardRefreshed(object sender, RoutedEventArgs e) => ReadCard();
+
+    /// <summary>
+    /// Compares the token in the reader with the record (0030). Reads only:
+    /// no PIN, no management key, nothing written.
+    /// </summary>
+    private async void Verified(object sender, RoutedEventArgs e)
+    {
+        if (server is null)
+        {
+            return;
+        }
+
+        VerifyButton.IsEnabled = false;
+        steps.Clear();
+        Message.Text = "";
+
+        try
+        {
+            var client = server;
+            var result = await Task.Run(async () =>
+            {
+                using var card = CardAccess.Open();
+                return await CardVerifier.VerifyAsync(card.Session, client);
+            });
+
+            steps.Add(new Step(Text.Of("client.verify.card", result.Serial), "•", (Brush)Resources["MutedText"]));
+            if (result.Record?.Issuance is { } issuance)
+            {
+                steps.Add(new Step($"{issuance.TargetDisplayName} ({issuance.TargetSam})", "•", (Brush)Resources["MutedText"]));
+            }
+
+            foreach (var check in result.Checks)
+            {
+                steps.Add(new Step(Text.Of(check.MessageKey),
+                    check.Passed ? "✓" : "✗",
+                    (Brush)Resources[check.Passed ? "AccentText" : "Danger"]));
+                Log.Information("Verify {Serial}: {Check} {Passed} {Detail}", result.Serial, check.MessageKey, check.Passed, check.Detail);
+            }
+
+            Say(result.Passed ? "client.verify.passed" : "client.verify.failed", problem: !result.Passed);
+        }
+        catch (Exception problem)
+        {
+            steps.Add(new Step(Explain(problem, translated: true), "✗", (Brush)Resources["Danger"]));
+            Say(problem);
+        }
+        finally
+        {
+            VerifyButton.IsEnabled = true;
+        }
+    }
 
     /// <summary>Reads the token in the reader, writing nothing to it.</summary>
     private void ReadCard()

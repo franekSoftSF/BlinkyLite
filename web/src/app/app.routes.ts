@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, Routes } from '@angular/router';
 import { Auth } from './core/auth.service';
+import { AuditPage } from './pages/audit.page';
 import { IssuancesPage } from './pages/issuances.page';
 import { LoginPage } from './pages/login.page';
 
@@ -12,8 +13,13 @@ import { LoginPage } from './pages/login.page';
  */
 const signedIn: CanActivateFn = () => inject(Auth).signedIn() || inject(Router).parseUrl('/login');
 
+/** Only to spare an Admin-less operator a page of 403s; the server is what refuses. */
+const admin: CanActivateFn = () =>
+  (inject(Auth).signedIn() && inject(Auth).hasRole('Admin')) || inject(Router).parseUrl('/');
+
 export const routes: Routes = [
   { path: 'login', component: LoginPage },
   { path: '', component: IssuancesPage, canActivate: [signedIn] },
+  { path: 'audit', component: AuditPage, canActivate: [admin] },
   { path: '**', redirectTo: '' },
 ];

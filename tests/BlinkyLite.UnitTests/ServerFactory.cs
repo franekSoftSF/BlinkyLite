@@ -197,7 +197,32 @@ public sealed class FakeIssuances : IIssuanceReader
 {
     public Dictionary<Guid, ServerIssuance> Rows { get; } = [];
 
+    public Dictionary<long, Card> Cards { get; } = [];
+
+    public Dictionary<Guid, CardSecret> Secrets { get; } = [];
+
+    public List<AuditEvent> AuditRows { get; } = [];
+
     public ServerIssuance? Find(Guid id) => Rows.GetValueOrDefault(id);
+
+    public Page<ServerIssuance> List(string? query, int page, int pageSize)
+    {
+        var rows = Rows.Values
+            .Where(i => query is null || i.TargetDisplayName.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(i => i.CreatedAt)
+            .ToList();
+        return new Page<ServerIssuance>(rows.Skip((page - 1) * pageSize).Take(pageSize).ToList(), rows.Count, page, pageSize);
+    }
+
+    public Card? FindCard(long serial) => Cards.GetValueOrDefault(serial);
+
+    public CardSecret? SecretOf(Guid issuanceId) => Secrets.GetValueOrDefault(issuanceId);
+
+    public Page<AuditEvent> Audit(long? cardSerial, int page, int pageSize)
+    {
+        var rows = AuditRows.Where(a => cardSerial is null || a.CardSerial == cardSerial).OrderByDescending(a => a.Id).ToList();
+        return new Page<AuditEvent>(rows.Skip((page - 1) * pageSize).Take(pageSize).ToList(), rows.Count, page, pageSize);
+    }
 }
 
 /// <summary>Records what the server would have written to the database.</summary>
@@ -341,7 +366,26 @@ public sealed class RecordingProcedures : IProcedures
     private static DatabaseRuleException Rule(string sqlState, string key) =>
         new(sqlState, key, null, new InvalidOperationException(key));
 
-    public Task<SecretEnvelope> DiscloseSecretAsync(long cardSerial, SecretKind kind, string reason, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
+    /// <summary>What bl_secret_disclose would hand out, by card and kind.</summary>
+    public Dictionary<(long Serial, SecretKind Kind), SecretEnvelope> Envelopes { get; } = [];
+
+    public List<(long Serial, SecretKind Kind, string Reason, Actor Actor)> Disclosures { get; } = [];
+
+    public Task<SecretEnvelope> DiscloseSecretAsync(long cardSerial, SecretKind kind, string reason, Actor actor, CancellationToken ct = default)
+    {
+        if (reason.Trim().Length < 5)
+        {
+            throw Rule("BL005", ErrorCodes.ReasonRequired);
+        }
+
+        if (!Envelopes.TryGetValue((cardSerial, kind), out var envelope))
+        {
+            throw Rule("BL002", ErrorCodes.NotFound);
+        }
+
+        Disclosures.Add((cardSerial, kind, reason, actor));
+        return Task.FromResult(envelope);
+    }
 
     public Task<IReadOnlyList<ManagementKeyCandidate>> GetManagementKeyCandidatesAsync(long cardSerial, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
 }

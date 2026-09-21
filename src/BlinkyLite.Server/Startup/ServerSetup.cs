@@ -131,6 +131,7 @@ public static class ServerSetup
         // physical token and this repository is public.
         services.TryAddSingleton(AttestationVerifier.ForYubico());
         services.AddScoped<IssuanceService>();
+        services.AddScoped<BlinkyLite.Server.Browsing.BrowseService>();
     }
 
     /// <summary>

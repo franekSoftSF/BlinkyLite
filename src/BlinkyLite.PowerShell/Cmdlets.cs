@@ -180,6 +180,58 @@ public sealed class GetBlinkyLiteProfileCommand : PSCmdlet
 }
 
 /// <summary>
+/// Compares the token in the reader with the record (0030): issued by this
+/// server, the recorded certificate, a key generated on the card and unchanged
+/// since. Read only - no PIN, no management key, nothing written.
+/// </summary>
+/// <remarks>
+/// The checks are <see cref="CardVerifier"/>, the same the WPF client runs;
+/// this cmdlet only turns them into objects. Admin and SecurityOfficer - the
+/// server refuses the record to anyone else.
+/// </remarks>
+[Cmdlet(VerbsDiagnostic.Test, "BlinkyLiteCard")]
+[OutputType(typeof(PSObject))]
+public sealed class TestBlinkyLiteCardCommand : PSCmdlet
+{
+    /// <summary>Part of a reader's name, when the machine has several.</summary>
+    [Parameter]
+    public string? Reader { get; set; }
+
+    protected override void ProcessRecord()
+    {
+        var client = Session.Require(this);
+
+        try
+        {
+            using var card = CardAccess.Open(Reader);
+            var result = CardVerifier.VerifyAsync(card.Session, client).GetAwaiter().GetResult();
+
+            var checks = result.Checks.Select(c =>
+            {
+                var line = new PSObject();
+                line.Properties.Add(new PSNoteProperty("Passed", c.Passed));
+                line.Properties.Add(new PSNoteProperty("Check", Strings.Current[c.MessageKey]));
+                line.Properties.Add(new PSNoteProperty("Detail", c.Detail));
+                return line;
+            }).ToArray();
+
+            var output = new PSObject();
+            output.Properties.Add(new PSNoteProperty("Serial", result.Serial));
+            output.Properties.Add(new PSNoteProperty("User", result.Record?.Issuance?.TargetSam));
+            output.Properties.Add(new PSNoteProperty("IssuanceId", result.Record?.Issuance?.Id));
+            output.Properties.Add(new PSNoteProperty("Passed", result.Passed));
+            output.Properties.Add(new PSNoteProperty("Checks", checks));
+
+            WriteObject(output);
+        }
+        catch (Exception e)
+        {
+            WriteError(Problems.Of(e));
+        }
+    }
+}
+
+/// <summary>
 /// Issues a key: the whole thing, on the same engine as the WPF client.
 /// </summary>
 /// <remarks>

@@ -6,10 +6,13 @@
 wbudowany sterownik PIV bez minidrivera Yubico (0026). Serwer stoi w Dockerze
 za nginx na 443 z konsolą web (0055, na razie tylko logowanie i pusty widok
 wydań). Logowanie ma obowiązkowy drugi składnik TOTP (0027) — napisany i
-sprawdzony testami, ale jeszcze bez prawdziwego telefonu i konta AD. 486
-testów jednostkowych i 101 na PostgreSQL 16. Otwarte przed 1.0: ponowne
-wydanie znanej karty (R-11), odzyskiwanie (0022), lista wydań i PUK w web
-(0030), konfiguracja w web (0031), Kerberos (0025), instalatory.
+sprawdzony testami i pierwszym logowaniem do konsoli. Przeglądarka (0030):
+lista wydań dla trzech ról, PUK jednej karty z powodem, szczegóły dla Admin/SO,
+MK i dziennik audytu dla Admina, a „Zweryfikuj klucz” w WPF i PowerShell —
+napisana i przetestowana, jeszcze nie sprawdzona w labie. 517 testów
+jednostkowych i 104 na PostgreSQL 16. Otwarte przed 1.0: ponowne wydanie
+znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031), Kerberos
+(0025), instalatory.
 
 Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
 się zgadzać; `status.json` czyta build albo dashboard. Definicje ukończenia są
@@ -346,7 +349,7 @@ wersji, przez którą przeszło wydanie.
 | 0025 | 2 | Logowanie zintegrowane (Negotiate/Kerberos) | `open` |
 | 0027 | 2 | Drugi składnik TOTP dla wszystkich klientów | `done-unverified` |
 | 0023 | 2 | Klient WPF — wydanie | `done` |
-| 0030 | 3 | Przeglądarka web (Helpdesk) i weryfikacja karty | `partly-done` |
+| 0030 | 3 | Przeglądarka web (Helpdesk) i weryfikacja karty | `done-unverified` |
 | 0031 | 3 | Konfiguracja w aplikacji web: profile i keytab | `open` |
 | 0040 | 4 | Moduł PowerShell | `partly-done` |
 | 0050 | 5 | Docker | `done` |

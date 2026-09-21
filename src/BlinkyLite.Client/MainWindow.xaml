@@ -114,6 +114,14 @@
 
                 <TextBlock DockPanel.Dock="Top" Text="{l:Loc client.card}" />
                 <DockPanel DockPanel.Dock="Top" Margin="0,4,0,12">
+                    <!-- Read only: compares the token with the record (0030). -->
+                    <Button x:Name="VerifyButton"
+                            DockPanel.Dock="Right"
+                            Content="{l:Loc client.verify}"
+                            Padding="10,6"
+                            Margin="8,0,0,0"
+                            Click="Verified" />
+
                     <Button DockPanel.Dock="Right"
                             Content="{l:Loc client.refresh}"
                             Padding="10,6"

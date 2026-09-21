@@ -130,6 +130,7 @@ var version = typeof(Program).Assembly
 
 app.MapBlinkyLiteApi(version);
 app.MapIssuanceApi();
+app.MapBrowseApi();
 
 await app.RunAsync();
 return 0;

@@ -41,7 +41,7 @@
     "phase": 2,
     "phaseTitle": "Wydanie",
     "state": "open",
-    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na DPCLIENT01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. nginx na 443 z konsola web wdrozony (0055 partly-done). Drugi skladnik TOTP napisany i przetestowany bez AD (0027 done-unverified). Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), lista wydan w web (0030), konfiguracja w web (0031), Kerberos (0025), wydanie z PowerShell (0040). 486 testow jednostkowych, 101 bazodanowych.",
+    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na DPCLIENT01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. nginx na 443 z konsola web wdrozony (0055 partly-done). Drugi skladnik TOTP napisany i przetestowany bez AD (0027 done-unverified). Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031), Kerberos (0025), wydanie z PowerShell (0040). Przegladarka web z lista, PUK, szczegolami i audytem oraz weryfikacja klucza w WPF/PowerShell (0030 done-unverified). 517 testow jednostkowych, 104 bazodanowe.",
     "nothingIssuedYet": false
   },
   "stateLegend": {
@@ -658,17 +658,17 @@
       "title": "Drugi skladnik TOTP dla wszystkich klientow",
       "state": "done-unverified",
       "owner": "cloud-ai",
-      "proof": "2026-09-21: migracja 0006 (operator_totp, operator_backup_codes, bl_totp_state/begin/confirm/accept/backup_use/reset; zadna rola nie ma SELECT na tych tabelach), logowanie dwuetapowe z biletem o osobnym aud, konfiguracja z QR w konsoli web, pytanie o kod w WPF, PowerShell i CardLab. Testy: wektory RFC 6238 i RFC 4648; bilet nie otwiera /api/auth/me ani /api/profiles, token nie otwiera /api/auth/totp; token nie powstaje bez poprawnego kodu; kod uzyty raz i kod starszy od uzytego odrzucone; 8 rownoczesnych prob tym samym krokiem - dokladnie jedna wygrywa (PostgreSQL); kod zapasowy dziala raz; potwierdzonego skladnika nie da sie zastapic; piec zlych kodow blokuje takze dobry; reset tylko przez innego Admina z powodem.",
-      "gap": "Nikt jeszcze nie zalogowal sie z prawdziwym telefonem i kontem AD: konfiguracja w web na blinkylite.ems-ad.emsdemolab.pl, potem kod w WPF i w Connect-BlinkyLite. Reset nie ma ekranu (0030/0031)."
+      "proof": "2026-09-21: migracja 0006 (operator_totp, operator_backup_codes, bl_totp_state/begin/confirm/accept/backup_use/reset; zadna rola nie ma SELECT na tych tabelach), logowanie dwuetapowe z biletem o osobnym aud, konfiguracja z QR w konsoli web, pytanie o kod w WPF, PowerShell i CardLab. Testy: wektory RFC 6238 i RFC 4648; bilet nie otwiera /api/auth/me ani /api/profiles, token nie otwiera /api/auth/totp; token nie powstaje bez poprawnego kodu; kod uzyty raz i kod starszy od uzytego odrzucone; 8 rownoczesnych prob tym samym krokiem - dokladnie jedna wygrywa (PostgreSQL); kod zapasowy dziala raz; potwierdzonego skladnika nie da sie zastapic; piec zlych kodow blokuje takze dobry; reset tylko przez innego Admina z powodem. 2026-09-21: wlasciciel skonfigurowal skladnik i zalogowal sie do konsoli web w labie (haslo AD + kod z telefonu).",
+      "gap": "Nie sprawdzone: kod w WPF i w Connect-BlinkyLite, logowanie kodem zapasowym, reset przez innego Admina. Reset nie ma ekranu (0031)."
     },
     {
       "id": "0030",
       "phase": 3,
       "title": "Przegladarka web (Helpdesk) i weryfikacja karty",
-      "state": "partly-done",
+      "state": "done-unverified",
       "owner": "cloud-ai",
-      "proof": "2026-09-21: konsola web w Angular 22 (D-30) - logowanie, token tylko w pamieci karty, pasek boczny i gorny jak w Blinky w zieleni BlinkyLite, motyw jasny/ciemny, cztery jezyki z Messages.resx generowanych przy budowie. Wdrozona za nginx.",
-      "gap": "Brak listy wydan, szczegolow, odsloniecia PUK z powodem i endpointow pod nimi - to jest rdzen 0030."
+      "proof": "2026-09-21: API przegladarki - lista dla trzech rol (IssuanceListItem, test porownuje nazwy pol JSON: bez PUK i bez pol szczegolow), szczegoly i rekord karty dla Admin/SO, PUK jednej karty z powodem, MK i dziennik audytu tylko Admin; kazda rola sprawdzona testem na endpoincie (BrowseTests), zapytania listy i audytu na prawdziwym PostgreSQL (BrowseReadTests). Konsola web: lista z wyszukiwaniem i stronicowaniem, panel szczegolow, odsloniecie PUK/MK z powodem (wartosc tylko w komponencie, znika po 2 min), dziennik audytu dla Admina. \"Zweryfikuj klucz\" w WPF i Test-BlinkyLiteCard w PowerShell na wspolnym CardVerifier: rekord, certyfikat w 9A == zapisany, swieza atestacja Yubico, klucz certyfikatu == klucz atestowany == klucz z wydania (6 testow na syntetycznym PKI Yubico). WPF wpuszcza tylko Admin i SO, Helpdesk odsyla do web.",
+      "gap": "Nie sprawdzone w labie: konsola z prawdziwymi wydaniami i kontem Helpdesk, odsloniecie PUK przez Helpdesk, \"Zweryfikuj klucz\" na karcie 23673995 albo 39721373 w WPF i Test-BlinkyLiteCard."
     },
     {
       "id": "0031",

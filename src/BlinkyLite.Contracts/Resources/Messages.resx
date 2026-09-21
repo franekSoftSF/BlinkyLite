@@ -436,4 +436,175 @@
   <data name="audit.totp.reset" xml:space="preserve">
     <value>Second factor reset</value>
   </data>
+  <data name="issuance.state.Reserved" xml:space="preserve">
+    <value>Reserved</value>
+  </data>
+  <data name="issuance.state.Customised" xml:space="preserve">
+    <value>Personalised</value>
+  </data>
+  <data name="issuance.state.Attested" xml:space="preserve">
+    <value>Attested</value>
+  </data>
+  <data name="issuance.state.PendingCa" xml:space="preserve">
+    <value>Waiting for the CA</value>
+  </data>
+  <data name="issuance.state.Issued" xml:space="preserve">
+    <value>Issued</value>
+  </data>
+  <data name="issuance.state.Failed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="issuance.state.Superseded" xml:space="preserve">
+    <value>Replaced by a newer issuance</value>
+  </data>
+  <data name="common.yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="common.no" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="common.hide" xml:space="preserve">
+    <value>Hide</value>
+  </data>
+  <data name="common.previous" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="common.next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="common.page-range" xml:space="preserve">
+    <value>{0}–{1} of {2}</value>
+  </data>
+  <data name="web.issuances.search" xml:space="preserve">
+    <value>Name, account or key serial number</value>
+  </data>
+  <data name="web.issuances.account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="web.issuances.state" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="web.issuances.nothing-found" xml:space="preserve">
+    <value>Nothing matches the search.</value>
+  </data>
+  <data name="web.issuances.pick" xml:space="preserve">
+    <value>Select an issuance in the list.</value>
+  </data>
+  <data name="web.details.title" xml:space="preserve">
+    <value>Issuance</value>
+  </data>
+  <data name="web.details.current" xml:space="preserve">
+    <value>Current issuance of this key</value>
+  </data>
+  <data name="web.details.upn" xml:space="preserve">
+    <value>UPN</value>
+  </data>
+  <data name="web.details.firmware" xml:space="preserve">
+    <value>Firmware</value>
+  </data>
+  <data name="web.details.profile" xml:space="preserve">
+    <value>Profile and template</value>
+  </data>
+  <data name="web.details.ca" xml:space="preserve">
+    <value>CA and request</value>
+  </data>
+  <data name="web.details.operator" xml:space="preserve">
+    <value>Operator</value>
+  </data>
+  <data name="web.details.workstation" xml:space="preserve">
+    <value>Workstation and Windows account</value>
+  </data>
+  <data name="web.details.agent" xml:space="preserve">
+    <value>Enrollment Agent certificate</value>
+  </data>
+  <data name="web.details.key" xml:space="preserve">
+    <value>Key algorithm, PIN and touch policy</value>
+  </data>
+  <data name="web.details.certificate" xml:space="preserve">
+    <value>Certificate</value>
+  </data>
+  <data name="web.details.valid" xml:space="preserve">
+    <value>Valid</value>
+  </data>
+  <data name="web.details.error" xml:space="preserve">
+    <value>What went wrong</value>
+  </data>
+  <data name="web.details.puk-shown" xml:space="preserve">
+    <value>PUK shown</value>
+  </data>
+  <data name="web.details.completed" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="web.reveal.puk.title" xml:space="preserve">
+    <value>PUK of key {0}</value>
+  </data>
+  <data name="web.reveal.puk.explain" xml:space="preserve">
+    <value>The PUK unblocks the PIN. Write down why you need it. The reason is saved in the audit trail before the PUK is shown.</value>
+  </data>
+  <data name="web.reveal.mk.title" xml:space="preserve">
+    <value>Management key of key {0}</value>
+  </data>
+  <data name="web.reveal.mk.explain" xml:space="preserve">
+    <value>The management key lets you change everything on the key. Write down why you need it. The reason is saved in the audit trail before the key is shown.</value>
+  </data>
+  <data name="web.reveal.reason-hint" xml:space="preserve">
+    <value>At least 5 characters, for example a ticket number.</value>
+  </data>
+  <data name="web.nav.audit" xml:space="preserve">
+    <value>Audit trail</value>
+  </data>
+  <data name="web.audit.title" xml:space="preserve">
+    <value>Audit trail</value>
+  </data>
+  <data name="web.audit.filter" xml:space="preserve">
+    <value>Key serial number</value>
+  </data>
+  <data name="web.audit.when" xml:space="preserve">
+    <value>When</value>
+  </data>
+  <data name="web.audit.who" xml:space="preserve">
+    <value>Who</value>
+  </data>
+  <data name="web.audit.what" xml:space="preserve">
+    <value>What</value>
+  </data>
+  <data name="web.audit.source" xml:space="preserve">
+    <value>From</value>
+  </data>
+  <data name="web.audit.data" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="web.audit.empty" xml:space="preserve">
+    <value>No events.</value>
+  </data>
+  <data name="client.use-web-console" xml:space="preserve">
+    <value>This application issues and verifies keys, which only Admin and SecurityOfficer may do. Use the BlinkyLite web console in a browser to find a key and show its PUK.</value>
+  </data>
+  <data name="client.verify" xml:space="preserve">
+    <value>Verify key</value>
+  </data>
+  <data name="client.verify.card" xml:space="preserve">
+    <value>Key {0}</value>
+  </data>
+  <data name="client.verify.passed" xml:space="preserve">
+    <value>The key in the reader is the key BlinkyLite issued, with the same certificate and the same key pair.</value>
+  </data>
+  <data name="client.verify.failed" xml:space="preserve">
+    <value>The key in the reader does not match the record. See the lines marked ✗.</value>
+  </data>
+  <data name="verify.known" xml:space="preserve">
+    <value>BlinkyLite issued this key and the issuance is complete</value>
+  </data>
+  <data name="verify.certificate" xml:space="preserve">
+    <value>The certificate on the key is the one the CA issued</value>
+  </data>
+  <data name="verify.attestation" xml:space="preserve">
+    <value>Yubico confirms that the key pair was generated on this key</value>
+  </data>
+  <data name="verify.key-certified" xml:space="preserve">
+    <value>The certificate belongs to the key pair on the key</value>
+  </data>
+  <data name="verify.same-key" xml:space="preserve">
+    <value>The key pair has not changed since the issuance</value>
+  </data>
 </root>

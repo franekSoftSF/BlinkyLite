@@ -17,7 +17,8 @@
         'Get-BlinkyLiteCard',
         'Get-BlinkyLiteProfile',
         'Find-BlinkyLiteUser',
-        'New-BlinkyLiteIssuance'
+        'New-BlinkyLiteIssuance',
+        'Test-BlinkyLiteCard'
     )
     FunctionsToExport    = @()
     AliasesToExport      = @()

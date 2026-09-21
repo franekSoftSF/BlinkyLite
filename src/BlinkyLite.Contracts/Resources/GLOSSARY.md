@@ -35,6 +35,7 @@ Tłumaczenia pisze autor kodu razem z kluczem (D-15). Ten słowniczek pilnuje,
 | second factor | zweiter Faktor | andra faktor | drugi składnik |
 | authenticator app | Authenticator-App | autentiseringsapp | aplikacja uwierzytelniająca |
 | backup code | Backup-Code | reservkod | kod zapasowy |
+| key pair (on the YubiKey) | Schlüsselpaar | nyckelpar | para kluczy |
 | code (TOTP) | Code | kod | kod |
 | secret (TOTP, not the YubiKey) | Geheimcode | hemlig kod | sekret |
 

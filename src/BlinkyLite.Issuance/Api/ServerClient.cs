@@ -128,6 +128,14 @@ public sealed class ServerClient : IDisposable
         throw new ServerException(HttpStatusCode.Unauthorized, ErrorCodes.TotpInvalid, "three wrong codes");
     }
 
+    /// <summary>What the record says about a card, or null when this server never issued it.</summary>
+    public async Task<CardRecord?> CardAsync(long serial, CancellationToken ct = default)
+    {
+        var response = await http.GetAsync($"/api/cards/{serial}", ct);
+
+        return response.StatusCode == HttpStatusCode.NotFound ? null : await ReadAsync<CardRecord>(response, ct);
+    }
+
     public async Task<IReadOnlyList<IssuanceProfile>> ProfilesAsync(CancellationToken ct = default) =>
         await ReadAsync<List<IssuanceProfile>>(await http.GetAsync("/api/profiles", ct), ct);
 

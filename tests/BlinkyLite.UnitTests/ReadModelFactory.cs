@@ -32,7 +32,19 @@ internal static class ReadModelFactory
         return row;
     }
 
-    private static void Set(object target, string property, object value) =>
+    /// <summary>Any read-model row, property by property.</summary>
+    public static T Row<T>(params (string Property, object? Value)[] values) where T : new()
+    {
+        var row = new T();
+        foreach (var (property, value) in values)
+        {
+            Set(row, property, value);
+        }
+
+        return row;
+    }
+
+    private static void Set(object target, string property, object? value) =>
         target.GetType()
             .GetProperty(property, BindingFlags.Public | BindingFlags.Instance)!
             .GetSetMethod(nonPublic: true)!
