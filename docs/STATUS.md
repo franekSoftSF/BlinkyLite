@@ -348,11 +348,11 @@ wersji, przez którą przeszło wydanie.
 | 0025 | 2 | Logowanie zintegrowane (Negotiate/Kerberos) | `open` |
 | 0027 | 2 | Drugi składnik TOTP dla wszystkich klientów | `open` |
 | 0023 | 2 | Klient WPF — wydanie | `done` |
-| 0030 | 3 | Przeglądarka web (Helpdesk) i weryfikacja karty | `open` |
+| 0030 | 3 | Przeglądarka web (Helpdesk) i weryfikacja karty | `partly-done` |
 | 0031 | 3 | Konfiguracja w aplikacji web: profile i keytab | `open` |
 | 0040 | 4 | Moduł PowerShell | `partly-done` |
 | 0050 | 5 | Docker | `done` |
-| 0055 | 5 | nginx w Dockerze | `open` |
+| 0055 | 5 | nginx w Dockerze | `partly-done` |
 | 0051 | 5 | Serwer Windows — MSIX | `open` |
 | 0052 | 5 | Klient — MSIX | `open` |
 | 0053 | 5 | Test end-to-end | `open` |

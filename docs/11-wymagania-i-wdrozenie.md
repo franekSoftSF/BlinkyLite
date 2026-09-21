@@ -65,6 +65,45 @@ znaczyłoby to, że w tej konfiguracji CA sprawdza jednak posiadacza — wtedy
 `Enroll` nadaje się osobnej grupie posiadaczy kart, nie `Domain Users`, żeby
 *Restricted Enrollment Agents* miało czego pilnować.
 
+### nginx przed serwerem (0055)
+
+Od 21 września 2026 publicznie jest **tylko nginx**: port 443 (i 80, wyłącznie
+z przekierowaniem na 443), ten sam certyfikat co serwer, konsola web jako pliki
+statyczne i `/api` oraz `/health` przekazywane do serwera. Serwer nie publikuje
+portu. Do `.env` dochodzi jedna zmienna:
+
+```bash
+BLINKYLITE_SERVER_NAME=blinkylite.ems-ad.emsdemolab.pl   # nazwa z certyfikatu
+```
+
+nginx łączy się z serwerem przez TLS i **sprawdza jego certyfikat** po tej
+nazwie, zaufaniem z tego samego pliku `certs/blinkylite.crt` (łańcuch do
+roota). Zła nazwa w `.env` to `502` na każdym `/api` — dziennik nginx mówi
+wtedy `upstream SSL certificate does not match`.
+
+Klienci — WPF, PowerShell, narzędzie stacji — łączą się pod
+`https://blinkylite.ems-ad.emsdemolab.pl`, **bez portu**. Adres z `:8443`
+zapamiętany przez klienta WPF przestaje działać i trzeba go raz poprawić.
+
+**Po każdym wdrożeniu sprawdź nagłówki**, a nie tylko to, że strona się
+otwiera. Pierwsze wdrożenie odpowiadało bez HSTS i CSP, bo nginx nie łączy
+`add_header` między poziomami — i nic o tym nie mówi:
+
+```bash
+for u in / /i18n/pl.json /health /api/auth/me; do
+  curl -s -D - -o /dev/null https://blinkylite.ems-ad.emsdemolab.pl$u     | grep -iE '^HTTP|strict-transport|content-security-policy|cache-control'
+done
+```
+
+Każda ścieżka ma mieć `Strict-Transport-Security` i `Content-Security-Policy`;
+`/api` i `/health` dodatkowo `Cache-Control: no-store`.
+
+**Adres w audycie.** Serwer czyta `X-Forwarded-For` tylko przy
+`ForwardedHeaders__BehindOwnProxy=true` (ustawione w compose, bo do serwera
+dochodzi wyłącznie nginx). Sprawdzone 21.09: nieudane logowanie przez nginx
+zapisało w audycie ten sam adres, który nginx ma w swoim dzienniku — nie adres
+kontenera nginx.
+
 ### TLS: PEM z całym łańcuchem działa
 
 Kestrel czyta parę PEM (`Certificate:Path` + `KeyPath`) i **wysyła cały

@@ -652,9 +652,10 @@
       "id": "0030",
       "phase": 3,
       "title": "Przegladarka web (Helpdesk) i weryfikacja karty",
-      "state": "open",
+      "state": "partly-done",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-21: konsola web w Angular 22 (D-30) - logowanie, token tylko w pamieci karty, pasek boczny i gorny jak w Blinky w zieleni BlinkyLite, motyw jasny/ciemny, cztery jezyki z Messages.resx generowanych przy budowie. Wdrozona za nginx.",
+      "gap": "Brak listy wydan, szczegolow, odsloniecia PUK z powodem i endpointow pod nimi - to jest rdzen 0030."
     },
     {
       "id": "0031",
@@ -717,9 +718,10 @@
       "id": "0055",
       "phase": 5,
       "title": "nginx w Dockerze: aplikacja web i proxy do API",
-      "state": "open",
+      "state": "partly-done",
       "owner": "cloud-ai",
-      "proof": null
+      "proof": "2026-09-21, wdrozone na 10.0.20.89: nginx na 443 z certyfikatem serwera, konsola web (Angular) statycznie, /api i /health do serwera przez TLS z weryfikacja certyfikatu po nazwie; serwer bez publicznego portu (8443 z zewnatrz zamkniety), 80 tylko 301 na https. Sprawdzone z zewnatrz: strona 200, trasy Angular 200, /health 200 przez proxy, /api bez tokenu 401, naglowki HSTS, CSP, nosniff na kazdej sciezce (po poprawce dziedziczenia add_header) i no-store na /api. Audyt przez proxy zapisuje adres klienta z dziennika nginx, nie adres kontenera nginx. WebPaletteTests pilnuje zgodnosci kolorow web z Palette.cs.",
+      "gap": "WPF i PowerShell nie zostaly jeszcze uruchomione pod https://<nazwa> bez portu. Negotiate przez proxy czeka na 0025."
     },
     {
       "id": "0060",
