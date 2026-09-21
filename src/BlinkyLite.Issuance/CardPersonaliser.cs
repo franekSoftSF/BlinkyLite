@@ -165,8 +165,10 @@ public sealed class CardPersonaliser(AttestationVerifier? verifier = null)
             session.VerifyPin(pin);
 
             // Without CHUID and CCC Windows answers NTE_BAD_KEYSET and the card
-            // cannot log anybody in, however good the certificate is.
-            var identity = session.EnsureCardIdentity(DateOnly.FromDateTime(DateTime.UtcNow.AddYears(10)));
+            // cannot log anybody in, however good the certificate is. Fresh
+            // every time: a new key under an old card identity is a card
+            // Windows believes it already knows (docs/12).
+            var identity = session.ReplaceCardIdentity(DateOnly.FromDateTime(DateTime.UtcNow.AddYears(10)));
 
             progress?.Report("issuance.step.generate-key");
             var publicKey = session.GenerateKeyPair(

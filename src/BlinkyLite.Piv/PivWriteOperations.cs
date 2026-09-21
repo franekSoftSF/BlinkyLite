@@ -353,46 +353,42 @@ public partial class PivSession
     }
 
     /// <summary>
-    /// Writes the two data objects that make a card usable by Windows, unless
-    /// it already has them.
+    /// Writes a fresh CHUID and CCC, replacing whatever the card had.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// See <see cref="PivCardObjects"/> for why. In short: without a CHUID and
-    /// a CCC the inbox minidriver finds the certificate, cannot associate a
-    /// key container with it, and answers <c>NTE_BAD_KEYSET</c>.
+    /// Without a CHUID and a CCC the inbox minidriver finds the certificate,
+    /// cannot associate a key container with it, and answers
+    /// <c>NTE_BAD_KEYSET</c> - see <see cref="PivCardObjects"/>.
     /// </para>
     /// <para>
-    /// Not overwritten when present. The GUID inside a CHUID is how Windows
-    /// tells one card from another, and replacing it on a card somebody
-    /// already enrolled would look, from the operating system's side, like a
-    /// different card wearing the same certificates.
+    /// <b>Always replaced, never kept.</b> This used to write them only when
+    /// absent, on the reasoning that a new GUID on an enrolled card looks like
+    /// a different card wearing the same certificates. That is true when only
+    /// the CHUID changes. At issuance the key and the certificate change, and
+    /// keeping the old GUID is the opposite mistake: the same card, as far as
+    /// Windows can tell, with keys it has never seen. Windows recognises a
+    /// card by this GUID.
+    /// </para>
+    /// <para>
+    /// Found on card 39721373, 21 September 2026: after three issuances its
+    /// CHUID carried an expiry of 20300101 and a non-RFC 4122 GUID - written
+    /// by somebody else's software while the card sat reset in a workstation,
+    /// and kept by this method through every issuance since. On that card the
+    /// inbox driver exposed no key container at all. Whether the kept identity
+    /// is the cause is still being measured (docs/12); a CHUID this code did
+    /// not write is wrong to keep either way.
     /// </para>
     /// <para>
     /// Needs the management key, like every other write.
     /// </para>
     /// </remarks>
-    /// <returns>What it had to write, for the caller to report.</returns>
-    public CardIdentityWritten EnsureCardIdentity(DateOnly chuidExpires)
+    public CardIdentityWritten ReplaceCardIdentity(DateOnly chuidExpires)
     {
-        var chuid = WriteIfAbsent(PivCardObjects.CardholderUniqueIdentifier,
-            () => PivCardObjects.BuildChuid(chuidExpires), "CHUID");
+        WriteObject(PivCardObjects.CardholderUniqueIdentifier, PivCardObjects.BuildChuid(chuidExpires), "CHUID");
+        WriteObject(PivCardObjects.CardCapabilityContainer, PivCardObjects.BuildCapabilityContainer(), "CCC");
 
-        var ccc = WriteIfAbsent(PivCardObjects.CardCapabilityContainer,
-            PivCardObjects.BuildCapabilityContainer, "CCC");
-
-        return new CardIdentityWritten(chuid, ccc);
-    }
-
-    private bool WriteIfAbsent(byte[] tag, Func<byte[]> build, string what)
-    {
-        if (ReadObject(tag) is { Length: > 0 })
-        {
-            return false;
-        }
-
-        WriteObject(tag, build(), what);
-        return true;
+        return new CardIdentityWritten(Chuid: true, CapabilityContainer: true);
     }
 
     /// <summary>

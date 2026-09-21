@@ -62,6 +62,7 @@ static async Task<int> Run(string[] args)
             "cmc-inspect" => await EoboProbe.InspectAsync(options, log),
             "issue" => await Issue.RunAsync(options, log),
             "reset" => Reset(options, log),
+            "dump" => await Dump.RunAsync(options, log),
             _ => Help(),
         };
     }
@@ -110,6 +111,8 @@ static int Help()
             --profile <nazwa>              gdy serwer ma wiecej niz jeden
             --agent <odcisk>               ktory certyfikat EA, gdy jest kilka
             --yes                          nie pytaj przed zapisem na karte
+          dump                           wszystkie obiekty PIV czytelne bez
+                                         PIN-u, surowo i rozpisane (0026)
           reset --yes                    KASUJE cala czesc PIV karty: klucze,
                                          certyfikaty, PIN i PUK. Karta wraca
                                          do stanu fabrycznego. Nie do cofniecia

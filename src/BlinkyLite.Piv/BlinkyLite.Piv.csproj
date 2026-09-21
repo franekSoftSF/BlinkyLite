@@ -10,6 +10,10 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="BlinkyLite.UnitTests" />
+    <!-- The bench tool's dump command reads raw TLV the same way this layer
+         does; a second parser in the tool would disagree with this one in
+         exactly the cases a dump exists to show. -->
+    <InternalsVisibleTo Include="BlinkyLite.CardLab" />
   </ItemGroup>
 
   <ItemGroup>

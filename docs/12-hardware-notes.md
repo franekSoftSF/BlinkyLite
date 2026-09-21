@@ -50,7 +50,7 @@ urządzenia.
 | Data ważności w CHUID (`35`, ASCII `YYYYMMDD`) | Part 1, 3.1.2 | Jest, 10 lat |
 
 **Ostrożnie z wnioskiem:** karta 39721373 z nieprawidłowym UUID zalogowała się do
-Windows 20 września. Albo sterownik wbudowany tego nie sprawdza, albo logowanie
+Windows 20 września (na `DPCLIENT01`, sterownik nieznany). Albo sterownik wbudowany tego nie sprawdza, albo logowanie
 obsłużył minidriver Yubico. Poprawka jest potrzebna niezależnie — to wymóg
 normy — ale nie wiadomo jeszcze, czy to ona była przyczyną w Blinky.
 
@@ -60,7 +60,7 @@ Zmierzone 21 września 2026 na `SZYMON-PC` (poza domeną), karta 39721373 w
 czytniku: kartę przejmuje **minidriver Yubico** (wpis „YubiKey Smart Card",
 `ykmd.dll`, dopasowany po ATR), a `certutil -scinfo -silent` i tak kończy się
 `0x80090016 NTE_BAD_KEYSET` na obu dostawcach. Ta sama karta 20 września
-**zalogowała się do Windows** na `DPCLIENT02`.
+**zalogowała się do Windows** — na `DPCLIENT01`, co wyszło dopiero później.
 
 Czyli ten sam błąd pojawia się z minidriverem Yubico i na karcie, która
 działa. Blinky oparł wniosek „wbudowany sterownik nie działa" właśnie na
@@ -99,6 +99,45 @@ karty w czytniku odmawia. Pierwsza wersja wybierała po nazwie producenta i
 na `SZYMON-PC` oznaczyła do usunięcia wszystkie wpisy HID Crescendo — innej
 karty, z innym ATR. Złapane próbnym odczytem, zanim skrypt trafił na stację.
 
+### 21 września 2026: co pokazały pomiary i zrzut karty
+
+**Poprawka faktu:** udane logowanie kartą z żądania 223 było 20 września na
+`DPCLIENT01`, **nie** na `DPCLIENT02`, i nie wiadomo, jakim sterownikiem.
+Wcześniejsze zdanie w tym dokumencie („ta sama karta zalogowała się na
+`DPCLIENT02`") było błędne.
+
+Pomiary skryptem stacji:
+
+| Maszyna | Sterownik przypięty do karty | `certutil -scinfo` | Certyfikat w magazynie |
+|---|---|---|---|
+| `DPCLIENT02` | Microsoft, `msclmd.inf` — nigdy nie było tam oprogramowania Yubico | `NTE_BAD_KEYSET` (także z PIN-em) | — |
+| `SZYMON-PC`, do 9:16 | Yubico, `ykmd.dll` | `NTE_BAD_KEYSET` | `F3C1…` (żądanie 223) |
+| `SZYMON-PC`, po usunięciu minidrivera | Microsoft, `msclmd.inf` | `NTE_BAD_KEYSET`; `certutil -key` na dostawcy kart **nie wylicza żadnego kontenera** | obecnego `1AC8…` (żądanie 225) **brak** — sterownik go nie wystawił |
+
+Dziś kartą 39721373 (żądanie 225) nie da się już zalogować.
+
+Zrzut karty (`CardLab dump`, tylko odczyt):
+
+| Obiekt | Zawartość | Wniosek |
+|---|---|---|
+| CHUID | GUID `E3DD83AC…`, **nie RFC 4122**; ważność **`20300101`** | **nie nasz** — my piszemy ważność „za 10 lat" (`2036…`). Zapisało go cudze oprogramowanie, gdy zresetowana karta siedziała w stacji z minidriverem Yubico, a `EnsureCardIdentity` („tylko gdy brak") go zostawił przez kolejne wydania |
+| Discovery Object `7E` | `4F A0000003080000100001 00`, `5F2F 40 00` | karta ma go sama z firmware — **hipoteza o braku Discovery Object odpada** |
+| certyfikat `9A` | `1AC8…`, `71 00` bez kompresji | poprawny |
+| ADMIN DATA | `80 03 81 01 02` | nasza flaga „MK za PIN-em" |
+| Key History, Security Object, 9C/9D/9E | brak (`6A82`) | bez znaczenia dla logowania |
+
+**Hipoteza wiodąca: stara tożsamość karty z nowym kluczem.** Windows rozpoznaje
+kartę po GUID z CHUID. Trzy wydania z różnymi kluczami pod jednym GUID to dla
+Windows „ta sama, znana karta" — i może używać tego, co o niej zapamiętał.
+Reguła „pisz CHUID tylko gdy go brak" pochodzi z Blinky, a Blinky utknął na
+tym samym `NTE_BAD_KEYSET`. Od 21 września BlinkyLite pisze CHUID (z UUID v4)
+i CCC od nowa przy każdym wydaniu.
+
+Test, który to rozstrzyga: `reset` → wydanie nową wersją → `dump` (GUID
+wersji 4, RFC 4122, ważność `2036…`) → karta na `DPCLIENT02` (tylko sterownik
+Microsoftu): czy certyfikat trafia do `Cert:\CurrentUser\My`, czy
+`Test-SmartCardDriver.ps1 -TestSignature` przechodzi, i czy logowanie działa.
+
 ### Pomiar na `DPCLIENT02` — do zrobienia
 
 Który sterownik obsłużył logowanie kartą 39721373:
@@ -117,5 +156,5 @@ Jeśli nie — hipotezy po jednej, każda z wynikiem w tabeli:
 | wpis ATR sterownika producenta w `Calais\SmartCards` wygrywa, zanim sterownik PIV w ogóle zostanie zapytany | lista kluczy w `Calais\SmartCards` | — |
 | Windows Update sam zainstalował minidriver Yubico | dostawca sterownika urządzenia karty | — |
 | GUID w CHUID nie jest poprawnym UUID | wydać kartę po poprawce, porównać `certutil -scinfo` | poprawione; wpływu na Windows jeszcze nie zmierzono |
-| sterownik czyta Discovery Object (`7E`) i bez niego nie wie, jak używać PIN-u | zapisać Discovery Object z polityką `40 00`, powtórzyć | **osłabiona** przez SP 800-85A-4, TE05.12A.01: karta **bez** Discovery Object to poprawny stan, w którym obowiązuje PIN aplikacji PIV — zgodny odbiorca musi go obsłużyć |
+| ~~sterownik czyta Discovery Object (`7E`) i bez niego nie wie, jak używać PIN-u~~ | — | **odpada**: YubiKey ma Discovery Object z firmware (`5F2F 40 00`), zrzut 21.09; i tak brak byłby zgodny z normą (SP 800-85A-4, TE05.12A.01) |
 | sterownik wymaga Key History Object (`5FC10C`) | zapisać pusty, powtórzyć | — |

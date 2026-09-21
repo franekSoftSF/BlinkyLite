@@ -82,7 +82,14 @@ językach zamiast ze słownika PL/EN w kodzie.
     ECC bez `EnumerateECCCerts` w
     `HKLM\SOFTWARE\Policies\Microsoft\Windows\SmartCardCredentialProvider`.
 19. **CHUID `5FC102` i CCC `5FC107` muszą istnieć**, inaczej
-    `NTE_BAD_KEYSET 0x80090016`. Pisane tylko, gdy ich brak.
+    `NTE_BAD_KEYSET 0x80090016`. ~~Pisane tylko, gdy ich brak.~~
+    **Druga połowa podważona 21 września 2026** ([12](12-hardware-notes.md)):
+    „tylko gdy brak" zostawiło na karcie 39721373 CHUID zapisany przez cudze
+    oprogramowanie (ważność `20300101`, GUID nie-RFC 4122) przez trzy kolejne
+    wydania z różnymi kluczami. Windows rozpoznaje kartę po tym GUID; stary
+    GUID z nowym kluczem to karta, którą Windows uważa za znaną. BlinkyLite
+    pisze teraz CHUID i CCC **od nowa przy każdym wydaniu**. Czy to była
+    przyczyna `NTE_BAD_KEYSET` w Blinky — jeszcze niezmierzone.
 20. **`SET PIN RETRIES` (`FA`) resetuje PIN i PUK** do fabrycznych — tylko
     przed ich zmianą. `RESET` (`FB`) działa tylko przy zablokowanym PIN i PUK.
     Żadnej z tych instrukcji Blinky nie wysyła i BlinkyLite też nie — to
