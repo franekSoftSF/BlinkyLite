@@ -25,7 +25,9 @@
     VariablesToExport    = @()
     PrivateData          = @{
         PSData = @{
-            Tags = @('YubiKey', 'PIV', 'ADCS', 'SmartCard')
+            Tags       = @('YubiKey', 'PIV', 'ADCS', 'SmartCard')
+            LicenseUri = 'https://www.apache.org/licenses/LICENSE-2.0'
+            ProjectUri = 'https://github.com/franekSoftSF/BlinkyLite'
         }
     }
 }

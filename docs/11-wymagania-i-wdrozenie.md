@@ -55,7 +55,7 @@ składnik obowiązuje także po Kerberosie (D-31).
 
 | Nazwa w adresie | SPN |
 |---|---|
-| `blinkylite.ems-ad.emsdemolab.pl` | `HTTP/blinkylite.ems-ad.emsdemolab.pl` |
+| `blinkylite.dw-ad.digitalworkspace.pl` | `HTTP/blinkylite.dw-ad.digitalworkspace.pl` |
 | `blinkylite` (krótka, jeśli ktoś jej używa) | `HTTP/blinkylite` |
 
 - Nazwa ma być rekordem **A**, nie CNAME: Windows przy CNAME prosi o bilet dla
@@ -64,7 +64,7 @@ składnik obowiązuje także po Kerberosie (D-31).
 - **Adres IP nie loguje przez Kerberos.** Kto wpisze `https://10.0.20.89`,
   dostanie formularz hasła. To celowe, nie usterka.
 - Ten sam SPN na dwóch kontach psuje oba — sprawdź przed dodaniem:
-  `setspn -Q HTTP/blinkylite.ems-ad.emsdemolab.pl`.
+  `setspn -Q HTTP/blinkylite.dw-ad.digitalworkspace.pl`.
 
 **2. Konto: osobne, nie `svc_blinkylite`.** `ktpass` ustawia kontu nowe hasło
 i — bez `-setupn` — zmienia jego UPN na nazwę SPN. Na koncie LDAP pierwsze
@@ -74,12 +74,12 @@ nie musi znać, bo jedynym sekretem jest keytab.
 
 ```powershell
 New-ADUser -Name 'svc_blinkylite_http' -SamAccountName 'svc_blinkylite_http' `
-    -Path 'OU=Service Accounts,DC=ems-ad,DC=emsdemolab,DC=pl' `
+    -Path 'OU=Service Accounts,DC=dw-ad,DC=digitalworkspace,DC=pl' `
     -AccountPassword (Read-Host -AsSecureString 'tymczasowe haslo') -Enabled $true `
     -CannotChangePassword $true -PasswordNeverExpires $true `
     -KerberosEncryptionType AES256
-setspn -S HTTP/blinkylite.ems-ad.emsdemolab.pl EMS-AD\svc_blinkylite_http
-setspn -S HTTP/blinkylite EMS-AD\svc_blinkylite_http
+setspn -S HTTP/blinkylite.dw-ad.digitalworkspace.pl DW-AD\svc_blinkylite_http
+setspn -S HTTP/blinkylite DW-AD\svc_blinkylite_http
 ```
 
 Konto nie potrzebuje żadnych uprawnień ani grup. `-KerberosEncryptionType
@@ -89,8 +89,8 @@ KDC wystawi bilet RC4, a keytab ma tylko AES.
 **3. Keytab** — raz, na kontrolerze domeny, jako Domain Admin:
 
 ```cmd
-ktpass /princ HTTP/blinkylite.ems-ad.emsdemolab.pl@EMS-AD.EMSDEMOLAB.PL ^
-       /mapuser EMS-AD\svc_blinkylite_http /pass +rndPass ^
+ktpass /princ HTTP/blinkylite.dw-ad.digitalworkspace.pl@DW-AD.DIGITALWORKSPACE.PL ^
+       /mapuser DW-AD\svc_blinkylite_http /pass +rndPass ^
        /crypto AES256-SHA1 /ptype KRB5_NT_PRINCIPAL ^
        /out blinkylite-http.keytab
 ```
@@ -117,7 +117,7 @@ przez formularz web to 0031, nie teraz.
 strefy **Intranet lokalny** (albo z `AuthServerAllowlist`). GPO:
 *Computer Configuration → Administrative Templates → Windows Components →
 Internet Explorer → Internet Control Panel → Security Page → Site to Zone
-Assignment List*: `https://blinkylite.ems-ad.emsdemolab.pl` = `1`. Bez tego
+Assignment List*: `https://blinkylite.dw-ad.digitalworkspace.pl` = `1`. Bez tego
 przeglądarka pokaże okno logowania albo formularz hasła — nie zaloguje sama.
 
 **Konto usługi LDAP musi czytać `tokenGroups` innych kont.** Przy haśle grupy
@@ -131,7 +131,7 @@ grupy **Windows Authorization Access Group**.
 przycisk „Zaloguj kontem Windows” odpowiada „nie skonfigurowane”.
 
 **Zmierzone w labie 21.09.2026:** konto `svc_blinkylite_http` w
-`OU=Services,OU=BLINKYLITE,…`, SPN `HTTP/blinkylite.ems-ad.emsdemolab.pl`,
+`OU=Services,OU=BLINKYLITE,…`, SPN `HTTP/blinkylite.dw-ad.digitalworkspace.pl`,
 keytab kvno 3, `aes256-cts-hmac-sha1-96`; `kinit -k` z keytaba na serwerze
 dostał TGT — klucz zgadza się z KDC. Skrypt potrzebował czterech poprawek, każda
 z pomiaru: okno bez „Uruchom jako administrator” (UAC odcina Domain Admins —
@@ -144,7 +144,7 @@ Serwer z keytabem odpowiada przez nginx `401 WWW-Authenticate: Negotiate`.
 
 ```powershell
 klist purge
-klist get HTTP/blinkylite.ems-ad.emsdemolab.pl   # bilet musi byc AES256, nie RC4
+klist get HTTP/blinkylite.dw-ad.digitalworkspace.pl   # bilet musi byc AES256, nie RC4
 ```
 
 ## 3. ADCS (potrzebne dopiero do wydawania, patch 0021)
@@ -179,7 +179,7 @@ statyczne i `/api` oraz `/health` przekazywane do serwera. Serwer nie publikuje
 portu. Do `.env` dochodzi jedna zmienna:
 
 ```bash
-BLINKYLITE_SERVER_NAME=blinkylite.ems-ad.emsdemolab.pl   # nazwa z certyfikatu
+BLINKYLITE_SERVER_NAME=blinkylite.dw-ad.digitalworkspace.pl   # nazwa z certyfikatu
 ```
 
 nginx łączy się z serwerem przez TLS i **sprawdza jego certyfikat** po tej
@@ -188,7 +188,7 @@ roota). Zła nazwa w `.env` to `502` na każdym `/api` — dziennik nginx mówi
 wtedy `upstream SSL certificate does not match`.
 
 Klienci — WPF, PowerShell, narzędzie stacji — łączą się pod
-`https://blinkylite.ems-ad.emsdemolab.pl`, **bez portu**. Adres z `:8443`
+`https://blinkylite.dw-ad.digitalworkspace.pl`, **bez portu**. Adres z `:8443`
 zapamiętany przez klienta WPF przestaje działać i trzeba go raz poprawić.
 
 **Po każdym wdrożeniu sprawdź nagłówki**, a nie tylko to, że strona się
@@ -197,7 +197,7 @@ otwiera. Pierwsze wdrożenie odpowiadało bez HSTS i CSP, bo nginx nie łączy
 
 ```bash
 for u in / /i18n/pl.json /health /api/auth/me; do
-  curl -s -D - -o /dev/null https://blinkylite.ems-ad.emsdemolab.pl$u     | grep -iE '^HTTP|strict-transport|content-security-policy|cache-control'
+  curl -s -D - -o /dev/null https://blinkylite.dw-ad.digitalworkspace.pl$u     | grep -iE '^HTTP|strict-transport|content-security-policy|cache-control'
 done
 ```
 
@@ -229,18 +229,18 @@ do kontenera jako Docker secret (`blinkylite-tls-key`, `0400`, uid 1654).
 Podmiana certyfikatu to podmiana pliku i `docker compose up -d
 --force-recreate api` — serwer czyta go tylko przy starcie.
 
-### Zmierzone w labie EMSDEMOLAB (20 września 2026)
+### Zmierzone w labie DIGITALWORKSPACE (20 września 2026)
 
 Szablon docelowy jest jeden dla wszystkich i osobny dla BlinkyLite: nazwa
-`EMSDEMOLABYubicoSmartcardLogon` (wyświetlana: *EMSDEMOLAB Yubico Smartcard
+`DIGITALWORKSPACEYubicoSmartcardLogon` (wyświetlana: *DIGITALWORKSPACE Yubico Smartcard
 Logon*). **Nazwa bez spacji jest tą, która idzie do `Issuance:Profiles` i do
 atrybutu `CertificateTemplate:` przy `Submit`** — nazwa wyświetlana nie działa.
 
-Serwer stoi na `blinkylite.ems-ad.emsdemolab.pl` (rekord A → `10.0.20.89`), z
-certyfikatem z `EMSDEMOLAB-Sub-CA` ważnym do 20 września 2028. `/health`
+Serwer stoi na `blinkylite.dw-ad.digitalworkspace.pl` (rekord A → `10.0.20.89`), z
+certyfikatem z `DIGITALWORKSPACE-Sub-CA` ważnym do 20 września 2028. `/health`
 odpowiada 200 przy pełnej weryfikacji łańcucha, bez `-k`.
 
-Konfiguracja CA dla `ICertRequest3`: **`SubCA.ems-ad.emsdemolab.pl\EMSDEMOLAB-Sub-CA`**
+Konfiguracja CA dla `ICertRequest3`: **`SubCA.dw-ad.digitalworkspace.pl\DIGITALWORKSPACE-Sub-CA`**
 — dokładnie to, co wypisuje `certutil -config - -ping`. Zapisana jako
 `BLINKYLITE_CA_CONFIG` w `.env`. Uwaga przy edycji: `sed` traktuje `\E` w
 łańcuchu zastępującym jako swoją sekwencję i po cichu zjada oba znaki, więc tę
@@ -261,8 +261,8 @@ linię wpisuje się innym narzędziem.
 `TemplatePropCryptoProviders = Microsoft Smart Card Key Storage Provider` nie
 dotyczy tej ścieżki: klucz powstaje na YubiKeyu, a CA nie sprawdza dostawcy —
 sprawdza atestację, którą weryfikuje serwer.
-Certyfikat Enrollment Agenta wystawia `EMSDEMOLAB-Sub-CA`; operator
-`EMS-AD\adm_s.frankiewicz` ma go w `CurrentUser\My` z kluczem prywatnym,
+Certyfikat Enrollment Agenta wystawia `DIGITALWORKSPACE-Sub-CA`; operator
+`DW-AD\adm_j.kowalski` ma go w `CurrentUser\My` z kluczem prywatnym,
 ważny do 19 września 2028.
 
 ## 4. Stacja operatora (wydawanie)
@@ -315,7 +315,7 @@ utraconym telefonem i kodami: reset robi **inny** Admin.
 
 ```bash
 # reset drugiego skladnika (token Admina, nie wlasny SID; powod >= 5 znakow)
-curl -X POST https://blinkylite.ems-ad.emsdemolab.pl/api/operators/S-1-5-21-.../totp/reset \
+curl -X POST https://blinkylite.dw-ad.digitalworkspace.pl/api/operators/S-1-5-21-.../totp/reset \
      -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
      -d '{"reason":"INC-123 zgubiony telefon"}'
 ```

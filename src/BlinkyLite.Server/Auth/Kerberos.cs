@@ -17,7 +17,7 @@ public sealed class KerberosOptions
     public const string Section = "Kerberos";
 
     /// <summary>
-    /// The realm tickets must come from, e.g. <c>EMS-AD.EMSDEMOLAB.PL</c>.
+    /// The realm tickets must come from, e.g. <c>DW-AD.DIGITALWORKSPACE.PL</c>.
     /// Empty: derived from <c>Ldap:BaseDn</c> - the same domain the server
     /// searches, which is the only one it can find people in.
     /// </summary>
@@ -63,7 +63,7 @@ public sealed class KerberosOptions
 
         if (string.IsNullOrWhiteSpace(options.Realm))
         {
-            // DC=ems-ad,DC=emsdemolab,DC=pl -> EMS-AD.EMSDEMOLAB.PL
+            // DC=dw-ad,DC=digitalworkspace,DC=pl -> DW-AD.DIGITALWORKSPACE.PL
             var baseDn = configuration[$"{LdapOptions.Section}:BaseDn"] ?? "";
             options.Realm = string.Join('.', baseDn.Split(',')
                     .Select(part => part.Trim())

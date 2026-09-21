@@ -21,6 +21,6 @@ certyfikaty główne atestacji Yubico. Nazwy „YubiKey”, „Yubico” i „PI
 użyte opisowo; BlinkyLite nie jest powiązany z Yubico ani przez Yubico
 wspierany.
 
-Licencja BlinkyLite jest jeszcze nieustalona (pytanie Q-02 w
-`docs/STATUS.md`); dopóki nie zostanie wybrana, przeniesiony kod pozostaje na
-warunkach Apache-2.0.
+BlinkyLite jest udostępniony na licencji Apache License, Version 2.0 — pełny
+tekst w pliku `LICENSE` (decyzja D-34, 21 września 2026). Tej samej licencji
+podlega kod przeniesiony z Blinky, więc całość ma jeden zestaw warunków.

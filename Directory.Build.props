@@ -16,6 +16,9 @@
     <Product>BlinkyLite</Product>
     <Company>BlinkyLite contributors</Company>
     <Copyright>Copyright 2026 Szymon Frankiewicz</Copyright>
+    <!-- Apache-2.0, like Blinky, from which src/BlinkyLite.Piv comes (D-34). -->
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/franekSoftSF/BlinkyLite</PackageProjectUrl>
     <Version>0.1.0</Version>
   </PropertyGroup>
 

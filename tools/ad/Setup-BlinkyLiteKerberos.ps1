@@ -34,14 +34,17 @@
     Gdzie zapisac keytab.
 
 .EXAMPLE
-    .\Setup-BlinkyLiteKerberos.ps1
+    .\Setup-BlinkyLiteKerberos.ps1 -Names blinkylite.dw-ad.digitalworkspace.pl
 
 .EXAMPLE
-    .\Setup-BlinkyLiteKerberos.ps1 -Names blinkylite.ems-ad.emsdemolab.pl, blinkylite
+    .\Setup-BlinkyLiteKerberos.ps1 -Names blinkylite.dw-ad.digitalworkspace.pl, blinkylite
 #>
 [CmdletBinding()]
 param(
-    [string[]] $Names = @('blinkylite.ems-ad.emsdemolab.pl'),
+    # No default: the name of a server is the one thing a script cannot guess,
+    # and a wrong one produces a keytab for a server nobody opens.
+    [Parameter(Mandatory)]
+    [string[]] $Names,
     [string] $Account = 'svc_blinkylite_http',
     [string] $Path,
     [string] $OutFile = (Join-Path $PWD 'blinkylite-http.keytab'),
@@ -193,7 +196,7 @@ $principal = "HTTP/$($Names[0])@$realm"
 # ktory nie otworzy zadnego biletu - bez zadnego komunikatu.
 # /target: ten sam DC co reszta - ktpass bez niego tez wybiera sam. Z /target
 # ktpass bierze /mapuser doslownie jako sAMAccountName, wiec BEZ "DOMENA\" -
-# z prefiksem szukal konta "EMS-AD\svc_blinkylite_http" i go nie znalazl.
+# z prefiksem szukal konta "DW-AD\svc_blinkylite_http" i go nie znalazl.
 #
 # ErrorActionPreference na chwile Continue: ktpass pisze ostrzezenia na
 # stderr takze wtedy, gdy mu sie udalo, a Windows PowerShell 5.1 przy Stop

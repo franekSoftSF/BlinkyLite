@@ -59,7 +59,7 @@ normy — ale nie wiadomo jeszcze, czy to ona była przyczyną w Blinky.
 
 ### `certutil -scinfo -silent` nie jest miarodajnym testem
 
-Zmierzone 21 września 2026 na `SZYMON-PC` (poza domeną), karta 39721373 w
+Zmierzone 21 września 2026 na `ADMIN-PC` (poza domeną), karta 39721373 w
 czytniku: kartę przejmuje **minidriver Yubico** (wpis „YubiKey Smart Card",
 `ykmd.dll`, dopasowany po ATR), a `certutil -scinfo -silent` i tak kończy się
 `0x80090016 NTE_BAD_KEYSET` na obu dostawcach. Ta sama karta 20 września
@@ -99,7 +99,7 @@ winscard), wpisy w `Calais\SmartCards`, które **przejmują włożoną kartę**
 urządzenia karty, pamięć podręczna ATR, zasada sterowników z Windows Update i
 wynik `certutil`. `-Apply` usuwa tylko to, co przejmuje **tę** kartę; bez
 karty w czytniku odmawia. Pierwsza wersja wybierała po nazwie producenta i
-na `SZYMON-PC` oznaczyła do usunięcia wszystkie wpisy HID Crescendo — innej
+na `ADMIN-PC` oznaczyła do usunięcia wszystkie wpisy HID Crescendo — innej
 karty, z innym ATR. Złapane próbnym odczytem, zanim skrypt trafił na stację.
 
 ### 21 września 2026: co pokazały pomiary i zrzut karty
@@ -114,8 +114,8 @@ Pomiary skryptem stacji:
 | Maszyna | Sterownik przypięty do karty | `certutil -scinfo` | Certyfikat w magazynie |
 |---|---|---|---|
 | `DPCLIENT02` | Microsoft, `msclmd.inf` — nigdy nie było tam oprogramowania Yubico | `NTE_BAD_KEYSET` (także z PIN-em) | — |
-| `SZYMON-PC`, do 9:16 | Yubico, `ykmd.dll` | `NTE_BAD_KEYSET` | `F3C1…` (żądanie 223) |
-| `SZYMON-PC`, po usunięciu minidrivera | Microsoft, `msclmd.inf` | `NTE_BAD_KEYSET`; `certutil -key` na dostawcy kart **nie wylicza żadnego kontenera** | obecnego `1AC8…` (żądanie 225) **brak** — sterownik go nie wystawił |
+| `ADMIN-PC`, do 9:16 | Yubico, `ykmd.dll` | `NTE_BAD_KEYSET` | `F3C1…` (żądanie 223) |
+| `ADMIN-PC`, po usunięciu minidrivera | Microsoft, `msclmd.inf` | `NTE_BAD_KEYSET`; `certutil -key` na dostawcy kart **nie wylicza żadnego kontenera** | obecnego `1AC8…` (żądanie 225) **brak** — sterownik go nie wystawił |
 
 Dziś kartą 39721373 (żądanie 225) nie da się już zalogować.
 
@@ -163,7 +163,7 @@ Wnioski:
   zastąpioną tagiem obiektu certyfikatu `5FC105`. Windows buduje tożsamość
   kontenera z CHUID — zmierzone, nie założone.
 - Ta sama karta daje `NTE_BAD_KEYSET` i zero kontenerów na `DPCLIENT02` i
-  `SZYMON-PC`, uruchamiana tam przez **zwykłych użytkowników, którzy widzieli
+  `ADMIN-PC`, uruchamiana tam przez **zwykłych użytkowników, którzy widzieli
   już tę kartę z kluczami z żądań 223 i 224 pod tym samym GUID**. SYSTEM na
   `DPCLIENT01` tej tożsamości nie znał.
 
@@ -183,7 +183,7 @@ waliduje się pod NT_AUTH. To jest wszystko, czego potrzebuje logowanie kartą.
 Jedyny „FAILED" w raporcie jest **oczekiwany**: `AES256+RSAES_OAEP(RSA:CNG) test
 FAILED … CRYPT_E_NO_DECRYPT_CERT (0x8009200c)`. `certutil` próbuje też
 odszyfrować kluczem z karty, a certyfikat z szablonu
-`EMSDEMOLABYubicoSmartcardLogon` ma tylko `Key Usage: Digital Signature` — nie
+`DIGITALWORKSPACEYubicoSmartcardLogon` ma tylko `Key Usage: Digital Signature` — nie
 może być odbiorcą szyfrowania. PKINIT używa podpisu. Skrypt stacji mówi to
 teraz wprost, żeby ta linia nie była nigdy czytana jako wada karty.
 

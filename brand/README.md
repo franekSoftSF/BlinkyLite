@@ -28,4 +28,6 @@ node build-assets.mjs
   `web.tagline`, w czterech językach — w logo po angielsku.
 - Z planszy świadomie **nie** wzięliśmy paska „PIV management / Windows logon /
   Certificates made easy / Open source”: BlinkyLite nie zarządza kluczami (to
-  robi Blinky), a repozytorium nie ma licencji otwartej.
+  robi Blinky). Od 21.09.2026 repozytorium jest na Apache-2.0 (D-34), więc
+  „open source” byłoby już prawdą — pasek i tak nie wraca, bo pierwsza pozycja
+  nie.

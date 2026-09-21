@@ -21,7 +21,7 @@ Każda nazwa potrzebuje własnego SPN. Na dziś:
 
 | Nazwa | Czy potrzebna |
 |---|---|
-| `blinkylite.ems-ad.emsdemolab.pl` | **tak** — tak jest w certyfikacie i w klientach |
+| `blinkylite.dw-ad.digitalworkspace.pl` | **tak** — tak jest w certyfikacie i w klientach |
 | `blinkylite` (krótka) | tylko jeśli ktoś wpisuje ją w przeglądarce; wtedy musi też być w certyfikacie serwera, inaczej przeglądarka i tak odmówi |
 | `10.0.20.89` | **nie** — adres IP nigdy nie loguje przez Kerberos; kto go użyje, dostanie formularz hasła |
 
@@ -41,30 +41,30 @@ grup ani uprawnień, a jego hasła nikt nie zna: jedynym sekretem jest keytab.
    na kontroler domeny, np. do `C:\BlinkyLite\`.
 2. Otwórz **Windows PowerShell jako administrator** (zwykły 5.1 — ma moduł
    ActiveDirectory i `ktpass`).
-3. Uruchom:
+3. Uruchom, podając nazwę serwera BlinkyLite (tu przykładowa):
 
    ```powershell
    cd C:\BlinkyLite
    Set-ExecutionPolicy -Scope Process Bypass
-   .\Setup-BlinkyLiteKerberos.ps1
+   .\Setup-BlinkyLiteKerberos.ps1 -Names blinkylite.dw-ad.digitalworkspace.pl
    ```
 
    Z krótką nazwą:
 
    ```powershell
-   .\Setup-BlinkyLiteKerberos.ps1 -Names blinkylite.ems-ad.emsdemolab.pl, blinkylite
+   .\Setup-BlinkyLiteKerberos.ps1 -Names blinkylite.dw-ad.digitalworkspace.pl, blinkylite
    ```
 
-   Konto w innej OU: dodaj `-Path 'OU=Service Accounts,DC=ems-ad,DC=emsdemolab,DC=pl'`.
+   Konto w innej OU: dodaj `-Path 'OU=Service Accounts,DC=dw-ad,DC=digitalworkspace,DC=pl'`.
    Domyślnie trafia do kontenera `Users`.
 
 Co skrypt robi i co ma pokazać:
 
 | Krok | Co robi | Poprawny wynik |
 |---|---|---|
-| 0. DNS | sprawdza każdą nazwę | `OK   blinkylite.ems-ad.emsdemolab.pl -> 10.0.20.89` |
+| 0. DNS | sprawdza każdą nazwę | `OK   blinkylite.dw-ad.digitalworkspace.pl -> 10.0.20.89` |
 | 1. Konto | zakłada `svc_blinkylite_http`, włącza **AES256** | `OK   szyfrowanie: ... (AES256)` |
-| 2. SPN | sprawdza, czy SPN nie jest na innym koncie, i dopisuje go | `OK   HTTP/blinkylite.ems-ad.emsdemolab.pl dodany` |
+| 2. SPN | sprawdza, czy SPN nie jest na innym koncie, i dopisuje go | `OK   HTTP/blinkylite.dw-ad.digitalworkspace.pl dodany` |
 | 3. Keytab | `ktpass` z losowym hasłem, tylko AES256 | `OK   keytab: C:\BlinkyLite\blinkylite-http.keytab`, `kvno`, `SHA-256` |
 
 **Zapisz sobie SHA-256 i kvno** z ostatnich linii — sprawdzimy je na serwerze.
@@ -80,7 +80,7 @@ pokazał. Najczęstsze:
 - *„Unable to locate account … 0x00000525”* (wersja skryptu sprzed poprawki) —
   konto powstało na jednym kontrolerze, a `setspn` zapytał inny, do którego
   jeszcze nie dotarło z replikacji. Obecna wersja robi wszystko na jednym DC
-  (widać go w nagłówku jako `DC:`); można go wskazać `-Server dc01.ems-ad…`;
+  (widać go w nagłówku jako `DC:`); można go wskazać `-Server dc01.dw-ad…`;
 - *„jest CNAME”* — zamień rekord w DNS na A;
 - *„jest już na koncie …”* — ten SPN ma inne konto; dwa konta z tym samym SPN
   psują logowanie obu. Usuń go stamtąd (`setspn -D HTTP/<nazwa> <konto>`)
@@ -112,24 +112,24 @@ jest dokładnie tym, który zna kontroler domeny, zanim ktokolwiek szuka błędu
 BlinkyLite. Na serwerze:
 
 ```bash
-apt-get install -y krb5-user        # jesli zapyta o realm: EMS-AD.EMSDEMOLAB.PL
+apt-get install -y krb5-user        # jesli zapyta o realm: DW-AD.DIGITALWORKSPACE.PL
 
 cat > /tmp/krb5-test.conf <<'EOF'
 [libdefaults]
-    default_realm = EMS-AD.EMSDEMOLAB.PL
+    default_realm = DW-AD.DIGITALWORKSPACE.PL
     dns_lookup_kdc = true
 EOF
 
 export KRB5_CONFIG=/tmp/krb5-test.conf
 klist -k -t -e /opt/blinkylite/secrets/blinkylite-http.keytab
-kinit -k -t /opt/blinkylite/secrets/blinkylite-http.keytab HTTP/blinkylite.ems-ad.emsdemolab.pl@EMS-AD.EMSDEMOLAB.PL && klist && kdestroy
+kinit -k -t /opt/blinkylite/secrets/blinkylite-http.keytab HTTP/blinkylite.dw-ad.digitalworkspace.pl@DW-AD.DIGITALWORKSPACE.PL && klist && kdestroy
 ```
 
 Poprawnie:
 
-- `klist -k` pokazuje jeden wpis `HTTP/blinkylite.ems-ad.emsdemolab.pl@EMS-AD.EMSDEMOLAB.PL`
+- `klist -k` pokazuje jeden wpis `HTTP/blinkylite.dw-ad.digitalworkspace.pl@DW-AD.DIGITALWORKSPACE.PL`
   z **tym samym kvno** co skrypt i `aes256-cts-hmac-sha1-96`;
-- `kinit` nic nie mówi, a `klist` pokazuje bilet `krbtgt/EMS-AD.EMSDEMOLAB.PL`.
+- `kinit` nic nie mówi, a `klist` pokazuje bilet `krbtgt/DW-AD.DIGITALWORKSPACE.PL`.
 
 Jeśli `kinit` mówi:
 
@@ -141,7 +141,7 @@ Jeśli `kinit` mówi:
 
   ```
   [realms]
-      EMS-AD.EMSDEMOLAB.PL = {
+      DW-AD.DIGITALWORKSPACE.PL = {
           kdc = 10.0.20.10
       }
   ```
@@ -170,7 +170,7 @@ zabezpieczeń → **Lista przypisywania witryn do stref***
 
 | Nazwa wartości | Wartość |
 |---|---|
-| `https://blinkylite.ems-ad.emsdemolab.pl` | `1` |
+| `https://blinkylite.dw-ad.digitalworkspace.pl` | `1` |
 | `https://blinkylite` (tylko jeśli używacie krótkiej nazwy) | `1` |
 
 `1` = Intranet lokalny. Na stacji: `gpupdate /force`, potem pełne zamknięcie
@@ -184,11 +184,11 @@ Jako zwykły użytkownik domeny, w PowerShell:
 
 ```powershell
 klist purge
-klist get HTTP/blinkylite.ems-ad.emsdemolab.pl
+klist get HTTP/blinkylite.dw-ad.digitalworkspace.pl
 ```
 
 Poprawnie: `KerbTicket Encryption Type: AES-256-CTS-HMAC-SHA1-96` i
-`Server: HTTP/blinkylite.ems-ad.emsdemolab.pl @ EMS-AD.EMSDEMOLAB.PL`.
+`Server: HTTP/blinkylite.dw-ad.digitalworkspace.pl @ DW-AD.DIGITALWORKSPACE.PL`.
 
 - *RSADSI RC4-HMAC* zamiast AES-256 — kontu brakuje AES256 (krok 1) albo
   stacja trzyma stary bilet: `klist purge` i jeszcze raz.

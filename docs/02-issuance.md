@@ -127,7 +127,7 @@ końca, może być jedyną kopią management key karty leżącej na czyimś biur
 - W atrybucie podajemy **nazwę** szablonu, nie nazwę wyświetlaną.
 - Konfiguracja CA: `HOST\CA CN`, np. `SUBCA\Corp Issuing CA`.
 - **`RequesterName` jedzie w kontroli RegInfo (`1.3.6.1.5.5.7.7.18`) i jest
-  kodowany procentowo**: CertEnroll zapisuje `requestername=EMS-AD%5Cjkowalski`,
+  kodowany procentowo**: CertEnroll zapisuje `requestername=DW-AD%5Cjkowalski`,
   bo pary są łączone przez `&` i `=`, więc `\` musi je przetrwać. Czytając CMC
   z powrotem, najpierw dekoduj — inaczej poprawna nazwa wygląda na błędną
   (zmierzone 20 września 2026, `DPCLIENT02`, Windows 11 26100).

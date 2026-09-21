@@ -12,6 +12,7 @@
     "prestart": "node scripts/messages.mjs"
   },
   "private": true,
+  "license": "Apache-2.0",
   "packageManager": "npm@12.0.2",
   "dependencies": {
     "@angular/common": "^22.1.0",

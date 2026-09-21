@@ -133,13 +133,13 @@ public sealed class KerberosTests(ServerFactory server) : IClassFixture<ServerFa
     public void The_realm_defaults_to_the_domain_the_server_searches()
     {
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?> { ["Ldap:BaseDn"] = "DC=ems-ad, DC=emsdemolab,DC=pl" })
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Ldap:BaseDn"] = "DC=dw-ad, DC=digitalworkspace,DC=pl" })
             .Build();
 
         var options = KerberosOptions.From(configuration);
 
-        Assert.Equal("EMS-AD.EMSDEMOLAB.PL", options.Realm);
-        Assert.True(options.AcceptsRealm("ems-ad.emsdemolab.pl"));
+        Assert.Equal("DW-AD.DIGITALWORKSPACE.PL", options.Realm);
+        Assert.True(options.AcceptsRealm("dw-ad.digitalworkspace.pl"));
     }
 
     [Fact]

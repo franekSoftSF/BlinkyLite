@@ -7,23 +7,23 @@ namespace BlinkyLite.UnitTests;
 /// Turning what an operator typed into one person - or into a refusal.
 /// </summary>
 /// <remarks>
-/// From a real run: <c>-User szymon.frankiewicz</c> matched the person and
+/// From a real run: <c>-User jan.kowalski</c> matched the person and
 /// their own administrative account, because the two share a mailbox, and the
 /// cmdlet refused although one of them was named exactly.
 /// </remarks>
 public sealed class DirectoryMatchTests
 {
     private static readonly DirectoryUser Person =
-        new(@"EMS-AD\szymon.frankiewicz", "szymon.frankiewicz@emsdemolab.pl", "S-1-5-21-1-2-3-1106", "Szymon Frankiewicz", true);
+        new(@"DW-AD\jan.kowalski", "jan.kowalski@digitalworkspace.pl", "S-1-5-21-1-2-3-1106", "Jan Kowalski", true);
 
     private static readonly DirectoryUser Admin =
-        new(@"EMS-AD\adm_s.frankiewicz", "adm_s.frankiewicz@emsdemolab.pl", "S-1-5-21-1-2-3-1107", "Admin Szymon Frankiewicz", true);
+        new(@"DW-AD\adm_j.kowalski", "adm_j.kowalski@digitalworkspace.pl", "S-1-5-21-1-2-3-1107", "Admin Jan Kowalski", true);
 
     [Theory]
-    [InlineData("szymon.frankiewicz")]
-    [InlineData(@"EMS-AD\szymon.frankiewicz")]
-    [InlineData(@"ems-ad\SZYMON.FRANKIEWICZ")]
-    [InlineData("szymon.frankiewicz@emsdemolab.pl")]
+    [InlineData("jan.kowalski")]
+    [InlineData(@"DW-AD\jan.kowalski")]
+    [InlineData(@"dw-ad\JAN.KOWALSKI")]
+    [InlineData("jan.kowalski@digitalworkspace.pl")]
     public void An_exact_name_wins_over_a_crowded_search(string typed)
     {
         var chosen = DirectoryMatch.Exact(typed, [Admin, Person]);
@@ -36,7 +36,7 @@ public sealed class DirectoryMatchTests
     {
         // The refusal is the point. Issuing to the first of several puts
         // somebody else's certificate on the card in your hand.
-        Assert.Null(DirectoryMatch.Exact("frankiewicz", [Admin, Person]));
+        Assert.Null(DirectoryMatch.Exact("kowalski", [Admin, Person]));
     }
 
     [Fact]

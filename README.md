@@ -214,5 +214,9 @@ biblioteki pod nim celują w czyste `net10.0` i budują się wszędzie.
 
 ## Licencja
 
-Do ustalenia (Blinky: Apache-2.0 — kod przeniesiony z Blinky zachowuje jego
-licencję i nagłówki).
+[Apache License, Version 2.0](LICENSE) — tak jak Blinky, z którego pochodzi
+warstwa PIV. Co zostało przeniesione i skąd: [NOTICE](NOTICE).
+
+Nazwy i dane w dokumentacji (domena `dw-ad.digitalworkspace.pl`, konta
+`jan.kowalski`, stacje) są przykładowe. „YubiKey”, „Yubico” i „PIV” są użyte
+opisowo; BlinkyLite nie jest powiązany z Yubico ani przez Yubico wspierany.

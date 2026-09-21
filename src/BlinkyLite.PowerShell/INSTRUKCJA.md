@@ -36,12 +36,12 @@ Import-Module BlinkyLite
 ## Co można
 
 ```powershell
-Connect-BlinkyLite -Server https://blinkylite.ems-ad.emsdemolab.pl
+Connect-BlinkyLite -Server https://blinkylite.dw-ad.digitalworkspace.pl
 Get-BlinkyLiteCard
 Get-BlinkyLiteProfile
-Find-BlinkyLiteUser frankiewicz
-New-BlinkyLiteIssuance -User szymon.frankiewicz -WhatIf
-New-BlinkyLiteIssuance -User szymon.frankiewicz
+Find-BlinkyLiteUser kowalski
+New-BlinkyLiteIssuance -User jan.kowalski -WhatIf
+New-BlinkyLiteIssuance -User jan.kowalski
 Disconnect-BlinkyLite
 ```
 

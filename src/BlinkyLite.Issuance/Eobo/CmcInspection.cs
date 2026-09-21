@@ -143,7 +143,7 @@ public static class CmcInspection
     /// MS-WCCE puts UTF-8 pairs joined by <c>&amp;</c> in here, and each side is
     /// percent-encoded - it has to be, or the <c>\</c> of DOMAIN\user and the
     /// separators themselves could not tell each other apart. CertEnroll writes
-    /// <c>requestername=EMS-AD%5Cszymon.frankiewicz</c>, which looked like a
+    /// <c>requestername=DW-AD%5Cjan.kowalski</c>, which looked like a
     /// wrong name the first time this was read back: it was the right name,
     /// read wrongly.
     /// </remarks>

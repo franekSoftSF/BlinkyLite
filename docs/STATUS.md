@@ -178,10 +178,10 @@ odmawia ustawienia pustego hasła, a ostrzeżenie o prawach pilnuje już tylko
 dostępu „dla innych”, bo grupa jest tu świadomym sposobem współdzielenia.
 
 **Potwierdzone na prawdziwej domenie** (20 września 2026, kontener LXC
-`10.0.20.89`, domena `ems-ad.emsdemolab.pl`): kontrolery znalezione po SRV,
-LDAPS zweryfikowany łańcuchem `EMSDEMOLAB-Root-CA` → `EMSDEMOLAB-Sub-CA`
-pobranym z `pki.emsdemolab.pl`, trzy grupy AD zmapowane po SID. Logowanie
-kontem `adm_s.frankiewicz` zwróciło token z rolą `Admin`, a w audycie są dwa
+`10.0.20.89`, domena `dw-ad.digitalworkspace.pl`): kontrolery znalezione po SRV,
+LDAPS zweryfikowany łańcuchem `DIGITALWORKSPACE-Root-CA` → `DIGITALWORKSPACE-Sub-CA`
+pobranym z `pki.digitalworkspace.pl`, trzy grupy AD zmapowane po SID. Logowanie
+kontem `adm_j.kowalski` zwróciło token z rolą `Admin`, a w audycie są dwa
 wpisy: `auth.denied` dla nieistniejącego konta i `auth.login` z rolą i
 adresem źródłowym. `has_column_privilege('blinkylite_app', 'card_secrets',
 'puk_envelope', 'SELECT')` na tym wdrożeniu zwraca `f` — aplikacja nadal nie
@@ -265,7 +265,7 @@ Dwa miejsca, w których serwer odmawia wiary stacji, oba z testem:
   nazywać tę osobę, dla której wydanie powstało. Certyfikat na inny klucz i
   certyfikat na innego człowieka: odmowa.
 
-Wdrożone na `10.0.20.89` razem z profilem `EMSDEMOLABYubicoSmartcardLogon`.
+Wdrożone na `10.0.20.89` razem z profilem `DIGITALWORKSPACEYubicoSmartcardLogon`.
 Serwer wstaje z tą konfiguracją, a `/api/profiles` i `/api/issuances` bez
 tokenu odpowiadają `401 error.auth.required`.
 
@@ -288,9 +288,9 @@ karty.
 | | |
 |---|---|
 | karta | 39721373 (5.8.0, AES-192) |
-| żądanie w CA | 223, `EMSDEMOLAB-Sub-CA`, dyspozycja `Issued` |
-| podmiot | `CN=Szymon Frankiewicz, OU=Users, OU=EMSDEMOLAB, …` — **zbudowany z AD** |
-| SAN | UPN `szymon.frankiewicz@emsdemolab.pl` |
+| żądanie w CA | 223, `DIGITALWORKSPACE-Sub-CA`, dyspozycja `Issued` |
+| podmiot | `CN=Jan Kowalski, OU=Users, OU=DIGITALWORKSPACE, …` — **zbudowany z AD** |
+| SAN | UPN `jan.kowalski@digitalworkspace.pl` |
 | `1.3.6.1.4.1.311.25.2` | `S-1-5-21-…-1106` — **SID posiadacza karty, nie operatora** |
 | odcisk | `F3C133572477C600635E08D0A98B13EB380A496A`, odczytany z karty i porównany |
 
@@ -397,6 +397,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-28 | Admin konfiguruje w aplikacji web **profile (CA, szablon)** i **importuje keytab** — odwołuje „bez ekranu edycji" z D-21; profile w bazie z audytem, role dalej w `appsettings.json` |
 | D-27 | Kerberos dla **wszystkich** klientów (web, WPF, PowerShell) i dla **każdej** nazwy serwisu |
 | D-26 | Całość w Dockerze **za nginx**; TLS także między nginx a serwerem |
+| D-34 | Licencja **Apache-2.0**, jak Blinky; dane labu w dokumentacji zanonimizowane (`DIGITALWORKSPACE`, `dw-ad`, `jan.kowalski`) |
 | D-25 | Przeglądarka jest **aplikacją web** dla Helpdesku; WPF zostaje narzędziem wydania |
 | D-24 | Klient pamięta adres serwera, login, język i motyw w `%APPDATA%\BlinkyLite\client.json`; **nigdy hasła ani tokenu** |
 | D-23 | Stacja loguje się do serwera **tożsamością Windows operatora** (Negotiate/Kerberos); hasło AD zostaje jako droga zapasowa — zmienia „Poza zakresem", gdzie Negotiate był odrzucony |
@@ -407,9 +408,10 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 
 | ID | Pytanie | Blokuje |
 |---|---|---|
-| Q-02 | Licencja BlinkyLite — Apache-2.0 jak Blinky? | wydanie publiczne |
 | Q-07 | Czy paczka eksportu ma być dodatkowo podpisana (CMS SignedData), nie tylko zaszyfrowana? | 0054 |
 | Q-08 | Czy eksport ma umieć wybrać podzbiór kart, czy zawsze całość? | 0054 |
+
+Zamknięte 2026-09-21: Q-02 (licencja) — **Apache-2.0** (D-34).
 
 Zamknięte 2026-09-20, **pomiarem na stacji w domenie**:
 - Q-01 (CertEnroll a żądanie podpisane na karcie) — **TAK**. Na `DPCLIENT02`
@@ -419,7 +421,7 @@ Zamknięte 2026-09-20, **pomiarem na stacji w domenie**:
   certyfikatu w kopercie, za zgłoszeniodawcę, i jeden agenta. 0021 idzie przez
   CertEnroll (D-04); ręcznie pisany CMC z Blinky nie jest potrzebny.
 - `requestername` jest w RegInfo **kodowany procentowo**
-  (`EMS-AD%5Cszymon.frankiewicz`) — pierwsze odczytanie uznało poprawną nazwę za
+  (`DW-AD%5Cjan.kowalski`) — pierwsze odczytanie uznało poprawną nazwę za
   błędną. Reguła zapisana w [02](02-issuance.md#cmc-i-eobo--co-musi-się-zgadzać-w-adcs).
 
 Zamknięte 2026-09-19, decyzje właściciela:
@@ -437,7 +439,7 @@ Zamknięte 2026-09-19, decyzje właściciela:
 | R-05 | Usługa Windows w MSIX (`desktop6:Service`) na docelowym Windows Server | 0051 z zapisaną rezerwą: skrypt instalacyjny |
 | R-06 | Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na uprawnienia Graph i ruchu wychodzącego z serwera | wymagania spisane w [09](09-expiry-notification.md#co-przygotowuje-administrator-raz); konto bez Entra → audyt, nie awaria |
 | R-12 | Kto zna hasło operatora **przed** jego pierwszym logowaniem, może skonfigurować drugi składnik na swoim telefonie | pierwsze logowanie zaraz po nadaniu roli; `totp.enrolled` w audycie z adresem; właściciel, który zamiast kodu QR dostaje pytanie o kod, zgłasza to — reset robi inny Admin |
-| R-11 | Karta wydana ponownie pod **starym CHUID** nie jest rozpoznawana na stacjach, które znały ją z poprzednim kluczem — 21.09 ta sama karta działała na `DPCLIENT01`, a na `DPCLIENT02` i `SZYMON-PC` (też bez minidrivera Yubico) nie | CHUID i CCC od nowa przy każdym wydaniu (`c17c056`); niezweryfikowane — następne wydanie musi zadziałać na `DPCLIENT02` |
+| R-11 | Karta wydana ponownie pod **starym CHUID** nie jest rozpoznawana na stacjach, które znały ją z poprzednim kluczem — 21.09 ta sama karta działała na `DPCLIENT01`, a na `DPCLIENT02` i `ADMIN-PC` (też bez minidrivera Yubico) nie | CHUID i CCC od nowa przy każdym wydaniu (`c17c056`); niezweryfikowane — następne wydanie musi zadziałać na `DPCLIENT02` |
 | R-10 | Wbudowany sterownik PIV Windows może odrzucić kartę (`NTE_BAD_KEYSET`) z przyczyny, której nie da się przeczytać — w Blinky nikt jej nie ustalił | 0026 zaczyna od pomiaru na `DPCLIENT02`; hipotezy sprawdzane po jednej, z wynikiem w [12](12-hardware-notes.md) |
 | R-09 | Keytab jest równoważny hasłu konta usługi, a D-28 przesyła go przez formularz web | tylko Admin, tylko TLS, zapieczętowany KEK-iem, nigdy nie zwracany ani logowany, na dysk tylko do tmpfs `600`, każda podmiana w audycie; w interfejsie „zastąp", bez „pokaż" |
 | R-08 | Negotiate na Kestrelu w kontenerze linuksowym wymaga keytaba dla SPN `HTTP/blinkylite…` i działającego `krb5.conf`; bez tego stacja dostaje 401 bez wyjaśnienia i wygląda to na błąd klienta | 0025: wymagania keytaba w [11](11-wymagania-i-wdrozenie.md) **przed** kodem; logowanie hasłem zostaje jako droga zapasowa |
