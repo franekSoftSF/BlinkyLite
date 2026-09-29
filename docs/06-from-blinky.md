@@ -107,6 +107,6 @@ językach zamiast ze słownika PL/EN w kodzie.
 |---|---|
 | CertEnroll `IX509CertificateRequestCmc` z PKCS#10 podpisanym na karcie | Blinky budował CMC ręcznie; trzeba potwierdzić, że `InitializeFromInnerRequest` na zdekodowanym PKCS#10 nie wymaga klucza prywatnego |
 | Build i działanie na **Windows ARM64** | Blinky budował tylko `win-x64`; WinSCard i CertEnroll są natywne, ale nikt tego nie uruchomił |
-| Usługa Windows w paczce MSIX | Blinky instalował się z MSI; `desktop6:Service` na Windows Server nikt tu nie sprawdzał |
+| ~~Usługa Windows w paczce MSIX~~ | **Odpada (D-38).** Blinky instalował się z MSI; `desktop6:Service` na Windows Server nikt tu nie sprawdził i już nie sprawdzi — serwer jest tylko obrazem Dockera |
 | Losowy, przechowywany MK zamiast wyprowadzanego | inna ścieżka niż w Blinky; PRINTED + ADMIN DATA ta sama |
 | Moduł PowerShell na pwsh 7.6 / .NET 10 | nowy komponent |

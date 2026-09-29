@@ -41,7 +41,7 @@
     "phase": 2,
     "phaseTitle": "Wydanie",
     "state": "open",
-    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na DPCLIENT01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. nginx na 443 z konsola web wdrozony (0055 partly-done). Drugi skladnik TOTP napisany i przetestowany bez AD (0027 done-unverified). Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031), wydanie z PowerShell (0040). Przegladarka web z lista, PUK, szczegolami i audytem oraz weryfikacja klucza w WPF/PowerShell (0030 done-unverified). Odblokowanie PIN przez telefon: kod, zatwierdzenie w konsoli i PUK pobrany przez stacje, nigdy wypowiedziany (0057 done-unverified). 566 testow jednostkowych, 120 bazodanowych.",
+    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na DPCLIENT01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. nginx na 443 z konsola web wdrozony (0055 partly-done). Drugi skladnik TOTP napisany i przetestowany bez AD (0027 done-unverified). Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031), wydanie z PowerShell (0040). Przegladarka web z lista, PUK, szczegolami i audytem oraz weryfikacja klucza w WPF/PowerShell (0030 done-unverified). Odblokowanie PIN przez telefon: kod, zatwierdzenie w konsoli i PUK pobrany przez stacje, nigdy wypowiedziany (0057 done-unverified). Serwer wydawany tylko jako obraz Dockera - usluga Windows w MSIX odpada (D-38, patch 0051 usuniety). 570 testow jednostkowych, 120 bazodanowych.",
     "nothingIssuedYet": false
   },
   "stateLegend": {
@@ -246,7 +246,7 @@
     {
       "id": "D-11",
       "choice": "MSIX: klient bundle x64+ARM64, serwer Windows z usługą; moduł PS jako nupkg",
-      "state": "locked",
+      "state": "superseded-in-part",
       "decidedOn": "2026-09-19",
       "by": "owner"
     },
@@ -429,6 +429,12 @@
       "choice": "Zdalne odblokowanie PIN: aplikacja pyta serwer, operator zatwierdza w konsoli. Karta nie ma challenge-response dla PUK-a, wiec kazda \"liczba do przepisania\" bylaby samym PUK-iem - zamiast tego kod przez telefon, zatwierdzenie z powodem i koperta pobrana przez stacje raz. Trzy endpointy bez tokenu (z zablokowanym PIN-em nie ma czym sie zalogowac), decyduja te same role co odsloniecie PUK-a, bez rotacji PUK-a i bez cmdletow",
       "state": "locked",
       "decidedOn": "2026-09-29"
+    },
+    {
+      "id": "D-38",
+      "choice": "Serwer jest wydawany WYLACZNIE jako obraz Dockera. Usluga Windows w paczce MSIX (0051) odpada wraz z ryzykiem R-05: dwa sposoby instalacji to dwa zestawy sciezek, praw do plikow i zrodel sekretow, z ktorych jeden bywa sprawdzany raz na kwartal, a serwer jest czystym net10.0 i nic w nim nie potrzebuje Windows. Windows zostaje po stronie stacji - klient, modul PowerShell i odblokowanie PIN.",
+      "state": "locked",
+      "decidedOn": "2026-09-29"
     }
   ],
   "openQuestions": [
@@ -531,7 +537,8 @@
     {
       "id": "R-05",
       "impact": "Usługa Windows w MSIX (desktop6:Service) na docelowym Windows Server",
-      "handling": "0051 z zapisaną rezerwą: skrypt instalacyjny"
+      "handling": "Zamkniete 2026-09-29 przez D-38: uslugi Windows w MSIX nie bedzie, bo serwera na Windows nie bedzie. Zostaje jako zapis, bo to ryzyko wyznaczalo zakres fazy 5.",
+      "state": "closed"
     },
     {
       "id": "R-06",
@@ -733,14 +740,6 @@
       "proof": "2026-09-20: docker/Dockerfile (Ubuntu 24.04 + libldap2 + libgssapi-krb5-2, uzytkownik nieuprzywilejowany), docker-compose.yml (postgres z rolami i haslami z Docker secrets, jednorazowy kontener migrate jako owner, serwer jako app), .dockerignore, scripts/dev-secrets.sh i dev-certs.sh, .env.example, docs/11. Uruchomione od zera na tej maszynie: baza zdrowa, 5 migracji w kontenerze, /health po HTTPS, schema ok, /api/auth/me bez tokenu 401, logowanie przy nieosiagalnym DC -> 503 error.directory.unavailable (libldap laduje sie naprawde). Pierwsze wdrozenie na prawdziwym Linuksie (LXC na Proxmoxie) pokazalo, ze kontener bazy uruchamia skrypty startowe jako uid 999 i nie mogl przeczytac sekretow nalezacych do uid 1654 - ustawil rolom puste hasla i zglosil sukces. Poprawione: hasla bazy 999:1654 mode 640, skrypt sprawdza czytelnosc i odmawia pustego hasla, ostrzezenie o prawach patrzy juz tylko na dostep 'dla innych'. 2026-09-20: wdrozone na kontenerze LXC 10.0.20.89 (Ubuntu 24.04, Docker 29.1.3, overlay2 na LVM). Logowanie kontem domenowym zwrocilo token z rola Admin; audyt ma auth.denied i auth.login; has_column_privilege dla puk_envelope = f."
     },
     {
-      "id": "0051",
-      "phase": 5,
-      "title": "Serwer Windows — MSIX",
-      "state": "open",
-      "owner": "cloud-ai",
-      "proof": null
-    },
-    {
       "id": "0052",
       "phase": 5,
       "title": "Klient — MSIX",
@@ -811,11 +810,6 @@
       "what": "0002: przeglad funkcji bl_*",
       "why": "DoD sprawdzal autor",
       "when": "przeglad przed 0020"
-    },
-    {
-      "what": "0003: TLS Kestrela z certyfikatem z magazynu Windows",
-      "why": "sprawdzony tylko certyfikat deweloperski z pliku",
-      "when": "0051"
     },
     {
       "what": "0026/R-11: swiezy CHUID przy ponownym wydaniu",

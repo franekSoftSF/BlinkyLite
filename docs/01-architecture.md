@@ -42,7 +42,7 @@ flowchart LR
         ENG --> CR
     end
 
-    subgraph SRV["Serwer — Docker albo usługa Windows"]
+    subgraph SRV["Serwer — Docker"]
         API["BlinkyLite.Server<br/>Kestrel, REST"]
         DB[("PostgreSQL")]
         API --> DB
@@ -82,18 +82,24 @@ ADCS na podstawie AD. Działający w labie ręczny builder CMC z Blinky
 
 ## Warianty wdrożenia serwera
 
-| | Docker | Windows |
-|---|---|---|
-| Host | Linux, `docker compose` | Windows Server, usługa (`UseWindowsService`) |
-| Obraz / instalator | `mcr.microsoft.com/dotnet/aspnet:10.0` + `libldap` | **MSIX** z usługą Windows |
-| PostgreSQL | kontener w compose albo zewnętrzny | zewnętrzny / lokalna instalacja |
-| TLS | Kestrel, certyfikat z wolumenu | Kestrel, certyfikat z magazynu `LocalMachine\My` |
-| KEK | zmienna / Docker secret | plik chroniony DPAPI (maszyna) w `%ProgramData%\BlinkyLite` |
-| Konfiguracja | `appsettings.json` z wolumenu + env | `%ProgramData%\BlinkyLite\appsettings.json` — katalog paczki MSIX jest tylko do odczytu |
-| Logowanie AD | LDAPS bind | LDAPS bind |
+| | Docker |
+|---|---|
+| Host | Linux, `docker compose` |
+| Obraz | `mcr.microsoft.com/dotnet/aspnet:10.0` + `libldap` |
+| PostgreSQL | kontener w compose albo zewnętrzny |
+| TLS | Kestrel, certyfikat z wolumenu |
+| KEK | zmienna albo Docker secret |
+| Konfiguracja | `appsettings.json` z wolumenu + env |
+| Logowanie AD | LDAPS bind |
 
-Konfiguracja jest ta sama (`appsettings.json` + zmienne `BLINKYLITE__…`);
-różni się tylko źródło sekretów i sposób startu. Migracje bazy uruchamia
+**Jeden sposób, nie dwa (D-38).** Serwer był kiedyś planowany również jako
+usługa Windows w paczce MSIX; to odpada. Dwa sposoby instalacji to dwa
+zestawy ścieżek, praw do plików i źródeł sekretów, z których jeden jest
+sprawdzany rzadko — a serwer i tak jest czystym `net10.0` i nic w nim nie
+potrzebuje Windows. Windows zostaje po stronie stacji: klient, moduł
+PowerShell i odblokowanie PIN.
+
+Migracje bazy uruchamia
 serwer z `--migrate` na osobnym koncie właściciela schematu — patrz
 [07 — Baza danych](07-database.md#migracje). Profile wydania (szablon ADCS,
 CA, algorytm, polityka PIN/touch) i mapowanie grup AD na role są sekcjami
@@ -105,7 +111,6 @@ CA, algorytm, polityka PIN/touch) i mapowanie grup AD na role są sekcjami
 |---|---|---|
 | `BlinkyLite-Unlock-<wersja>-x64.msix` | okno „Odblokuj PIN" dla posiadacza klucza (0056) | osobna paczka, bo inna publiczność: link jest **na stronie logowania** konsoli web, przed zalogowaniem. Bez aliasu, bez modułu, bez silnika wydania |
 | `BlinkyLite-Client-<wersja>-x64.msix` | WPF + silnik, CardLab w wydaniu **stacji** i moduł PowerShell (D-35) | skrót na pulpicie (`desktop7:Shortcut`); aliasy `blinkylite` i `blinkylite-cardlab` w cmd — MSIX nie zmienia `PATH`, alias jest jego sposobem, żeby w nim być; na razie tylko `win-x64`, ARM64 dojdzie jako bundle. Pobierany ze strony **Narzędzia** w konsoli web. Buduje `packaging/client/Build-Msix.ps1` |
-| `BlinkyLite.Server.msix` | serwer jako usługa (`desktop6:Service`) | wymaga Windows Server 2022 / Windows 10 2004+ i ograniczonej zdolności `packagedServices`; ryzyko R-05 |
 | moduł PowerShell | **w MSIX klienta**, w `Modules\BlinkyLite` | pliki paczki leżą w `WindowsApps`, poza `PSModulePath`, a MSIX nie ma kroku instalacji — więc aplikacja kopiuje moduł przy starcie do `Dokumenty\PowerShell\Modules\BlinkyLite\<wersja>` użytkownika (`ModuleInstaller`). Odwołuje `.nupkg` z D-11 (D-35) |
 
 Wszystkie paczki podpisane certyfikatem code signing z firmowego ADCS;

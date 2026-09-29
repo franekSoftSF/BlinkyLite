@@ -132,9 +132,10 @@ Connection string w konfiguracji nie ma hasła; serwer dokleja je w pamięci.
   KEK-iem i hasłem bazy w plikach startuje, loguje `schema ok` i odpowiada na
   `/health`, a w pliku `.dpapi` nie widać wartości.
 
-Stan `partly-done`: ostrzeżenie o zbyt szerokich prawach pliku działa na
-Linuksie (prawa POSIX), a na Windows ACL ustawia i sprawdza instalator —
-projekt serwera jest wieloplatformowy i nie ma w nim API do ACL (0051).
+Ostrzeżenie o zbyt szerokich prawach pliku działa na Linuksie (prawa POSIX),
+czyli wszędzie, gdzie serwer stoi — od D-38 nie ma innego miejsca. Plik DPAPI
+i `--protect-secret` zostają w kodzie, ale żadne wspierane wdrożenie ich nie
+używa; do rozstrzygnięcia, czy je usunąć.
 
 Od 0010 (20 września 2026) w repozytorium jest warstwa PIV: 34 pliki z
 `Blinky.Piv` (PC/SC, komendy APDU, management key, obiekty karty, weryfikacja
@@ -358,7 +359,6 @@ wersji, przez którą przeszło wydanie.
 | 0040 | 4 | Moduł PowerShell | `partly-done` |
 | 0050 | 5 | Docker | `done` |
 | 0055 | 5 | nginx w Dockerze | `partly-done` |
-| 0051 | 5 | Serwer Windows — MSIX | `open` |
 | 0052 | 5 | Klient — MSIX | `partly-done` |
 | 0056 | 3 | Odblokowanie PIN dla posiadacza klucza | `done-unverified` |
 | 0057 | 3 | Odblokowanie PIN przez telefon | `done-unverified` |
@@ -384,7 +384,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-08 | JWT HS256, 30 min, bez refresh tokenu |
 | D-09 | Logowanie przez LDAPS bind |
 | D-10 | Moduł PowerShell binarny na wspólnym silniku |
-| D-11 | MSIX: klient bundle x64+ARM64, serwer Windows z usługą; moduł PS jako `.nupkg` |
+| D-11 | MSIX: klient bundle x64+ARM64, ~~serwer Windows z usługą~~ (odwołane przez D-38); moduł PS jako `.nupkg` (odwołane przez D-35) |
 | D-12 | Języki EN, DE, SV, PL; serwer zwraca kody, klient tłumaczy |
 | D-13 | Profile i role w `appsettings.json`, bez ekranu edycji |
 | D-14 | Helpdesk: lista użytkownik — serial — data; PUK tylko po wybraniu jednego wpisu (WPF) lub wskazaniu w PowerShell; bez szczegółów i weryfikacji |
@@ -403,6 +403,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-27 | Kerberos dla **wszystkich** klientów (web, WPF, PowerShell) i dla **każdej** nazwy serwisu |
 | D-26 | Całość w Dockerze **za nginx**; TLS także między nginx a serwerem |
 | D-37 | **Zdalne odblokowanie PIN: aplikacja pyta serwer, operator zatwierdza w konsoli.** Karta nie ma challenge–response dla PUK-a (`RESET RETRY COUNTER` bierze tylko PUK, `SET PIN RETRIES` wymaga działającego PIN-u), więc każda „liczba do przepisania" byłaby samym PUK-iem — zamiast tego kod przez telefon, zatwierdzenie z powodem i koperta pobrana przez stację raz. Trzy endpointy bez tokenu, decyzja dla tych samych ról co odsłonięcie PUK-a, bez rotacji PUK-a i bez cmdletów |
+| D-38 | **Serwer tylko jako obraz Dockera.** Usługa Windows w MSIX (0051) i ryzyko R-05 odpadają: dwa sposoby instalacji to dwa zestawy ścieżek, praw i źródeł sekretów, z których jeden bywa sprawdzany raz na kwartał, a serwer jest czystym `net10.0`. Windows zostaje po stronie stacji |
 | D-36 | **Odblokowanie PIN PUK-iem wchodzi do produktu** jako osobna aplikacja (`BlinkyLite.Unlock`) i osobny MSIX ze strony logowania — bez logowania i bez serwera; zmiana PUK i reset dalej u Blinky. Instalator klienta widoczny dopiero po zalogowaniu; wspólny wygląd z `BlinkyLite.Ui` |
 | D-35 | Instalator stacji: **MSIX x64** do pobrania z konsoli web (Narzędzia); skrót na pulpicie, `blinkylite-cardlab` w cmd przez alias aplikacji, moduł PowerShell w paczce, kopiowany dla użytkownika przy starcie; CardLab w wydaniu **Station** — bez `reset`/`personalise`/`eobo-probe`; podpis certyfikatem z firmowego ADCS. Odwołuje `.nupkg` z D-11 |
 | D-34 | Licencja **Apache-2.0**, jak Blinky; dane labu w dokumentacji zanonimizowane (`DIGITALWORKSPACE`, `dw-ad`, `jan.kowalski`) |
@@ -445,7 +446,7 @@ Zamknięte 2026-09-19, decyzje właściciela:
 | ID | Ryzyko | Co z tym robimy |
 |---|---|---|
 | R-03 | WinSCard / CertEnroll z .NET 10 na Windows ARM64 nikt nie uruchomił | 0001 publikuje `win-arm64`, 0053 dowodzi na sprzęcie |
-| R-05 | Usługa Windows w MSIX (`desktop6:Service`) na docelowym Windows Server | 0051 z zapisaną rezerwą: skrypt instalacyjny |
+| R-05 | **Zamknięte** 29 września 2026 przez D-38: usługi Windows w MSIX nie będzie, bo serwera na Windows nie będzie | zamknięte; zostaje jako zapis, bo to ryzyko wyznaczało zakres fazy 5 |
 | R-06 | Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na uprawnienia Graph i ruchu wychodzącego z serwera | wymagania spisane w [09](09-expiry-notification.md#co-przygotowuje-administrator-raz); konto bez Entra → audyt, nie awaria |
 | R-12 | Kto zna hasło operatora **przed** jego pierwszym logowaniem, może skonfigurować drugi składnik na swoim telefonie | pierwsze logowanie zaraz po nadaniu roli; `totp.enrolled` w audycie z adresem; właściciel, który zamiast kodu QR dostaje pytanie o kod, zgłasza to — reset robi inny Admin |
 | R-11 | Karta wydana ponownie pod **starym CHUID** nie jest rozpoznawana na stacjach, które znały ją z poprzednim kluczem — 21.09 ta sama karta działała na `DPCLIENT01`, a na `DPCLIENT02` i `ADMIN-PC` (też bez minidrivera Yubico) nie | CHUID i CCC od nowa przy każdym wydaniu (`c17c056`); niezweryfikowane — następne wydanie musi zadziałać na `DPCLIENT02` |
@@ -460,7 +461,7 @@ Zamknięte 2026-09-19, decyzje właściciela:
 |---|---|---|
 | 0001: klient `win-arm64` uruchomiony | binarka ma poprawny nagłówek ARM64, ale nie startowała na maszynie ARM64 | 0053 |
 | 0002: przegląd funkcji `bl_*` | DoD sprawdzał autor; reguły stanów i uprawnień warto, żeby przeczytał ktoś drugi | przegląd przed 0020 |
-| 0003: TLS Kestrela z certyfikatem z magazynu Windows | sprawdzony tylko certyfikat deweloperski z pliku | 0051 |
+| ~~0003: TLS Kestrela z certyfikatem z magazynu Windows~~ | **nie dotyczy od D-38** — serwer stoi tylko w Dockerze, gdzie certyfikat jest plikiem z wolumenu. Sprawdzony certyfikat z pliku, i to jest jedyny przypadek | — |
 
 Rzeczy, których Blinky nie sprawdził, a BlinkyLite będzie musiał:
 [06 — Co przychodzi z Blinky](06-from-blinky.md#czego-blinky-nie-sprawdził-a-blinkylite-potrzebuje).

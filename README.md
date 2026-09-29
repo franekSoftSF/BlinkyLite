@@ -65,7 +65,7 @@ sprawdzone na prawdziwych kluczach — patrz
 │        │                      │     Active Directory
 │        ▼                      │  ◄── LDAPS: logowanie,
 │   PostgreSQL                  │       grupy, wyszukiwanie
-│  Docker  albo  usługa Windows │       użytkownika docelowego
+│      Docker (Linux)           │       użytkownika docelowego
 └───────────────────────────────┘
 ```
 
@@ -111,7 +111,7 @@ powodem i numerem seryjnym klucza. Dziennik audytu nie ma operacji `DELETE`.
 | `BlinkyLite.Issuance` | biblioteka `net10.0-windows` | stacja | Silnik wydania: personalizacja, atestacja, CMC/EOBO, klient API |
 | `BlinkyLite.Client` | WPF `net10.0-windows` | stacja x64 / ARM64 | Wydawanie i przeglądarka wydań |
 | `BlinkyLite.PowerShell` | moduł binarny | stacja, pwsh 7.6+ | Wydawanie i odczyt bez WPF |
-| `BlinkyLite.Server` | ASP.NET Core (Kestrel) | Docker / usługa Windows (MSIX) | Logowanie AD → JWT, API, szyfrowanie sekretów; NHibernate do odczytu, procedury SQL do zapisu |
+| `BlinkyLite.Server` | ASP.NET Core (Kestrel) | obraz Dockera | Logowanie AD → JWT, API, szyfrowanie sekretów; NHibernate do odczytu, procedury SQL do zapisu |
 
 ## Baza danych
 
@@ -148,7 +148,7 @@ użytkownika. Brak tłumaczenia to czerwony build —
 - Prawo Enroll dla operatorów; zalecane *Restricted Enrollment Agents* na CA.
 
 **Serwer**
-- Docker (Linux) **albo** Windows Server z usługą Windows.
+- Docker (Linux). Serwer nie jest wydawany jako usługa Windows (D-38).
 - PostgreSQL 16+.
 - Konto serwisowe tylko do odczytu w AD (wyszukiwanie użytkowników) i LDAPS.
 
@@ -167,11 +167,6 @@ curl -k https://localhost/health
 
 Pełna lista wymagań (serwer, AD, ADCS, stacja) i kroki wdrożenia:
 [docs/11-wymagania-i-wdrozenie.md](docs/11-wymagania-i-wdrozenie.md).
-
-```powershell
-# serwer jako usługa Windows (MSIX), konfiguracja w %ProgramData%\BlinkyLite
-Add-AppxPackage .\BlinkyLite.Server.msix
-```
 
 ```powershell
 # stacja: instalator z konsoli web (strona Narzędzia) - aplikacja ze skrótem na

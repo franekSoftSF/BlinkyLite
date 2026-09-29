@@ -215,19 +215,19 @@ Serwer ma cztery sekrety i **żaden z nich nie może leżeć jawnie na dysku**
 (D-18). Dlatego sposób ich przechowywania jest zaplanowany teraz, a nie przy
 pakowaniu instalatora — patch **0005**, jeszcze w fazie 0.
 
-| Sekret | Do czego | Docker | Windows (MSIX) |
-|---|---|---|---|
-| KEK (per wersja) | koperty PUK i management key | Docker secret `/run/secrets/blinkylite-kek-1` | plik zaszyfrowany DPAPI w zakresie **maszyny**, w `%ProgramData%\BlinkyLite\secrets\` |
-| Klucz podpisu JWT | tokeny operatorów | Docker secret | jak wyżej |
-| Hasło konta serwisowego LDAP | wyszukiwanie w AD | Docker secret | jak wyżej |
-| Hasło do bazy (`App`) | połączenie z PostgreSQL | Docker secret | jak wyżej |
+| Sekret | Do czego | Skąd |
+|---|---|---|
+| KEK (per wersja) | koperty PUK i management key | Docker secret `/run/secrets/blinkylite-kek-1` |
+| Klucz podpisu JWT | tokeny operatorów | Docker secret |
+| Hasło konta serwisowego LDAP | wyszukiwanie w AD | Docker secret |
+| Hasło do bazy (`App`) | połączenie z PostgreSQL | Docker secret |
 
 Zasady, które z tego wynikają:
 
 - **Serwer nie odczyta sekretu spoza swojego magazynu.** Kolejność źródeł:
   plik wskazany w `Secrets:Files:<nazwa>`, potem `Secrets:Directory` (domyślnie
-  `/run/secrets`, na Windows `%ProgramData%\BlinkyLite\secrets`) — najpierw
-  `blinkylite-<nazwa>.dpapi`, potem `blinkylite-<nazwa>` — a na końcu zmienna
+  `/run/secrets`) — najpierw `blinkylite-<nazwa>.dpapi`, potem
+  `blinkylite-<nazwa>` — a na końcu zmienna
   `BLINKYLITE_SECRET_<NAZWA>`. `appsettings.json` **nie jest** źródłem
   sekretów: wartość wpisana tam wprost zatrzymuje start z nazwą klucza (samej
   wartości komunikat nie pokazuje).
@@ -235,15 +235,13 @@ Zasady, które z tego wynikają:
   `db-app-password`, `db-owner-password`, `kek-<wersja>`.
 - **Connection string w konfiguracji nie ma hasła.** Serwer skleja je z
   sekretem dopiero w pamięci.
-- Plik DPAPI tworzy sam serwer:
-  `BlinkyLite.Server.exe --protect-secret jwt-signing-key` czyta wartość ze
-  standardowego wejścia i zapisuje ją zaszyfrowaną w `Secrets:Directory`.
-- **DPAPI w zakresie maszyny, nie użytkownika:** usługa i tak działa jako
-  konto maszynowe, a zakres użytkownika psuje się przy każdej zmianie konta
-  usługi (Blinky przerobił to przy imporcie klucza).
-- Plik sekretu ma ACL tylko dla konta usługi i administratorów; instalator to
-  ustawia i sprawdza przy starcie, a przy zbyt szerokich prawach loguje
-  ostrzeżenie.
+- **Plik DPAPI: kod został, wdrożenie nie.** Serwer dalej umie czytać
+  `blinkylite-<nazwa>.dpapi` i tworzyć go przez
+  `BlinkyLite.Server.exe --protect-secret <nazwa>`, ale od **D-38** serwer stoi
+  wyłącznie w Dockerze, gdzie DPAPI nie istnieje. Żadne wspierane wdrożenie z
+  tego nie korzysta; czy usunąć tę ścieżkę, jest do rozstrzygnięcia.
+- Plik sekretu jest czytelny tylko dla konta, na którym działa serwer; przy
+  zbyt szerokich prawach serwer loguje ostrzeżenie przy starcie.
 - **KEK jest wersjonowany** (`kek_version`); nowy KEK szyfruje nowe koperty,
   stare czytane starym. Rotacja = dodanie wersji; przepisanie starych kopert
   to osobne narzędzie, poza zakresem 1.0.

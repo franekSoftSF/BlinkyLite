@@ -2,8 +2,8 @@
 
 BlinkyLite — narzędzie do wydawania kluczy YubiKey 5 PIV z Microsoft ADCS
 przez Enroll On Behalf Of. .NET 10: klient WPF (`win-x64`, `win-arm64`) i
-moduł PowerShell na wspólnym silniku, serwer Kestrel + PostgreSQL (Docker albo
-usługa Windows), logowanie AD → JWT, role Admin / SecurityOfficer / Helpdesk.
+moduł PowerShell na wspólnym silniku, serwer Kestrel + PostgreSQL **tylko w
+Dockerze** (D-38), logowanie AD → JWT, role Admin / SecurityOfficer / Helpdesk.
 **Nie jest CMS-em.** Robi trzy rzeczy: **wydaje** klucz, pozwala go
 **zweryfikować** (tylko odczyt) i pozwala posiadaczowi **odblokować PIN**
 PUK-iem z helpdesku (`src/BlinkyLite.Unlock`, 0056, D-36 — osobna aplikacja,
@@ -50,7 +50,7 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `tests/BlinkyLite.UnitTests` | xunit, bez sprzętu i bez bazy |
 | `tests/BlinkyLite.DbTests` | xunit na prawdziwym PostgreSQL — funkcje, uprawnienia, migracje |
 | `tools/BlinkyLite.CardLab` | narzędzie warsztatowe: czyta kartę i uruchamia silnik wydania przy prawdziwym kluczu. Dwa wydania: **Lab** (wszystko, z `reset`) poza instalatorami i **Station** (`-p:CardLabEdition=Station`, bez `reset`, `personalise`, `eobo-probe`) w MSIX klienta (D-35) |
-| `packaging/` | MSIX klienta (`client/Build-Msix.ps1`, manifest, ikony) i instrukcja podpisu; serwer z usługą — 0051 |
+| `packaging/` | MSIX klienta i aplikacji do odblokowania (`client/Build-Msix.ps1`, manifesty, ikony) oraz instrukcja podpisu. Serwera tu nie ma — jest obrazem Dockera (D-38) |
 | `brand/` | znak i logo w SVG; PNG/ICO generuje `brand/build-assets.mjs` |
 | `docs/` | numerowane dokumenty + `STATUS.md` i `status.json` |
 

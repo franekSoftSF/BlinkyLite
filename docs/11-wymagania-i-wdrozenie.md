@@ -9,7 +9,7 @@ stacja; serwer trzyma sekrety, audyt i wie, kto co dostał.
 
 | Rzecz | Wymaganie | Dlaczego tyle |
 |---|---|---|
-| System | Linux z Dockerem (obraz stoi na Ubuntu 24.04) **albo** Windows Server 2022/2025 | serwer to czyste `net10.0`; Windows jest potrzebny tylko stacji |
+| System | Linux z Dockerem (obraz stoi na Ubuntu 24.04) | serwer jest wydawany wyłącznie jako obraz Dockera (D-38); Windows jest potrzebny tylko stacji |
 | Docker | Engine 24+ z `docker compose` | `depends_on: service_completed_successfully` dla migracji |
 | CPU / RAM | 2 rdzenie, 2 GB | serwer ~200 MB, PostgreSQL resztę |
 | Dysk | 20 GB na start | baza rośnie z wydaniami; audytu nie kasujemy |
