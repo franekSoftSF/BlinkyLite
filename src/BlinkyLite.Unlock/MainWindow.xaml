@@ -105,6 +105,9 @@
 
                         <TextBlock Text="{l:Loc unlock.remote.server}" Style="{StaticResource FieldLabel}" />
                         <TextBox x:Name="ServerBox" TextChanged="Typed" />
+                        <!-- Filled only when an administrator set the address
+                             (0057); otherwise there is nothing to say here. -->
+                        <TextBlock x:Name="ServerHint" Style="{StaticResource Hint}" Margin="2,6,0,0" TextWrapping="Wrap" />
 
                         <!-- The code, once there is one: big, spaced and in a
                              mono font, because it is going to be read out over

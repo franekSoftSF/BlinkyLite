@@ -850,4 +850,7 @@
   <data name="web.unlock.decided" xml:space="preserve">
     <value>Done. The workstation carries on by itself.</value>
   </data>
+  <data name="client.server.policy" xml:space="preserve">
+    <value>Your administrator set this address. Nobody here has to type it, and nobody here can change it.</value>
+  </data>
 </root>

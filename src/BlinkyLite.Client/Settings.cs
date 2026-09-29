@@ -1,5 +1,7 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using BlinkyLite.Ui.Configuration;
 using Serilog;
 
 namespace BlinkyLite.Client;
@@ -29,6 +31,14 @@ public sealed record ClientSettings(
     string? Language = null,
     string? Theme = null)
 {
+    /// <summary>
+    /// The address came from Group Policy (0057) and is not the operator's to
+    /// change. Never written to the file: a flag that survived in JSON would
+    /// lock the box on a machine that no policy applies to any more.
+    /// </summary>
+    [JsonIgnore]
+    public bool ServerFromPolicy { get; private init; }
+
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true,
@@ -44,9 +54,15 @@ public sealed record ClientSettings(
     {
         try
         {
-            return File.Exists(Path)
+            var settings = File.Exists(Path)
                 ? JsonSerializer.Deserialize<ClientSettings>(File.ReadAllText(Path), Json) ?? new ClientSettings()
                 : new ClientSettings();
+
+            // The same policy the unblock tool reads: one address for one
+            // machine, whichever window asks (0057).
+            return Managed() is { } managed
+                ? settings with { Server = managed.Value, ServerFromPolicy = true }
+                : settings;
         }
         catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
         {
@@ -54,8 +70,22 @@ public sealed record ClientSettings(
             // not a reason to refuse to start.
             Log.Warning(e, "Nie da sie odczytac {Path}; zaczynam od pustych ustawien", Path);
 
-            return new ClientSettings();
+            return Managed() is { } managed
+                ? new ClientSettings(managed.Value) { ServerFromPolicy = true }
+                : new ClientSettings();
         }
+    }
+
+    private static ManagedSetting? Managed()
+    {
+        if (ManagedSettings.Server is not { } managed)
+        {
+            return null;
+        }
+
+        Log.Information("Adres serwera z polityki ({Scope})", managed.Scope);
+
+        return managed;
     }
 
     public void Save()

@@ -36,6 +36,9 @@
     <!-- For the palette alone: the colours are C# so a test can count their
          contrast, which XAML would make impossible (D-20). -->
     <ProjectReference Include="..\..\src\BlinkyLite.Client\BlinkyLite.Client.csproj" />
+    <!-- For the settings alone: where the two windows look for the server's
+         address is a rule worth a test (0057). -->
+    <ProjectReference Include="..\..\src\BlinkyLite.Unlock\BlinkyLite.Unlock.csproj" />
     <ProjectReference Include="..\..\src\BlinkyLite.Server\BlinkyLite.Server.csproj" />
   </ItemGroup>
 

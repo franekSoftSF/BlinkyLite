@@ -850,4 +850,7 @@
   <data name="web.unlock.decided" xml:space="preserve">
     <value>Klart. Arbetsstationen fortsätter själv.</value>
   </data>
+  <data name="client.server.policy" xml:space="preserve">
+    <value>Din administratör har angett adressen. Ingen här behöver skriva in den och ingen kan ändra den.</value>
+  </data>
 </root>

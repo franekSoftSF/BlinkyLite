@@ -850,4 +850,7 @@
   <data name="web.unlock.decided" xml:space="preserve">
     <value>Gotowe. Stacja działa dalej sama.</value>
   </data>
+  <data name="client.server.policy" xml:space="preserve">
+    <value>Adres ustawił administrator. Nikt tutaj nie musi go wpisywać ani nie może go zmienić.</value>
+  </data>
 </root>

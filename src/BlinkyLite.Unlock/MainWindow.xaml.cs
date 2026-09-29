@@ -48,6 +48,13 @@ public partial class MainWindow : Window
             .IndexOf(Strings.Current.Culture.TwoLetterISOLanguageName);
 
         ServerBox.Text = App.Settings.Server ?? "https://";
+        if (App.Settings.FromPolicy)
+        {
+            // An address an administrator set is not a suggestion, and the
+            // person standing here with a blocked PIN has no way to judge it.
+            ServerBox.IsReadOnly = true;
+            ServerHint.Text = Text.Of("client.server.policy");
+        }
 
         Loaded += (_, _) =>
         {

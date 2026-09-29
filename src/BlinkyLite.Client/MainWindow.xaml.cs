@@ -66,6 +66,11 @@ public partial class MainWindow : Window
             .IndexOf(Strings.Current.Culture.TwoLetterISOLanguageName);
 
         ServerBox.Text = App.Settings.Server ?? "https://";
+        if (App.Settings.ServerFromPolicy)
+        {
+            ServerBox.IsReadOnly = true;
+            ServerHint.Text = Text.Of("client.server.policy");
+        }
         UserBox.Text = App.Settings.Username
                        ?? Environment.UserDomainName + "\\" + Environment.UserName;
     }

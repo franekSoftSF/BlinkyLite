@@ -1,5 +1,7 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using BlinkyLite.Ui.Configuration;
 using Serilog;
 
 namespace BlinkyLite.Unlock;
@@ -11,17 +13,27 @@ namespace BlinkyLite.Unlock;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Two files, in this order: one under <c>%ProgramData%</c> that whoever
-/// deploys the station writes once, and one under the person's own profile
-/// with whatever they last typed. The machine-wide one is the point - a person
-/// with a blocked PIN should not have to know the address of anything.
+/// Three places, in this order: a Group Policy value
+/// (<see cref="ManagedSettings"/>), then the person's own profile with
+/// whatever they last typed, then a file under <c>%ProgramData%</c> that
+/// whoever deploys the station writes once. The first two exist because a
+/// person with a blocked PIN should not have to know the address of anything.
+/// </para>
+/// <para>
+/// The policy wins, and then the window stops asking: an address an
+/// administrator set is not a suggestion, and it decides where a request to
+/// unblock a key is sent.
 /// </para>
 /// <para>
 /// No token, no PUK, no PIN, ever. There is nothing else in here to be
 /// tempted by.
 /// </para>
 /// </remarks>
-public sealed record UnlockSettings(string? Server = null)
+/// <param name="FromPolicy">
+/// The address came from Group Policy, so the window shows it and refuses to
+/// let anybody change it.
+/// </param>
+public sealed record UnlockSettings(string? Server = null, [property: JsonIgnore] bool FromPolicy = false)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
@@ -41,16 +53,29 @@ public sealed record UnlockSettings(string? Server = null)
 
     public static UnlockSettings Load()
     {
+        if (ManagedSettings.Server is { } managed)
+        {
+            Log.Information("Adres serwera z polityki ({Scope})", managed.Scope);
+
+            return new UnlockSettings(managed.Value, FromPolicy: true);
+        }
+
         var machine = Read(MachinePath);
         var user = Read(UserPath);
 
-        // The person's own address wins, because they are the one standing
-        // here; the machine's is what they see when they have never typed one.
+        // The person's own address wins over the deployed file, because they
+        // are the one standing here; neither wins over a policy.
         return new UnlockSettings(user.Server ?? machine.Server);
     }
 
     public void Save()
     {
+        if (FromPolicy)
+        {
+            // Nothing to remember: the policy says it again at every start.
+            return;
+        }
+
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(UserPath)!);

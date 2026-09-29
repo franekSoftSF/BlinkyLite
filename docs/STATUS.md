@@ -12,7 +12,8 @@ MK i dziennik audytu dla Admina, a „Zweryfikuj klucz” w WPF i PowerShell —
 napisana i przetestowana, jeszcze nie sprawdzona w labie. Zablokowany PIN
 odblokowuje osobna aplikacja: PUK-iem z helpdesku (0056) albo przez telefon,
 z zatwierdzeniem w konsoli i PUK-iem, którego nikt nie wypowiada (0057).
-566 testów jednostkowych i 120 na PostgreSQL 16. Otwarte przed 1.0: ponowne
+Adres serwera dla obu okien ustawia administrator przez GPO, więc nikt go nie
+wpisuje. 570 testów jednostkowych i 120 na PostgreSQL 16. Otwarte przed 1.0: ponowne
 wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031),
 instalatory. Logowanie kontem Windows (0025) napisane, keytab w labie
 zweryfikowany, czeka na pierwsze logowanie ze stacji.

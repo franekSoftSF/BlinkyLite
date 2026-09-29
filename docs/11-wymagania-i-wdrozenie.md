@@ -282,16 +282,46 @@ certyfikatu EA, bez konta w BlinkyLite. Aplikacja `BlinkyLite.Unlock` z MSIX-a
 ze strony logowania robi to na dwa sposoby: z PUK-iem wpisanym z ręki albo
 przez telefon, z zatwierdzeniem w konsoli.
 
-Dla trybu telefonicznego warto wpisać adres serwera raz, maszynowo, żeby nikt
-z zablokowanym PIN-em nie musiał go znać — `%ProgramData%\BlinkyLite\unlock.json`:
+### Adres serwera z Group Policy
+
+Użytkownik z zablokowanym PIN-em nie powinien znać adresu czegokolwiek, więc
+adres ustawia administrator — jedną wartością w rejestrze, przez GPO:
+
+| Rzecz | Wartość |
+|---|---|
+| Klucz | `HKLM\SOFTWARE\Policies\BlinkyLite` (albo `HKCU\…` dla polityki użytkownika) |
+| Wartość | `Server`, typ `REG_SZ` |
+| Przykład | `https://blinkylite.digitalworkspace.example` |
+
+W konsoli GPO: **Computer Configuration → Preferences → Windows Settings →
+Registry → New → Registry Item**, akcja `Update`, gałąź `HKEY_LOCAL_MACHINE`,
+ścieżka `SOFTWARE\Policies\BlinkyLite`, nazwa `Server`, typ `REG_SZ`. Jedną
+wartością konfiguruje się całą flotę. To samo z wiersza poleceń, do testu na
+jednej stacji:
+
+```powershell
+New-Item -Path 'HKLM:\SOFTWARE\Policies\BlinkyLite' -Force |
+    New-ItemProperty -Name Server -PropertyType String `
+        -Value 'https://blinkylite.digitalworkspace.example' -Force
+```
+
+Wartość czytają **obie** aplikacje — `BlinkyLite.Unlock` i klient WPF — więc
+operator też nie wpisuje adresu. Kiedy jest ustawiona, pole adresu w oknie
+pokazuje ją tylko do odczytu, z wyjaśnieniem, że ustawił ją administrator, i
+nic nie zapisuje się w profilu: polityka mówi to samo przy każdym starcie.
+Klucz jest pod `Policies` celowo — maszyna wyjęta spod polityki przestaje być
+skonfigurowana, zamiast trzymać wczorajszy adres w nieskończoność.
+
+**Bez polityki** zostaje plik `%ProgramData%\BlinkyLite\unlock.json`, który
+można rozłożyć skryptem albo GPO Preferences (Files):
 
 ```json
 { "server": "https://blinkylite.digitalworkspace.example" }
 ```
 
-Adres wpisany przez użytkownika w okienku wygrywa i zapisuje się w jego
-profilu (`%AppData%\BlinkyLite\unlock.json`). Poza adresem nie ma tam nic —
-żadnego tokenu, PUK-a ani PIN-u.
+Kolejność: polityka → to, co użytkownik wpisał sam
+(`%AppData%\BlinkyLite\unlock.json`) → plik maszynowy. Poza adresem nie ma w
+tych plikach nic — żadnego tokenu, PUK-a ani PIN-u.
 
 ## 5. Uruchomienie stacku (dziś)
 

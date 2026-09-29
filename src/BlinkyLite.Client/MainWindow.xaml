@@ -102,7 +102,7 @@
                     <!-- What the address looks like, spelled out: the first operator
                          to use this window guessed the port wrong and was told that
                          the server had a problem. -->
-                    <TextBlock Text="{l:Loc client.server-hint}" Style="{StaticResource Hint}" Margin="2,6,0,16" />
+                    <TextBlock x:Name="ServerHint" Text="{l:Loc client.server-hint}" Style="{StaticResource Hint}" Margin="2,6,0,16" />
 
                     <!-- Kerberos (0025) first: on a domain machine it needs nothing
                          typed. The password below is the way round it. -->
