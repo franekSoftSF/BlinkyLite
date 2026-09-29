@@ -1,7 +1,6 @@
-using BlinkyLite.Piv;
 using BlinkyLite.Piv.Pcsc;
 
-namespace BlinkyLite.Issuance;
+namespace BlinkyLite.Piv;
 
 /// <summary>A token found in a reader, held open until it is disposed.</summary>
 public sealed class CardHandle : IDisposable
@@ -43,8 +42,10 @@ public sealed class NoCardException(string messageKey, string detail)
 /// Finding the token among whatever else is plugged into the machine.
 /// </summary>
 /// <remarks>
-/// Here rather than in each shell, because both of them get it wrong the same
-/// way: a desk has a badge reader and a token reader, and the token in a
+/// Here, next to the PC/SC layer rather than in the issuance engine, because
+/// the unlock tool needs a token too and has no business knowing how a
+/// certificate is issued (D-36). Not in each shell, because they get it wrong
+/// the same way: a desk has a badge reader and a token reader, and the token in a
 /// contact reader is not called "YubiKey" - it is called after the reader. So
 /// the choice is made by asking each card whether it answers the PIV applet,
 /// which writes nothing and costs one command.

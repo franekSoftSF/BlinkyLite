@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
-using BlinkyLite.Client.Localisation;
+using BlinkyLite.Ui.Localisation;
 
 namespace BlinkyLite.Client;
 

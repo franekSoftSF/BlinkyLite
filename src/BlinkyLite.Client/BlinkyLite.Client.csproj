@@ -32,6 +32,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BlinkyLite.Issuance\BlinkyLite.Issuance.csproj" />
+    <ProjectReference Include="..\BlinkyLite.Ui\BlinkyLite.Ui.csproj" />
   </ItemGroup>
 
 </Project>

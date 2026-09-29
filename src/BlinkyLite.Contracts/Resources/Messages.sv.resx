@@ -706,4 +706,58 @@
   <data name="web.tools.certificate" xml:space="preserve">
     <value>Ladda ned certifikat</value>
   </data>
+  <data name="unlock.title" xml:space="preserve">
+    <value>Lås upp PIN-kod</value>
+  </data>
+  <data name="unlock.explain" xml:space="preserve">
+    <value>Tre fel PIN-koder låser nyckeln. Be helpdesk om nyckelns PUK och ange en ny PIN-kod här. Inget annat på nyckeln ändras.</value>
+  </data>
+  <data name="unlock.step.card" xml:space="preserve">
+    <value>1. Sätt nyckeln i läsaren</value>
+  </data>
+  <data name="unlock.step.puk" xml:space="preserve">
+    <value>2. PUK från helpdesk</value>
+  </data>
+  <data name="unlock.step.pin" xml:space="preserve">
+    <value>3. Din nya PIN-kod</value>
+  </data>
+  <data name="unlock.puk.hint" xml:space="preserve">
+    <value>Åtta siffror. Helpdesk läser upp den för just den här nyckeln och begäran loggas.</value>
+  </data>
+  <data name="unlock.puk.needed" xml:space="preserve">
+    <value>Skriv in PUK som du fått.</value>
+  </data>
+  <data name="unlock.action" xml:space="preserve">
+    <value>Ange ny PIN-kod</value>
+  </data>
+  <data name="unlock.card.pin-blocked" xml:space="preserve">
+    <value>Nyckel {0} · PIN-koden är låst</value>
+  </data>
+  <data name="unlock.card.pin-ok" xml:space="preserve">
+    <value>Nyckel {0} · PIN-koden fungerar; här sätts ändå en ny</value>
+  </data>
+  <data name="unlock.card.puk-left" xml:space="preserve">
+    <value>{0} PUK-försök kvar</value>
+  </data>
+  <data name="unlock.card.puk-blocked" xml:space="preserve">
+    <value>Nyckelns PUK är också låst. Inget här hjälper – nyckeln måste utfärdas på nytt. Kontakta din administratör.</value>
+  </data>
+  <data name="unlock.card.no-puk" xml:space="preserve">
+    <value>Nyckeln har ingen PUK, så en låst PIN-kod kan inte låsas upp. Kontakta din administratör.</value>
+  </data>
+  <data name="unlock.puk.wrong" xml:space="preserve">
+    <value>PUK är fel. Försök kvar: {0}. När de är slut måste nyckeln utfärdas på nytt.</value>
+  </data>
+  <data name="unlock.done" xml:space="preserve">
+    <value>Klart. Den nya PIN-koden gäller nu – använd den för att logga in i Windows.</value>
+  </data>
+  <data name="web.tools.unlock" xml:space="preserve">
+    <value>BlinkyLite Unlock för Windows (x64)</value>
+  </data>
+  <data name="web.tools.unlock.explain" xml:space="preserve">
+    <value>För alla med låst PIN-kod: ett fönster, PUK från helpdesk, en ny PIN-kod. Det kan inte utfärda något.</value>
+  </data>
+  <data name="web.login.blocked-pin" xml:space="preserve">
+    <value>Är din PIN-kod låst?</value>
+  </data>
 </root>

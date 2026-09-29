@@ -706,4 +706,58 @@
   <data name="web.tools.certificate" xml:space="preserve">
     <value>Download certificate</value>
   </data>
+  <data name="unlock.title" xml:space="preserve">
+    <value>Unblock a PIN</value>
+  </data>
+  <data name="unlock.explain" xml:space="preserve">
+    <value>Three wrong PINs block the key. Ask the helpdesk for the PUK of this key, then set a new PIN here. Nothing else on the key changes.</value>
+  </data>
+  <data name="unlock.step.card" xml:space="preserve">
+    <value>1. Put the key in the reader</value>
+  </data>
+  <data name="unlock.step.puk" xml:space="preserve">
+    <value>2. PUK from the helpdesk</value>
+  </data>
+  <data name="unlock.step.pin" xml:space="preserve">
+    <value>3. Your new PIN</value>
+  </data>
+  <data name="unlock.puk.hint" xml:space="preserve">
+    <value>Eight digits. The helpdesk reads it out for this one key and the request is recorded.</value>
+  </data>
+  <data name="unlock.puk.needed" xml:space="preserve">
+    <value>Type the PUK you were given.</value>
+  </data>
+  <data name="unlock.action" xml:space="preserve">
+    <value>Set the new PIN</value>
+  </data>
+  <data name="unlock.card.pin-blocked" xml:space="preserve">
+    <value>Key {0} · the PIN is blocked</value>
+  </data>
+  <data name="unlock.card.pin-ok" xml:space="preserve">
+    <value>Key {0} · the PIN works; this will set a new one anyway</value>
+  </data>
+  <data name="unlock.card.puk-left" xml:space="preserve">
+    <value>{0} PUK attempts left</value>
+  </data>
+  <data name="unlock.card.puk-blocked" xml:space="preserve">
+    <value>The PUK of this key is blocked as well. Nothing here can help - the key has to be issued again. Go to your administrator.</value>
+  </data>
+  <data name="unlock.card.no-puk" xml:space="preserve">
+    <value>This key has no PUK, so a blocked PIN cannot be unblocked. Go to your administrator.</value>
+  </data>
+  <data name="unlock.puk.wrong" xml:space="preserve">
+    <value>That PUK is not right. Attempts left: {0}. When they run out, the key has to be issued again.</value>
+  </data>
+  <data name="unlock.done" xml:space="preserve">
+    <value>Done. The new PIN works now - use it to sign in to Windows.</value>
+  </data>
+  <data name="web.tools.unlock" xml:space="preserve">
+    <value>BlinkyLite Unlock for Windows (x64)</value>
+  </data>
+  <data name="web.tools.unlock.explain" xml:space="preserve">
+    <value>For anyone whose PIN is blocked: one window, the PUK from the helpdesk, a new PIN. It cannot issue anything.</value>
+  </data>
+  <data name="web.login.blocked-pin" xml:space="preserve">
+    <value>Is your PIN blocked?</value>
+  </data>
 </root>

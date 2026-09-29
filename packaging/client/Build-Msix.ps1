@@ -1,8 +1,8 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-    Builds the BlinkyLite client MSIX for win-x64 (0052) and, with a certificate,
-    signs it.
+    Builds a BlinkyLite MSIX for win-x64 - the client (0052) or the unlock tool
+    (0056) - and, with a certificate, signs it.
 
 .DESCRIPTION
     Lays out one package with:
@@ -15,6 +15,11 @@
     Unsigned, the package builds and validates but no station will install it:
     Windows installs an MSIX only with a signature it trusts. The certificate
     comes from the company CA (packaging\INSTRUKCJA-PODPIS.md).
+
+.PARAMETER Product
+    Client: the issuing station - WPF client, CardLab (station edition) and the
+    PowerShell module. Unlock: the one-window tool for a person whose PIN is
+    blocked, with nothing that could issue anything.
 
 .PARAMETER CertificateThumbprint
     Code signing certificate in CurrentUser\My or LocalMachine\My. Without it,
@@ -34,6 +39,9 @@
 #>
 [CmdletBinding()]
 param(
+    [ValidateSet('Client', 'Unlock')]
+    [string] $Product = 'Client',
+
     [string] $CertificateThumbprint,
     [string] $Publisher,
     [string] $TimestampUrl,
@@ -86,32 +94,41 @@ Write-Host "Version:   $Version"
 Write-Host "Publisher: $publisher"
 
 # --- Layout -----------------------------------------------------------------
-$layout = Join-Path $Out 'layout'
+$source = if ($Product -eq 'Client') { $PSScriptRoot } else { Join-Path $PSScriptRoot '../unlock' }
+$layout = Join-Path $Out "layout-$($Product.ToLowerInvariant())"
 if (Test-Path $layout) { Remove-Item $layout -Recurse -Force }
 New-Item -ItemType Directory $layout | Out-Null
 
-# Client and CardLab into the same folder: both self-contained on the same
-# runtime, so the runtime is in the package once instead of twice. Each keeps
-# its own .deps.json and .runtimeconfig.json.
-dotnet publish (Join-Path $repo 'src/BlinkyLite.Client') -c Release -r win-x64 --self-contained true -o $layout -p:Version=$Version
-if ($LASTEXITCODE) { throw 'dotnet publish BlinkyLite.Client failed.' }
-dotnet publish (Join-Path $repo 'tools/BlinkyLite.CardLab') -c Release -r win-x64 --self-contained true -o $layout -p:CardLabEdition=Station -p:Version=$Version
-if ($LASTEXITCODE) { throw 'dotnet publish BlinkyLite.CardLab failed.' }
+if ($Product -eq 'Client') {
+    # Client and CardLab into the same folder: both self-contained on the same
+    # runtime, so the runtime is in the package once instead of twice. Each keeps
+    # its own .deps.json and .runtimeconfig.json.
+    dotnet publish (Join-Path $repo 'src/BlinkyLite.Client') -c Release -r win-x64 --self-contained true -o $layout -p:Version=$Version
+    if ($LASTEXITCODE) { throw 'dotnet publish BlinkyLite.Client failed.' }
+    dotnet publish (Join-Path $repo 'tools/BlinkyLite.CardLab') -c Release -r win-x64 --self-contained true -o $layout -p:CardLabEdition=Station -p:Version=$Version
+    if ($LASTEXITCODE) { throw 'dotnet publish BlinkyLite.CardLab failed.' }
 
-$module = Join-Path $layout 'Modules/BlinkyLite'
-dotnet build (Join-Path $repo 'src/BlinkyLite.PowerShell') -c Release -o $module
-if ($LASTEXITCODE) { throw 'dotnet build BlinkyLite.PowerShell failed.' }
+    $module = Join-Path $layout 'Modules/BlinkyLite'
+    dotnet build (Join-Path $repo 'src/BlinkyLite.PowerShell') -c Release -o $module
+    if ($LASTEXITCODE) { throw 'dotnet build BlinkyLite.PowerShell failed.' }
+}
+else {
+    # Nothing but the window: no engine, no module, no command line. What is
+    # not in the package cannot be run from it (D-36).
+    dotnet publish (Join-Path $repo 'src/BlinkyLite.Unlock') -c Release -r win-x64 --self-contained true -o $layout -p:Version=$Version
+    if ($LASTEXITCODE) { throw 'dotnet publish BlinkyLite.Unlock failed.' }
+}
 
 Get-ChildItem $layout -Recurse -Filter *.pdb | Remove-Item -Force
 Copy-Item (Join-Path $PSScriptRoot 'Assets') (Join-Path $layout 'Assets') -Recurse
 
-(Get-Content (Join-Path $PSScriptRoot 'AppxManifest.xml') -Raw).
+(Get-Content (Join-Path $source 'AppxManifest.xml') -Raw).
     Replace('{Version}', $Version).
     Replace('{Publisher}', [Security.SecurityElement]::Escape($publisher)) |
     Set-Content (Join-Path $layout 'AppxManifest.xml') -Encoding utf8NoBOM
 
 # --- Pack and sign ------------------------------------------------------------
-$name = "BlinkyLite-Client-$Version-x64.msix"
+$name = "BlinkyLite-$Product-$Version-x64.msix"
 $package = Join-Path $Out $name
 if (Test-Path $package) { Remove-Item $package -Force }
 
@@ -134,7 +151,7 @@ if ($certificate) {
 # --- What the web console lists -------------------------------------------------
 $downloads = Join-Path $Out 'downloads'
 New-Item -ItemType Directory $downloads -Force | Out-Null
-Get-ChildItem $downloads -Filter 'BlinkyLite-Client-*.msix' | Remove-Item -Force
+Get-ChildItem $downloads -Filter "BlinkyLite-$Product-*.msix" | Remove-Item -Force
 Get-ChildItem $downloads -Filter '*.cer' | Remove-Item -Force
 Copy-Item $package $downloads
 
@@ -148,22 +165,33 @@ if ($selfSigned) {
     [IO.File]::WriteAllBytes((Join-Path $downloads $certificateFile), $certificate.Export('Cert'))
 }
 
+# One index for both products: the other one's entry is kept, so building the
+# client does not take the unlock tool off the page.
+$indexFile = Join-Path $downloads 'index.json'
+$kind = if ($Product -eq 'Client') { 'client-msix' } else { 'unlock-msix' }
+$others = @()
+if (Test-Path $indexFile) {
+    $others = @((Get-Content $indexFile -Raw | ConvertFrom-Json).files | Where-Object { $_.kind -ne $kind })
+}
+
 $item = Get-Item (Join-Path $downloads $name)
+$entry = [ordered]@{
+    kind        = $kind
+    file        = $name
+    version     = $Version
+    platform    = 'win-x64'
+    bytes       = $item.Length
+    sha256      = (Get-FileHash $item.FullName -Algorithm SHA256).Hash
+    signed      = [bool] $certificate
+    selfSigned  = [bool] $selfSigned
+    certificate = $certificateFile
+    publisher   = $publisher
+}
+
 [ordered]@{
     generated = (Get-Date).ToUniversalTime().ToString('o')
-    files     = @([ordered]@{
-        kind      = 'client-msix'
-        file      = $name
-        version   = $Version
-        platform  = 'win-x64'
-        bytes     = $item.Length
-        sha256    = (Get-FileHash $item.FullName -Algorithm SHA256).Hash
-        signed      = [bool] $certificate
-        selfSigned  = [bool] $selfSigned
-        certificate = $certificateFile
-        publisher   = $publisher
-    })
-} | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $downloads 'index.json') -Encoding utf8NoBOM
+    files     = @($entry) + $others
+} | ConvertTo-Json -Depth 4 | Set-Content $indexFile -Encoding utf8NoBOM
 
 Write-Host ""
 Write-Host "Package:   $package ($([math]::Round($item.Length / 1MB, 1)) MB)"

@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using BlinkyLite.Client.Localisation;
+using BlinkyLite.Ui.Localisation;
 using BlinkyLite.Contracts;
 using BlinkyLite.Issuance;
 

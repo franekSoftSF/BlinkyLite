@@ -37,7 +37,7 @@
     "hardware": "YubiKey 5 series (PIV applet)"
   },
   "status": {
-    "updated": "2026-09-21",
+    "updated": "2026-09-29",
     "phase": 2,
     "phaseTitle": "Wydanie",
     "state": "open",
@@ -416,6 +416,13 @@
       "state": "locked",
       "decidedOn": "2026-09-21",
       "by": "owner"
+    },
+    {
+      "id": "D-36",
+      "choice": "Odblokowanie PIN PUK-iem wchodzi do produktu jako osobna aplikacja WPF (BlinkyLite.Unlock) i osobny MSIX, do pobrania ze strony logowania konsoli web - bez logowania i bez serwera, bo z zablokowanym PIN-em nie ma czym sie zalogowac, i bez silnika wydania, zeby nie mogla nic wydac. Zmienia zakres z dwoch rzeczy na trzy; zmiana PUK i reset dalej naleza do Blinky. Instalator klienta (management) jest widoczny dopiero po zalogowaniu. Wspolny wyglad obu okien zapewnia biblioteka BlinkyLite.Ui",
+      "state": "locked",
+      "decidedOn": "2026-09-29",
+      "by": "owner"
     }
   ],
   "openQuestions": [
@@ -760,6 +767,15 @@
       "state": "open",
       "owner": "cloud-ai",
       "proof": null
+    },
+    {
+      "id": "0056",
+      "phase": 3,
+      "title": "Odblokowanie PIN dla posiadacza klucza",
+      "state": "done-unverified",
+      "owner": "cloud-ai",
+      "proof": "2026-09-29: aplikacja BlinkyLite.Unlock (jedno okno: klucz -> PUK -> nowy PIN) zbudowana i podpisana jako BlinkyLite-Unlock-0.1.87.0-x64.msix, w downloads/index.json obok klienta; strona logowania konsoli web podaje wlasnie ja, a instalator klienta dopiero po zalogowaniu. Okno odczytalo prawdziwy klucz (serial, stan PIN, pozostale proby PUK) na maszynie budujacej. Wspolna biblioteka BlinkyLite.Ui: paleta, style, tlumaczenia; CardAccess przeniesiony do BlinkyLite.Piv, zeby aplikacja nie ciagnela silnika wydania. 540 testow jednostkowych.",
+      "gap": "Nikt jeszcze nie odblokowal prawdziwie zablokowanego PIN-u ta aplikacja: potrzebny klucz z zablokowanym PIN-em, PUK z konsoli i sprawdzenie zlego PUK-u (licznik prob) oraz zablokowanego PUK-u. Instalacja MSIX na stacji tez nie sprawdzona."
     }
   ],
   "notVerified": [

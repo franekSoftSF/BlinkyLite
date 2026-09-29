@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Management.Automation;
+using BlinkyLite.Piv;
 using BlinkyLite.Contracts;
 using BlinkyLite.Issuance;
 using BlinkyLite.Issuance.Api;

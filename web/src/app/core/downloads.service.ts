@@ -40,7 +40,7 @@ export class Downloads {
     }
   }
 
-  async client(): Promise<Download | null> {
-    return (await this.index())?.files.find((f) => f.kind === 'client-msix') ?? null;
+  async of(kind: 'client-msix' | 'unlock-msix'): Promise<Download | null> {
+    return (await this.index())?.files.find((f) => f.kind === kind) ?? null;
   }
 }

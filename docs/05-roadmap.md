@@ -63,6 +63,7 @@ Windows, a PUK odczytany z bazy odblokowuje jego PIN.
 | 0051 | Serwer Windows — MSIX | paczka MSIX z usługą (`desktop6:Service`), konfiguracja i KEK (DPAPI) w `%ProgramData%\BlinkyLite`, migracje; aktualizacja paczki zachowuje konfigurację; odinstalowanie nie rusza bazy. Jeśli usługa w MSIX okaże się niewykonalna na docelowym Windows Server — skrypt instalacyjny i zapisany powód |
 | 0052 | Klient — MSIX | MSIX `win-x64` (ARM64 później jako bundle), podpisany certyfikatem code signing z firmowego CA ([instrukcja](../packaging/INSTRUKCJA-PODPIS.md)); w środku aplikacja WPF ze **skrótem na pulpicie**, CardLab w wydaniu **stacji** jako `blinkylite-cardlab` w cmd (alias aplikacji) i **moduł PowerShell** kopiowany dla użytkownika przy starcie aplikacji; pobierany ze strony **Narzędzia** w konsoli web (D-35); instalacja na czystej stacji x64 |
 | 0055 | nginx w Dockerze | `docker compose up` stawia nginx **na porcie 443 z tym samym certyfikatem co serwer**: aplikacja web (Angular) statycznie, `/api` do serwera; TLS od klienta do nginx i od nginx do serwera na sieci wewnętrznej, z weryfikacją certyfikatu serwera; publicznie tylko nginx; Negotiate przechodzi przez proxy bez zmian; WPF i PowerShell działają pod `https://<nazwa>` bez portu (D-26, D-32) |
+| 0056 | Odblokowanie PIN dla posiadacza klucza | osobna aplikacja WPF (`BlinkyLite.Unlock`) i osobny MSIX, do pobrania **ze strony logowania** konsoli web: klucz w czytniku → PUK z helpdesku → nowy PIN wg `PinRules` (odrzuca PIN równy PUK-owi i numerowi seryjnemu). Bez serwera i bez logowania, bo z zablokowanym PIN-em nie ma czym się zalogować; bez silnika wydania, żeby nie mogła nic wydać. Zablokowany PUK i klucz bez PUK-u mówią wprost, że trzeba wydać klucz od nowa. PIN i PUK nigdy w logu (D-36) |
 | 0053 | Test end-to-end | brama fazy 2 powtórzona: stacja ARM64, wydanie z PowerShell, serwer raz w Dockerze i raz z MSIX; procedura kopii KEK opisana i sprawdzona odtworzeniem |
 | 0054 | Eksport do Blinky | wg [10](10-blinky-export.md): `POST /api/export/blinky` (tylko Admin) oddaje ZIP z kartami, wydaniami, certyfikatami i atestacjami oraz `secrets.p7m` — PUK i management key zaszyfrowane **do certyfikatu Blinky** (CMS EnvelopedData). Każda karta przechodzi przez `bl_secret_disclose`, więc zostaje w audycie; plus jedno `export.blinky` z liczbami i odciskiem odbiorcy. **Dowód:** paczka z dwóch kart rozszyfrowana kluczem prywatnym odbiorcy zawiera te same PUK-i, co odsłonięte pojedynczo; bez tego klucza nie da się z niej nic wyjąć |
 
@@ -84,7 +85,8 @@ poniższe nie jest odłożone na później, tylko nie należy do tego narzędzia
 
 | Rzecz | Kto to robi |
 |---|---|
-| Zmiana / rotacja PUK, odblokowanie PIN, dalsze życie karty | **Blinky** |
+| Zmiana / rotacja PUK, dalsze życie karty | **Blinky** |
+| Odblokowanie PIN PUK-iem | **BlinkyLite**, od 0056 (D-36): osobna aplikacja dla posiadacza klucza. Sam PUK dalej odsłania helpdesk w konsoli, z powodem i audytem |
 | Reset PIV **w produkcie**, `SET PIN RETRIES` | Blinky; w BlinkyLite reset istnieje wyłącznie w narzędziu stacji testowej (`CardLab reset --yes`, D-22) i nie wchodzi do klienta ani do modułu |
 | Odnowienia, unieważnienia, CRL | ADCS / Blinky |
 | Ekran edycji **ról** (mapowania grup AD) | `appsettings.json` serwera; profile i keytab mają ekran od D-28 |

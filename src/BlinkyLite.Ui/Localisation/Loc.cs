@@ -3,7 +3,7 @@ using System.Windows.Data;
 using System.Windows.Markup;
 using BlinkyLite.Contracts;
 
-namespace BlinkyLite.Client.Localisation;
+namespace BlinkyLite.Ui.Localisation;
 
 /// <summary>
 /// <c>{l:Loc pin.title}</c> in XAML: the text for a key, in the language the

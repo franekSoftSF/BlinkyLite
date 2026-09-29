@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- What the two windowed applications share: the palette, the control
+       styles and the way a XAML file asks for a translated text. One design
+       system, so the client and the unlock tool cannot drift apart (D-36). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+
+    <!-- As in the client: invariant mode makes WPF throw the moment a text
+         box takes focus, and it is what lets de-DE, sv-SE and pl-PL formatting
+         exist at all. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlinkyLite.Contracts\BlinkyLite.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

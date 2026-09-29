@@ -101,6 +101,27 @@ drugi składnik jest **obowiązkowy**, nie jest opcją.
 - **Serwer nie wystartuje bez HTTPS** poza środowiskiem deweloperskim (kod
   wyjścia 4), bez połączenia do bazy (2) ani przy rozjeździe migracji (3).
 
+### Odblokowanie PIN przez posiadacza klucza (0056, D-36)
+
+Aplikacja `BlinkyLite.Unlock` wykonuje jedną komendę karty — `RESET RETRY
+COUNTER` — z PUK-iem, który posiadacz dostał od helpdesku, i nowym PIN-em,
+który sam wpisuje. Nie ma w niej logowania ani połączenia z serwerem: ktoś z
+zablokowanym PIN-em nie ma czym się uwierzytelnić, a wymaganie tego byłoby
+proszeniem o jedyną rzecz, której nie ma.
+
+- **Kontrolą dostępu jest PUK.** Odsłania go helpdesk w konsoli, dla jednej
+  wskazanej karty, z powodem i wpisem `puk.disclosed` w audycie — i to jest
+  moment, który zostaje zapisany. Samo odblokowanie dzieje się przy karcie,
+  bez serwera, więc **w audycie go nie ma**; z zapisu widać, komu i po co PUK
+  wydano.
+- PIN sprawdzają te same `PinRules` co przy wydaniu, z PUK-iem w ręku: PIN
+  równy PUK-owi jest odrzucany, bo odblokowanie do wartości podanej przed
+  chwilą przez telefon nie jest odblokowaniem.
+- Ani PIN, ani PUK nie trafiają do logu, pliku ani pola — okno trzyma je w
+  polach hasła i czyści po użyciu.
+- Zablokowany PUK i klucz bez PUK-u (Bio) kończą się zdaniem „klucz trzeba
+  wydać od nowa", nie kolejną próbą.
+
 ## Autoryzacja
 
 Polityki ASP.NET Core: `CanIssue` (Admin, SecurityOfficer), `CanList`

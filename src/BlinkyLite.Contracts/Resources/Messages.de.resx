@@ -706,4 +706,58 @@
   <data name="web.tools.certificate" xml:space="preserve">
     <value>Zertifikat herunterladen</value>
   </data>
+  <data name="unlock.title" xml:space="preserve">
+    <value>PIN entsperren</value>
+  </data>
+  <data name="unlock.explain" xml:space="preserve">
+    <value>Nach drei falschen PINs ist der Schlüssel gesperrt. Fragen Sie den Helpdesk nach dem PUK dieses Schlüssels und vergeben Sie hier eine neue PIN. Sonst ändert sich am Schlüssel nichts.</value>
+  </data>
+  <data name="unlock.step.card" xml:space="preserve">
+    <value>1. Stecken Sie den Schlüssel in das Lesegerät</value>
+  </data>
+  <data name="unlock.step.puk" xml:space="preserve">
+    <value>2. PUK vom Helpdesk</value>
+  </data>
+  <data name="unlock.step.pin" xml:space="preserve">
+    <value>3. Ihre neue PIN</value>
+  </data>
+  <data name="unlock.puk.hint" xml:space="preserve">
+    <value>Acht Ziffern. Der Helpdesk liest ihn für genau diesen Schlüssel vor; die Anfrage wird protokolliert.</value>
+  </data>
+  <data name="unlock.puk.needed" xml:space="preserve">
+    <value>Geben Sie den erhaltenen PUK ein.</value>
+  </data>
+  <data name="unlock.action" xml:space="preserve">
+    <value>Neue PIN setzen</value>
+  </data>
+  <data name="unlock.card.pin-blocked" xml:space="preserve">
+    <value>Schlüssel {0} · die PIN ist gesperrt</value>
+  </data>
+  <data name="unlock.card.pin-ok" xml:space="preserve">
+    <value>Schlüssel {0} · die PIN funktioniert; hier wird trotzdem eine neue gesetzt</value>
+  </data>
+  <data name="unlock.card.puk-left" xml:space="preserve">
+    <value>noch {0} PUK-Versuche</value>
+  </data>
+  <data name="unlock.card.puk-blocked" xml:space="preserve">
+    <value>Auch der PUK dieses Schlüssels ist gesperrt. Hier hilft nichts mehr – der Schlüssel muss neu ausgestellt werden. Wenden Sie sich an Ihren Administrator.</value>
+  </data>
+  <data name="unlock.card.no-puk" xml:space="preserve">
+    <value>Dieser Schlüssel hat keinen PUK; eine gesperrte PIN lässt sich damit nicht entsperren. Wenden Sie sich an Ihren Administrator.</value>
+  </data>
+  <data name="unlock.puk.wrong" xml:space="preserve">
+    <value>Dieser PUK stimmt nicht. Verbleibende Versuche: {0}. Sind sie aufgebraucht, muss der Schlüssel neu ausgestellt werden.</value>
+  </data>
+  <data name="unlock.done" xml:space="preserve">
+    <value>Fertig. Die neue PIN gilt ab sofort – melden Sie sich damit bei Windows an.</value>
+  </data>
+  <data name="web.tools.unlock" xml:space="preserve">
+    <value>BlinkyLite Unlock für Windows (x64)</value>
+  </data>
+  <data name="web.tools.unlock.explain" xml:space="preserve">
+    <value>Für alle mit gesperrter PIN: ein Fenster, der PUK vom Helpdesk, eine neue PIN. Ausstellen kann es nichts.</value>
+  </data>
+  <data name="web.login.blocked-pin" xml:space="preserve">
+    <value>PIN gesperrt?</value>
+  </data>
 </root>

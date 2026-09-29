@@ -19,11 +19,13 @@ import { I18n } from '../core/i18n.service';
         <p class="muted small">{{ i18n.t('web.tools.explain') }}</p>
       </header>
 
-      @if (client(); as c) {
+      @if (packages().length) {
+        @for (c of packages(); track c.file) {
         <div class="download">
           <img class="mark large" src="brand/blinkylite-mark.svg" alt="" width="64" height="64" />
           <div class="download-body">
-            <h3>{{ i18n.t('web.tools.client') }}</h3>
+            <h3>{{ i18n.t(c.kind === 'unlock-msix' ? 'web.tools.unlock' : 'web.tools.client') }}</h3>
+            <p class="muted small">{{ i18n.t(c.kind === 'unlock-msix' ? 'web.tools.unlock.explain' : 'web.tools.explain') }}</p>
             <p class="muted">
               {{ i18n.t('web.tools.version', c.version) }} · {{ size(c.bytes) }} · {{ i18n.date(generated()) }}
             </p>
@@ -45,12 +47,14 @@ import { I18n } from '../core/i18n.service';
         </div>
 
         <div class="download-details">
-          <h3>{{ i18n.t('web.tools.contains') }}</h3>
-          <ul>
-            <li>{{ i18n.t('web.tools.item.app') }}</li>
-            <li>{{ i18n.t('web.tools.item.cli') }}</li>
-            <li>{{ i18n.t('web.tools.item.module') }}</li>
-          </ul>
+          @if (c.kind !== 'unlock-msix') {
+            <h3>{{ i18n.t('web.tools.contains') }}</h3>
+            <ul>
+              <li>{{ i18n.t('web.tools.item.app') }}</li>
+              <li>{{ i18n.t('web.tools.item.cli') }}</li>
+              <li>{{ i18n.t('web.tools.item.module') }}</li>
+            </ul>
+          }
 
           @if (c.selfSigned && c.certificate) {
             <!-- A self-signed package installs only where its certificate is
@@ -64,6 +68,7 @@ import { I18n } from '../core/i18n.service';
           <p>{{ i18n.t('web.tools.install') }}</p>
           <pre class="mono">Add-AppxPackage .\\{{ c.file }}</pre>
         </div>
+        }
       } @else if (loaded()) {
         <div class="empty"><strong>{{ i18n.t('web.tools.none') }}</strong></div>
       }
@@ -74,14 +79,16 @@ export class ToolsPage implements OnInit {
   protected readonly i18n = inject(I18n);
   private readonly downloads = inject(Downloads);
 
-  protected readonly client = signal<Download | null>(null);
+  protected readonly packages = signal<Download[]>([]);
   protected readonly generated = signal<string | null>(null);
   protected readonly loaded = signal(false);
 
   async ngOnInit(): Promise<void> {
     const index = await this.downloads.index();
     this.generated.set(index?.generated ?? null);
-    this.client.set(index?.files.find((f) => f.kind === 'client-msix') ?? null);
+
+    // The client first: this page is for the people who issue.
+    this.packages.set((index?.files ?? []).sort((a, b) => a.kind.localeCompare(b.kind)));
     this.loaded.set(true);
   }
 

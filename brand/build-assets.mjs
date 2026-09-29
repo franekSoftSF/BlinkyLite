@@ -85,6 +85,10 @@ await write(join(repo, 'web/public/brand/apple-touch-icon.png'), await png(mark,
 await write(join(repo, 'src/BlinkyLite.Client/Assets/blinkylite.ico'), await icoOf([16, 20, 24, 32, 40, 48, 64, 128, 256]));
 await write(join(repo, 'src/BlinkyLite.Client/Assets/blinkylite-mark-128.png'), await png(mark, 128));
 
+// The unlock tool (0056) carries the same mark as everything else.
+await write(join(repo, 'src/BlinkyLite.Unlock/Assets/blinkylite.ico'), await icoOf([16, 20, 24, 32, 40, 48, 64, 128, 256]));
+await write(join(repo, 'src/BlinkyLite.Unlock/Assets/blinkylite-mark-128.png'), await png(mark, 128));
+
 // MSIX (0052): the tiles and the list icon Windows asks the package for, and
 // the .ico the desktop shortcut points at.
 const msix = join(repo, 'packaging/client/Assets');

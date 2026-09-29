@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Media;
 using Microsoft.Win32;
 
-namespace BlinkyLite.Client.Theme;
+namespace BlinkyLite.Ui.Theme;
 
 /// <summary>
 /// Puts a <see cref="Palette"/> into the application's resources, so XAML

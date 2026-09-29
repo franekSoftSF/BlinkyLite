@@ -706,4 +706,58 @@
   <data name="web.tools.certificate" xml:space="preserve">
     <value>Pobierz certyfikat</value>
   </data>
+  <data name="unlock.title" xml:space="preserve">
+    <value>Odblokuj PIN</value>
+  </data>
+  <data name="unlock.explain" xml:space="preserve">
+    <value>Trzy błędne PIN-y blokują klucz. Poproś helpdesk o PUK do tego klucza i ustaw tutaj nowy PIN. Nic innego na kluczu się nie zmienia.</value>
+  </data>
+  <data name="unlock.step.card" xml:space="preserve">
+    <value>1. Włóż klucz do czytnika</value>
+  </data>
+  <data name="unlock.step.puk" xml:space="preserve">
+    <value>2. PUK od helpdesku</value>
+  </data>
+  <data name="unlock.step.pin" xml:space="preserve">
+    <value>3. Twój nowy PIN</value>
+  </data>
+  <data name="unlock.puk.hint" xml:space="preserve">
+    <value>Osiem cyfr. Helpdesk podaje go do tego jednego klucza, a prośba trafia do dziennika.</value>
+  </data>
+  <data name="unlock.puk.needed" xml:space="preserve">
+    <value>Wpisz PUK z helpdesku.</value>
+  </data>
+  <data name="unlock.action" xml:space="preserve">
+    <value>Ustaw nowy PIN</value>
+  </data>
+  <data name="unlock.card.pin-blocked" xml:space="preserve">
+    <value>Klucz {0} · PIN jest zablokowany</value>
+  </data>
+  <data name="unlock.card.pin-ok" xml:space="preserve">
+    <value>Klucz {0} · PIN działa; tu i tak ustawisz nowy</value>
+  </data>
+  <data name="unlock.card.puk-left" xml:space="preserve">
+    <value>pozostało prób PUK: {0}</value>
+  </data>
+  <data name="unlock.card.puk-blocked" xml:space="preserve">
+    <value>PUK do tego klucza też jest zablokowany. Tu już nic nie pomoże — klucz trzeba wydać od nowa. Zgłoś się do administratora.</value>
+  </data>
+  <data name="unlock.card.no-puk" xml:space="preserve">
+    <value>Ten klucz nie ma PUK, więc zablokowanego PIN-u nie da się odblokować. Zgłoś się do administratora.</value>
+  </data>
+  <data name="unlock.puk.wrong" xml:space="preserve">
+    <value>Ten PUK się nie zgadza. Pozostało prób: {0}. Kiedy się skończą, klucz trzeba wydać od nowa.</value>
+  </data>
+  <data name="unlock.done" xml:space="preserve">
+    <value>Gotowe. Nowy PIN już działa — zaloguj się nim do Windows.</value>
+  </data>
+  <data name="web.tools.unlock" xml:space="preserve">
+    <value>BlinkyLite Unlock dla Windows (x64)</value>
+  </data>
+  <data name="web.tools.unlock.explain" xml:space="preserve">
+    <value>Dla każdego, komu zablokował się PIN: jedno okno, PUK od helpdesku, nowy PIN. Nic nie wydaje.</value>
+  </data>
+  <data name="web.login.blocked-pin" xml:space="preserve">
+    <value>Zablokował Ci się PIN?</value>
+  </data>
 </root>

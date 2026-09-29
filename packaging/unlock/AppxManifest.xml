@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  BlinkyLite Unlock (0056, D-36): the window a person opens when their PIN is
+  blocked. Its own package, not part of the client's, because the audiences are
+  different - this one goes to anybody with a key, the client only to the
+  people who issue.
+
+  No execution alias and no module: one shortcut, one window, nothing that
+  writes to a card except the PIN it is there to set.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:desktop7="http://schemas.microsoft.com/appx/manifest/desktop/windows10/7"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap desktop7 rescap">
+
+  <Identity
+    Name="BlinkyLite.Unlock"
+    Publisher="{Publisher}"
+    Version="{Version}"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>BlinkyLite Unlock</DisplayName>
+    <PublisherDisplayName>BlinkyLite</PublisherDisplayName>
+    <Description>Unblocks a YubiKey PIN with the PUK from the helpdesk.</Description>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+    <Resource Language="pl-pl" />
+    <Resource Language="de-de" />
+    <Resource Language="sv-se" />
+  </Resources>
+
+  <Applications>
+    <Application Id="BlinkyLiteUnlock" Executable="BlinkyLite.Unlock.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="BlinkyLite Unlock"
+        Description="Unblocks a YubiKey PIN with the PUK from the helpdesk."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png" />
+      <Extensions>
+        <desktop7:Extension Category="windows.shortcut">
+          <desktop7:Shortcut File="[{Desktop}]\BlinkyLite Unlock.lnk" Icon="[{Package}]\Assets\blinkylite.ico" />
+        </desktop7:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

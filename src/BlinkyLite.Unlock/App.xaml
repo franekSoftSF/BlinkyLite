@@ -1,12 +1,11 @@
-<Application x:Class="BlinkyLite.Client.App"
+<Application x:Class="BlinkyLite.Unlock.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <!-- The palette roles and every control template live in
-                 BlinkyLite.Ui, so this window and the unlock tool look like one
-                 product (D-36). -->
+            <!-- The same palette and the same controls as the client: one
+                 product, two applications (D-36). -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/BlinkyLite.Ui;component/Themes/Controls.xaml" />
             </ResourceDictionary.MergedDictionaries>

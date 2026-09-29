@@ -138,14 +138,16 @@ type Step = 'password' | 'setup' | 'code' | 'backup';
         </ng-template>
       </section>
 
-      <!-- The station installer, before anybody signs in: the machine that
-           needs it most is the one without BlinkyLite on it yet (0052). The
-           same file the Tools page offers, from the same index. -->
+      <!-- Only the unlock tool before anybody signs in (0056): somebody with
+           a blocked PIN cannot sign in anywhere, so this has to be reachable
+           without it. The management client is behind the sign-in, on the
+           Tools page - out here it only confused people who do not issue. -->
       @if (installer(); as i) {
         <aside class="login-download" [attr.aria-label]="i18n.t('web.tools.client')">
           <img class="mark" src="brand/blinkylite-mark.svg" alt="" width="40" height="40" />
           <div>
-            <strong>{{ i18n.t('web.tools.client') }}</strong>
+            <small class="muted block">{{ i18n.t('web.login.blocked-pin') }}</small>
+            <strong>{{ i18n.t('web.tools.unlock') }}</strong>
             <small class="muted block">{{ i18n.t('web.tools.version', i.version) }} · {{ (i.bytes / 1048576).toFixed(1) }} MB</small>
           </div>
           <span class="login-download-actions">
@@ -174,7 +176,7 @@ export class LoginPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.installer.set(await this.downloads.client());
+    this.installer.set(await this.downloads.of('unlock-msix'));
   }
   private readonly codeInput = viewChild<ElementRef<HTMLInputElement>>('codeInput');
 

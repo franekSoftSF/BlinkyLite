@@ -2,7 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Windows;
-using BlinkyLite.Client.Theme;
+using BlinkyLite.Ui.Theme;
 using BlinkyLite.Contracts;
 using Serilog;
 
@@ -37,8 +37,8 @@ public partial class App : Application
 
         ThemeManager.Apply(Settings.Theme switch
         {
-            "light" => Theme.Palette.Light,
-            "dark" => Theme.Palette.Dark,
+            "light" => Palette.Light,
+            "dark" => Palette.Dark,
             _ => ThemeManager.FromWindows(),
         });
 

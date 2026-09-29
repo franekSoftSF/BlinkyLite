@@ -1,4 +1,4 @@
-using BlinkyLite.Client.Theme;
+using BlinkyLite.Ui.Theme;
 
 namespace BlinkyLite.UnitTests;
 

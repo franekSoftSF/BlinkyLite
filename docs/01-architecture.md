@@ -103,6 +103,7 @@ CA, algorytm, polityka PIN/touch) i mapowanie grup AD na role są sekcjami
 
 | Paczka | Zawartość | Uwagi |
 |---|---|---|
+| `BlinkyLite-Unlock-<wersja>-x64.msix` | okno „Odblokuj PIN" dla posiadacza klucza (0056) | osobna paczka, bo inna publiczność: link jest **na stronie logowania** konsoli web, przed zalogowaniem. Bez aliasu, bez modułu, bez silnika wydania |
 | `BlinkyLite-Client-<wersja>-x64.msix` | WPF + silnik, CardLab w wydaniu **stacji** i moduł PowerShell (D-35) | skrót na pulpicie (`desktop7:Shortcut`); aliasy `blinkylite` i `blinkylite-cardlab` w cmd — MSIX nie zmienia `PATH`, alias jest jego sposobem, żeby w nim być; na razie tylko `win-x64`, ARM64 dojdzie jako bundle. Pobierany ze strony **Narzędzia** w konsoli web. Buduje `packaging/client/Build-Msix.ps1` |
 | `BlinkyLite.Server.msix` | serwer jako usługa (`desktop6:Service`) | wymaga Windows Server 2022 / Windows 10 2004+ i ograniczonej zdolności `packagedServices`; ryzyko R-05 |
 | moduł PowerShell | **w MSIX klienta**, w `Modules\BlinkyLite` | pliki paczki leżą w `WindowsApps`, poza `PSModulePath`, a MSIX nie ma kroku instalacji — więc aplikacja kopiuje moduł przy starcie do `Dokumenty\PowerShell\Modules\BlinkyLite\<wersja>` użytkownika (`ModuleInstaller`). Odwołuje `.nupkg` z D-11 (D-35) |

@@ -1,4 +1,4 @@
-namespace BlinkyLite.Client.Theme;
+namespace BlinkyLite.Ui.Theme;
 
 /// <summary>One colour, as the hex somebody can paste into a design tool.</summary>
 public readonly record struct Colour(string Hex)

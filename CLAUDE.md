@@ -4,12 +4,15 @@ BlinkyLite — narzędzie do wydawania kluczy YubiKey 5 PIV z Microsoft ADCS
 przez Enroll On Behalf Of. .NET 10: klient WPF (`win-x64`, `win-arm64`) i
 moduł PowerShell na wspólnym silniku, serwer Kestrel + PostgreSQL (Docker albo
 usługa Windows), logowanie AD → JWT, role Admin / SecurityOfficer / Helpdesk.
-**Nie jest CMS-em.** Robi dwie rzeczy: **wydaje** klucz i pozwala go
-**zweryfikować** (tylko odczyt). Po 1.0 dochodzi jedna trzecia: wiadomość
+**Nie jest CMS-em.** Robi trzy rzeczy: **wydaje** klucz, pozwala go
+**zweryfikować** (tylko odczyt) i pozwala posiadaczowi **odblokować PIN**
+PUK-iem z helpdesku (`src/BlinkyLite.Unlock`, 0056, D-36 — osobna aplikacja,
+bez logowania i bez serwera, bo z zablokowanym PIN-em nie ma czym się
+zalogować). Po 1.0 dochodzi jedna trzecia: wiadomość
 od jednokierunkowego bota Teams, że certyfikat wygaśnie (0060,
 [docs/09](docs/09-expiry-notification.md)) — tylko informacja, bez
-odnawiania, bez rozmowy z botem. Zmiana PUK, odblokowanie PIN, reset, dalsze
-życie karty — to robi Blinky, nie BlinkyLite. Lista w „Poza zakresem” w
+odnawiania, bez rozmowy z botem. Zmiana PUK, reset, dalsze życie karty — to
+robi Blinky, nie BlinkyLite. Lista w „Poza zakresem” w
 [docs/05-roadmap.md](docs/05-roadmap.md).
 
 Przeczytaj [README.md](README.md) (co to jest), [docs/](docs/) (jak działa) i
@@ -34,6 +37,8 @@ bezwartościowymi — wtedy `done-unverified` i powód w `gap`.
 | `src/BlinkyLite.Piv` | PC/SC, APDU PIV, atestacja — przeniesione z `Blinky.Piv` |
 | `src/BlinkyLite.Issuance` | silnik wydania: personalizacja, atestacja, CertEnroll CMC, `ICertRequest3`, klient API. `net10.0-windows` |
 | `src/BlinkyLite.Client` | WPF: logowanie i wydanie; przeglądarka jest w aplikacji web (D-25) |
+| `src/BlinkyLite.Ui` | paleta, style kontrolek i `{l:Loc}` — wspólne dla obu okien, żeby nie rozjechały się wyglądem (D-36) |
+| `src/BlinkyLite.Unlock` | WPF: jedno okno, PUK od helpdesku → nowy PIN. Bez serwera i bez silnika wydania (0056) |
 | `src/BlinkyLite.PowerShell` | moduł binarny, pwsh 7.6+ — cienka powłoka na silniku |
 | `src/BlinkyLite.Server` | Kestrel: `Auth/` (LDAP, JWT, role, polityki), `Api/` (endpointy, ProblemDetails), `Secrets/` (koperty AES-GCM), `Data/` (NHibernate do odczytu, `Procedures` do zapisu), `Startup/` (wiring) |
 | `db/init/00_roles.sql` | role bazy — raz, jako superużytkownik, poza serwerem |
@@ -128,10 +133,13 @@ dotnet publish tools/BlinkyLite.CardLab -c Release -r win-x64 --self-contained t
   stronie CMS, trafia też do eksportu w [10](docs/10-blinky-export.md) — D-19.
 - **Prosto.** BlinkyLite ma być mały. Zanim dodasz ekran, tabelę albo opcję,
   sprawdź, czy nie ma jej w „Poza zakresem” w roadmapie — jeśli jest, nie
-  robimy jej. Poza wydaniem BlinkyLite nie pisze na kartę nigdy — **jedyny
-  wyjątek to `reset` w `tools/BlinkyLite.CardLab`** (D-22), i tylko w wydaniu
-  **Lab**, które nie wchodzi do żadnego instalatora. Wydanie **Station** w MSIX
-  nie ma `reset` ani `personalise` (D-35) — nie dodawaj ich tam.
+  robimy jej. Poza wydaniem BlinkyLite pisze na kartę w dwóch miejscach i
+  nigdzie więcej: **`reset` w `tools/BlinkyLite.CardLab`** (D-22), tylko w
+  wydaniu **Lab**, które nie wchodzi do żadnego instalatora, oraz **nowy PIN w
+  `src/BlinkyLite.Unlock`** (D-36) — jedna komenda `RESET RETRY COUNTER`,
+  wyłącznie z PUK-iem, który posiadacz dostał od helpdesku. Wydanie **Station**
+  w MSIX nie ma `reset` ani `personalise` (D-35) — nie dodawaj ich tam, a do
+  Unlocka nie dodawaj niczego poza tym jednym krokiem.
 - **Serilog** wszędzie. LF, UTF-8, 4 spacje (2 dla json/yml/xml/props/csproj)
   — `.editorconfig` rozstrzyga.
 - **Komentarze mówią dlaczego, nie co.** Jak w Blinky: powód, zwykle dlatego,

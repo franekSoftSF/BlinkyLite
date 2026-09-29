@@ -1,7 +1,7 @@
 <Window x:Class="BlinkyLite.Client.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:l="clr-namespace:BlinkyLite.Client.Localisation"
+        xmlns:l="clr-namespace:BlinkyLite.Ui.Localisation;assembly=BlinkyLite.Ui"
         Title="BlinkyLite"
         Icon="Assets/blinkylite.ico"
         Width="1100"

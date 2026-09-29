@@ -3,7 +3,9 @@
     <Project Path="src/BlinkyLite.Contracts/BlinkyLite.Contracts.csproj" />
     <Project Path="src/BlinkyLite.Piv/BlinkyLite.Piv.csproj" />
     <Project Path="src/BlinkyLite.Issuance/BlinkyLite.Issuance.csproj" />
+    <Project Path="src/BlinkyLite.Ui/BlinkyLite.Ui.csproj" />
     <Project Path="src/BlinkyLite.Client/BlinkyLite.Client.csproj" />
+    <Project Path="src/BlinkyLite.Unlock/BlinkyLite.Unlock.csproj" />
     <Project Path="src/BlinkyLite.PowerShell/BlinkyLite.PowerShell.csproj" />
     <Project Path="src/BlinkyLite.Server/BlinkyLite.Server.csproj" />
   </Folder>
