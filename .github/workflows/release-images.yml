@@ -7,9 +7,9 @@
 #
 # ghcr rather than Docker Hub: the same account and the same permissions as the
 # repository, no credentials to keep anywhere (GITHUB_TOKEN is enough), and no
-# pull limits for anonymous users. A package is created PRIVATE by default -
-# the first release needs one click in the repository's Packages settings to
-# make it public.
+# pull limits for anonymous users. Pushed from a public repository with
+# GITHUB_TOKEN, the packages come out public - measured at v0.1.91, against the
+# expectation that they would need to be switched by hand.
 name: release-images
 
 on:

@@ -293,9 +293,12 @@ testy przeszły. Tagi obrazu: dokładna wersja, `major.minor`, `latest` i
 git tag v0.1.91 && git push origin v0.1.91
 ```
 
-**Raz, po pierwszym wydaniu:** paczka w ghcr powstaje jako prywatna — w
-ustawieniach pakietu na GitHubie trzeba ją przestawić na publiczną, inaczej
-`docker pull` bez logowania dostanie 401.
+**Widoczność: nic nie trzeba klikać.** Spodziewaliśmy się, że paczka w ghcr
+powstanie prywatna i trzeba ją będzie przestawić ręcznie — pomiar przy wydaniu
+`v0.1.91` (29 września 2026) pokazał co innego: obrazy wypchnięte przez
+`GITHUB_TOKEN` z publicznego repozytorium są publiczne od razu, a
+`docker pull` bez logowania działa. Jeśli repozytorium kiedyś stanie się
+prywatne, ta reguła przestanie obowiązywać.
 
 Wdrożenie z wydanych obrazów, zamiast budowania z checkoutu:
 

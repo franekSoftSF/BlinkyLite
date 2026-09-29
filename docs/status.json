@@ -438,7 +438,7 @@
     },
     {
       "id": "D-39",
-      "choice": "Obrazy serwera i konsoli web publikowane na ghcr.io/franeksoftsf (blinkylite-server, blinkylite-web), budowane i wypychane przez GitHub Actions na tagu vX.Y.Z. To samo konto i te same uprawnienia co repozytorium, zaden sekret do trzymania (GITHUB_TOKEN wystarcza), brak limitow pobran dla anonimowych. Wypychanie z laptopa odpada - nikt nie odtworzy, z czego powstal obraz. Wdrozenie z wydanych obrazow: docker-compose.ghcr.yml obok zwyklego compose, ktory dalej buduje z checkoutu.",
+      "choice": "Obrazy serwera i konsoli web publikowane na ghcr.io/franeksoftsf (blinkylite-server, blinkylite-web), budowane i wypychane przez GitHub Actions na tagu vX.Y.Z. To samo konto i te same uprawnienia co repozytorium, zaden sekret do trzymania (GITHUB_TOKEN wystarcza), brak limitow pobran dla anonimowych. Wypychanie z laptopa odpada - nikt nie odtworzy, z czego powstal obraz. Wdrozenie z wydanych obrazow: docker-compose.ghcr.yml obok zwyklego compose, ktory dalej buduje z checkoutu. Wydane 2026-09-29 jako v0.1.91: testy bazodanowe zielone, oba obrazy w rejestrze z tagami 0.1.91, 0.1, latest i sha-3261886, pobieralne anonimowo (paczki wyszly publiczne bez klikania), obraz serwera uruchomiony z rejestru.",
       "state": "locked",
       "decidedOn": "2026-09-29"
     }
