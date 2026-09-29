@@ -15,6 +15,20 @@ node build-assets.mjs
 | `blinkylite-favicon.svg` | znak uproszczony dla 16–48 px — bez łuku i poświaty, które w tej skali robią się zieloną plamą | `favicon.svg`, `favicon.ico`, ikona WPF 16–48 px |
 | `blinkylite-logo.svg` | znak + „Blinky**Lite**” + hasło | `blinkylite-logo.png` w README (GitHub nie wczyta znaku, do którego SVG się odwołuje) |
 
+## Jedna rodzina, dwa produkty
+
+Blinky CMS wziął ten znak 29.09.2026 i trzyma go w swoim `brand/` w tym samym
+układzie — trzy SVG plus generator. Geometria jest ta sama celowo: ten sam
+klucz, ten sam kafelek, ten sam kąt. Różni się to, czym różnią się produkty:
+
+- **akcent** — tu `#1DB954`, tam `#18C9DF` konsoli Blinky;
+- **węzły** na końcach łuku — CMS zarządza zbiorem kart, BlinkyLite nie
+  zarządza niczym, więc jego łuk jest pusty;
+- **wordmark** — „Lite” tu, „CMS” tam.
+
+Zmiana kształtu po jednej stronie jest zmianą po obu. To jest ta sama zasada co
+D-30 — podobnie do Blinky, ale nie tak samo — tylko zapisana dla znaku.
+
 ## Zasady
 
 - **Kolory to paleta aplikacji** (`Palette.cs`, D-20): akcent `#1DB954`, akcent
