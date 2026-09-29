@@ -165,6 +165,14 @@ docker compose up -d --build                    # baza, migracje, serwer
 curl -k https://localhost/health
 ```
 
+Z **wydanych obrazów**, bez budowania z tego checkoutu
+([ghcr.io](https://github.com/franekSoftSF/BlinkyLite/pkgs/container/blinkylite-server), D-39):
+
+```bash
+BLINKYLITE_VERSION=0.1.91 \
+  docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+```
+
 Pełna lista wymagań (serwer, AD, ADCS, stacja) i kroki wdrożenia:
 [docs/11-wymagania-i-wdrozenie.md](docs/11-wymagania-i-wdrozenie.md).
 

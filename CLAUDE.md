@@ -75,7 +75,9 @@ ConnectionStrings__Owner="..." dotnet run --project src/BlinkyLite.Server -- --m
 echo "<wartosc>" | BlinkyLite.Server.exe --protect-secret jwt-signing-key      # Windows: plik DPAPI w Secrets:Directory
 dotnet publish src/BlinkyLite.Client -c Release -r win-x64
 dotnet publish src/BlinkyLite.Client -c Release -r win-arm64
-docker compose up -d --build       # serwer + postgres
+docker compose up -d --build       # serwer + postgres, budowany z tego checkoutu
+# z wydanych obrazow z ghcr.io (D-39; tag vX.Y.Z uruchamia release-images.yml)
+BLINKYLITE_VERSION=0.1.91 docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
 dotnet run --project tools/BlinkyLite.CardLab -- inventory          # czyta kartę, nic nie pisze
 dotnet run --project tools/BlinkyLite.CardLab -- personalise --yes  # PISZE na karcie (0011)
 # paczka na stację testową: jeden .exe, bez instalowania .NET

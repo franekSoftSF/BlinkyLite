@@ -435,6 +435,12 @@
       "choice": "Serwer jest wydawany WYLACZNIE jako obraz Dockera. Usluga Windows w paczce MSIX (0051) odpada wraz z ryzykiem R-05: dwa sposoby instalacji to dwa zestawy sciezek, praw do plikow i zrodel sekretow, z ktorych jeden bywa sprawdzany raz na kwartal, a serwer jest czystym net10.0 i nic w nim nie potrzebuje Windows. Windows zostaje po stronie stacji - klient, modul PowerShell i odblokowanie PIN.",
       "state": "locked",
       "decidedOn": "2026-09-29"
+    },
+    {
+      "id": "D-39",
+      "choice": "Obrazy serwera i konsoli web publikowane na ghcr.io/franeksoftsf (blinkylite-server, blinkylite-web), budowane i wypychane przez GitHub Actions na tagu vX.Y.Z. To samo konto i te same uprawnienia co repozytorium, zaden sekret do trzymania (GITHUB_TOKEN wystarcza), brak limitow pobran dla anonimowych. Wypychanie z laptopa odpada - nikt nie odtworzy, z czego powstal obraz. Wdrozenie z wydanych obrazow: docker-compose.ghcr.yml obok zwyklego compose, ktory dalej buduje z checkoutu.",
+      "state": "locked",
+      "decidedOn": "2026-09-29"
     }
   ],
   "openQuestions": [

@@ -275,6 +275,38 @@ ważny do 19 września 2028.
 | Czytnik | port USB z YubiKey 5, włączony interfejs CCID |
 | PowerShell | 7.6+, jeśli ktoś woli wydawać z konsoli |
 
+### Wydane obrazy (D-39)
+
+Obrazy stoją na **ghcr.io**, publicznie, pod tym samym kontem co repozytorium:
+
+| Obraz | Co to jest |
+|---|---|
+| `ghcr.io/franeksoftsf/blinkylite-server` | serwer i migrator (ten sam obraz, inna komenda) |
+| `ghcr.io/franeksoftsf/blinkylite-web` | nginx z konsolą web |
+
+Buduje je i wypycha `.github/workflows/release-images.yml` przy tagu `vX.Y.Z`,
+po przejściu testów bazodanowych — obraz, który wyszedł, to obraz, którego
+testy przeszły. Tagi obrazu: dokładna wersja, `major.minor`, `latest` i
+`sha-<skrót>`. Wydanie to jedno polecenie:
+
+```bash
+git tag v0.1.91 && git push origin v0.1.91
+```
+
+**Raz, po pierwszym wydaniu:** paczka w ghcr powstaje jako prywatna — w
+ustawieniach pakietu na GitHubie trzeba ją przestawić na publiczną, inaczej
+`docker pull` bez logowania dostanie 401.
+
+Wdrożenie z wydanych obrazów, zamiast budowania z checkoutu:
+
+```bash
+BLINKYLITE_VERSION=0.1.91 \
+  docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+```
+
+Sekrety, certyfikaty, `.env` i wolumeny są te same — drugi plik podmienia
+wyłącznie to, skąd biorą się trzy kontenery.
+
 ### Stacja użytkownika: odblokowanie PIN (0056, 0057)
 
 Do odblokowania PIN-u wystarczy Windows z czytnikiem — bez domeny, bez

@@ -85,7 +85,7 @@ ADCS na podstawie AD. Działający w labie ręczny builder CMC z Blinky
 | | Docker |
 |---|---|
 | Host | Linux, `docker compose` |
-| Obraz | `mcr.microsoft.com/dotnet/aspnet:10.0` + `libldap` |
+| Obraz | `mcr.microsoft.com/dotnet/aspnet:10.0` + `libldap`; wydany na `ghcr.io/franeksoftsf/blinkylite-server` i `-web` (D-39) |
 | PostgreSQL | kontener w compose albo zewnętrzny |
 | TLS | Kestrel, certyfikat z wolumenu |
 | KEK | zmienna albo Docker secret |

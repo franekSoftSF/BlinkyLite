@@ -1,0 +1,24 @@
+# Run the published images instead of building from this checkout (D-39).
+#
+#   BLINKYLITE_VERSION=0.1.91 docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+#
+# Everything else - secrets, certificates, .env, volumes - comes from
+# docker-compose.yml unchanged. The only difference is where the three
+# server-side containers come from: ghcr.io instead of `docker build`.
+#
+# Why a second file rather than a flag: the plain compose file has to keep
+# building, because that is how this repository is developed and how the lab
+# tests an unreleased commit. A deployment that pulls a released version is a
+# different intent, and it says so by naming a different file.
+services:
+  migrate:
+    build: !reset null
+    image: ghcr.io/franeksoftsf/blinkylite-server:${BLINKYLITE_VERSION:-latest}
+
+  api:
+    build: !reset null
+    image: ghcr.io/franeksoftsf/blinkylite-server:${BLINKYLITE_VERSION:-latest}
+
+  web:
+    build: !reset null
+    image: ghcr.io/franeksoftsf/blinkylite-web:${BLINKYLITE_VERSION:-latest}

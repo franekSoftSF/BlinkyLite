@@ -1,0 +1,110 @@
+# Publishes the two server-side images to GitHub Container Registry (D-39).
+#
+# Trigger: a tag like v0.1.91. The images land as
+#   ghcr.io/franeksoftsf/blinkylite-server
+#   ghcr.io/franeksoftsf/blinkylite-web
+# tagged with the version, with major.minor, and with latest.
+#
+# ghcr rather than Docker Hub: the same account and the same permissions as the
+# repository, no credentials to keep anywhere (GITHUB_TOKEN is enough), and no
+# pull limits for anonymous users. A package is created PRIVATE by default -
+# the first release needs one click in the repository's Packages settings to
+# make it public.
+name: release-images
+
+on:
+  push:
+    tags:
+      - "v*"
+  # For a re-run of a tag that failed halfway through.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # An image that goes out is an image whose database tests passed. The server
+  # and its tests are plain net10.0, so this is the same gate as ci.yml's Linux
+  # job - repeated here on purpose, because "ci was green on some other commit"
+  # is not the same statement.
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: blinkylite
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d blinkylite"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      BLINKYLITE_TEST_DB: Host=localhost;Port=5432;Database=blinkylite;Username=postgres;Password=test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - run: dotnet build src/BlinkyLite.Server -c Release
+      - run: dotnet test tests/BlinkyLite.DbTests -c Release
+
+  images:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - image: blinkylite-server
+            dockerfile: docker/Dockerfile
+          - image: blinkylite-web
+            dockerfile: docker/web/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+          # latest=auto: a semver tag also becomes latest, a pre-release does
+          # not. On a tag push is_default_branch is false, so the raw form
+          # would have produced no latest at all.
+          flavor: latest=auto
+          labels: |
+            org.opencontainers.image.title=${{ matrix.image }}
+            org.opencontainers.image.licenses=Apache-2.0
+
+      # linux/amd64 alone: nobody runs the server on arm64 yet, and a second
+      # platform doubles the build for an image no one pulls. Adding it later
+      # is one line - platforms: linux/amd64,linux/arm64.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
