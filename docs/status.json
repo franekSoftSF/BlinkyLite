@@ -41,7 +41,7 @@
     "phase": 2,
     "phaseTitle": "Wydanie",
     "state": "open",
-    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na DPCLIENT01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. nginx na 443 z konsola web wdrozony (0055 partly-done). Drugi skladnik TOTP napisany i przetestowany bez AD (0027 done-unverified). Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031), wydanie z PowerShell (0040). Przegladarka web z lista, PUK, szczegolami i audytem oraz weryfikacja klucza w WPF/PowerShell (0030 done-unverified). 517 testow jednostkowych, 104 bazodanowe.",
+    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na DPCLIENT01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. nginx na 443 z konsola web wdrozony (0055 partly-done). Drugi skladnik TOTP napisany i przetestowany bez AD (0027 done-unverified). Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031), wydanie z PowerShell (0040). Przegladarka web z lista, PUK, szczegolami i audytem oraz weryfikacja klucza w WPF/PowerShell (0030 done-unverified). Odblokowanie PIN przez telefon: kod, zatwierdzenie w konsoli i PUK pobrany przez stacje, nigdy wypowiedziany (0057 done-unverified). 566 testow jednostkowych, 120 bazodanowych.",
     "nothingIssuedYet": false
   },
   "stateLegend": {
@@ -423,6 +423,12 @@
       "state": "locked",
       "decidedOn": "2026-09-29",
       "by": "owner"
+    },
+    {
+      "id": "D-37",
+      "choice": "Zdalne odblokowanie PIN: aplikacja pyta serwer, operator zatwierdza w konsoli. Karta nie ma challenge-response dla PUK-a, wiec kazda \"liczba do przepisania\" bylaby samym PUK-iem - zamiast tego kod przez telefon, zatwierdzenie z powodem i koperta pobrana przez stacje raz. Trzy endpointy bez tokenu (z zablokowanym PIN-em nie ma czym sie zalogowac), decyduja te same role co odsloniecie PUK-a, bez rotacji PUK-a i bez cmdletow",
+      "state": "locked",
+      "decidedOn": "2026-09-29"
     }
   ],
   "openQuestions": [
@@ -776,6 +782,15 @@
       "owner": "cloud-ai",
       "proof": "2026-09-29: aplikacja BlinkyLite.Unlock (jedno okno: klucz -> PUK -> nowy PIN) zbudowana i podpisana jako BlinkyLite-Unlock-0.1.87.0-x64.msix, w downloads/index.json obok klienta; strona logowania konsoli web podaje wlasnie ja, a instalator klienta dopiero po zalogowaniu. Okno odczytalo prawdziwy klucz (serial, stan PIN, pozostale proby PUK) na maszynie budujacej. Wspolna biblioteka BlinkyLite.Ui: paleta, style, tlumaczenia; CardAccess przeniesiony do BlinkyLite.Piv, zeby aplikacja nie ciagnela silnika wydania. 540 testow jednostkowych.",
       "gap": "Nikt jeszcze nie odblokowal prawdziwie zablokowanego PIN-u ta aplikacja: potrzebny klucz z zablokowanym PIN-em, PUK z konsoli i sprawdzenie zlego PUK-u (licznik prob) oraz zablokowanego PUK-u. Instalacja MSIX na stacji tez nie sprawdzona."
+    },
+    {
+      "id": "0057",
+      "phase": 3,
+      "title": "Odblokowanie PIN przez telefon",
+      "state": "done-unverified",
+      "owner": "cloud-ai",
+      "proof": "2026-09-29: drugi tryb aplikacji BlinkyLite.Unlock - odblokowanie przez telefon. Stacja bez zalogowanego prosi o kod (POST /api/unlock/start), uzytkownik czyta go operatorowi, operator zatwierdza w konsoli z powodem (strona Odblokowania, role Admin/SO/Helpdesk przez CanRevealPuk), a stacja sama pobiera koperte PUK-a raz i ustawia nowy PIN - PUK nie pada w rozmowie i nie pojawia sie na zadnym ekranie. Migracja 0007: unlock_requests i piec funkcji bl_unlock_* trzymaja stan; koperta i puk.disclosed (remote: true) w jednej instrukcji, osiem rownoleglych pobran daje jedno wydanie, kod bez sekretu stacji odpowiada jak nieznane zgloszenie, tabeli nie czyta ani rola aplikacji, ani readonly. 13 testow endpointow i 11 testow funkcji na prawdziwym PostgreSQL; 566 testow jednostkowych, 120 bazodanowych. Karta nie ma czym zastapic PUK-a (RESET RETRY COUNTER bierze tylko PUK, SET PIN RETRIES wymaga dzialajacego PIN-u), dlatego zatwierdzenie online, a nie liczba do przepisania - D-37.",
+      "gap": "Nikt jeszcze nie odblokowal tak prawdziwie zablokowanego PIN-u: potrzebna stacja z MSIX-em, telefon do helpdesku i sprawdzenie odmowy oraz wygasniecia kodu w labie. Paczka MSIX z drugim trybem nie jest jeszcze zbudowana ani wystawiona na serwerze."
     }
   ],
   "notVerified": [
@@ -798,6 +813,11 @@
       "what": "0026/R-11: swiezy CHUID przy ponownym wydaniu",
       "why": "poprawka w kodzie, ale zadna karta nie zostala jeszcze wydana ta wersja; DPCLIENT02 i ADMIN-PC dalej nie widza klucza karty 39721373",
       "when": "reset + wydanie nowym klientem, potem ta sama karta na DPCLIENT02"
+    },
+    {
+      "what": "0057: odblokowanie przez telefon na prawdziwie zablokowanym PIN-ie",
+      "why": "caly tor sprawdzony testami i na PostgreSQL, ale nie z telefonem i nie na stacji",
+      "when": "0057 w labie"
     }
   ]
 }

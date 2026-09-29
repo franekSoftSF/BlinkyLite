@@ -21,12 +21,16 @@ po niej ślad:
 5. zapisuje PUK i management key — zaszyfrowane — w bazie serwera, z audytem
    kto, komu, kiedy i jaki klucz wydał,
 6. pozwala później **zweryfikować** kartę: włożony klucz jest porównywany z
-   zapisem (serial, certyfikat, atestacja) — tylko odczyt.
+   zapisem (serial, certyfikat, atestacja) — tylko odczyt,
+7. **odblokowuje zablokowany PIN** — osobną, małą aplikacją dla posiadacza
+   klucza: z PUK-iem, który przeczytał mu helpdesk, albo przez telefon, gdzie
+   operator zatwierdza zgłoszenie w konsoli, a PUK jedzie po TLS na stację i
+   nie pada w rozmowie (0056, 0057).
 
-Na tym koniec. Zmiana PUK, odblokowanie PIN, reset i dalsze życie karty to
-zadanie [Blinky](../blinky), nie BlinkyLite. Po wersji 1.0 dochodzi jedna
-rzecz: wiadomość od bota BlinkyLite w **Microsoft Teams**, że certyfikat
-użytkownika wkrótce wygaśnie — tylko informacja, bez odnawiania
+Na tym koniec. Zmiana PUK, reset karty i dalsze życie karty to zadanie
+[Blinky](../blinky), nie BlinkyLite. Po wersji 1.0 dochodzi jedna rzecz:
+wiadomość od bota BlinkyLite w **Microsoft Teams**, że certyfikat użytkownika
+wkrótce wygaśnie — tylko informacja, bez odnawiania
 ([docs/09](docs/09-expiry-notification.md)).
 
 BlinkyLite to uproszczone rodzeństwo [Blinky](../blinky). Warstwa PIV,

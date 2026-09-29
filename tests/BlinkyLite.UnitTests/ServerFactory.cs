@@ -66,6 +66,7 @@ public sealed class ServerFactory : WebApplicationFactory<Program>
         builder.UseSetting($"Roles:{Role.SecurityOfficer}:0", OfficerGroup);
         builder.UseSetting($"Roles:{Role.Helpdesk}:0", HelpdeskGroup);
         builder.UseSetting("RateLimits:LoginPerMinute", "1000");
+        builder.UseSetting("RateLimits:UnlockPerMinute", "1000");
         builder.UseSetting("Kerberos:Realm", Realm);
         builder.UseSetting("Kerberos:KeytabPath", Keytab ?? Path.Combine(Path.GetTempPath(), "blinkylite-no-such.keytab"));
 
@@ -429,6 +430,122 @@ public sealed class RecordingProcedures : IProcedures
         return Task.CompletedTask;
     }
 
+    /// <summary>Requests for a remote unblock, with the rules of migration 0007.</summary>
+    public ConcurrentDictionary<Guid, FakeUnlock> Unlocks { get; } = new();
+
+    /// <summary>What the bl_unlock_* functions would have written to audit_events.</summary>
+    public List<(string Action, Guid Request, Actor Actor)> UnlockAudits { get; } = [];
+
+    public Task RequestUnlockAsync(Guid id, long cardSerial, string code, byte[] secretHash, string workstation,
+        int minutes, Actor actor, CancellationToken ct = default)
+    {
+        if (!Envelopes.ContainsKey((cardSerial, SecretKind.Puk)))
+        {
+            throw Rule("BL002", ErrorCodes.NotFound);
+        }
+
+        foreach (var other in Unlocks.Values.Where(u => u.CardSerial == cardSerial && u.State == UnlockStates.Pending))
+        {
+            other.State = UnlockStates.Expired;
+        }
+
+        Unlocks[id] = new FakeUnlock(cardSerial, code, secretHash, workstation, actor.SourceIp?.ToString());
+        UnlockAudits.Add(("unlock.requested", id, actor));
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<UnlockWaitingRow>> UnlockWaitingAsync(Actor actor, CancellationToken ct = default)
+    {
+        RequireRole(actor, Role.Admin, Role.SecurityOfficer, Role.Helpdesk);
+
+        IReadOnlyList<UnlockWaitingRow> rows = Unlocks
+            .Where(u => u.Value.State == UnlockStates.Pending)
+            .OrderBy(u => u.Value.CreatedAt)
+            .Select(u => new UnlockWaitingRow(u.Key, u.Value.Code, u.Value.CardSerial, u.Value.Workstation,
+                u.Value.SourceIp, u.Value.CreatedAt, u.Value.CreatedAt.AddMinutes(10), "", ""))
+            .ToList();
+
+        return Task.FromResult(rows);
+    }
+
+    public Task DecideUnlockAsync(Guid id, bool approve, string reason, Actor actor, CancellationToken ct = default)
+    {
+        RequireRole(actor, Role.Admin, Role.SecurityOfficer, Role.Helpdesk);
+
+        if (reason.Trim().Length < 5)
+        {
+            throw Rule("BL005", ErrorCodes.ReasonRequired);
+        }
+
+        var request = Unlocks.TryGetValue(id, out var found) ? found : throw Rule("BL002", ErrorCodes.NotFound);
+        lock (request)
+        {
+            if (request.State != UnlockStates.Pending)
+            {
+                throw Rule("BL001", ErrorCodes.UnlockInvalidState);
+            }
+
+            request.State = approve ? UnlockStates.Approved : UnlockStates.Refused;
+            request.ApproverUpn = actor.Upn;
+            request.Reason = reason.Trim();
+        }
+
+        UnlockAudits.Add((approve ? "unlock.approved" : "unlock.refused", id, actor));
+        return Task.CompletedTask;
+    }
+
+    public Task<UnlockDelivery> CollectUnlockAsync(Guid id, byte[] secretHash, Actor actor, CancellationToken ct = default)
+    {
+        var request = Unlocks.TryGetValue(id, out var found) && found.SecretHash.SequenceEqual(secretHash)
+            ? found
+            : throw Rule("BL002", ErrorCodes.NotFound);
+
+        lock (request)
+        {
+            if (request.State != UnlockStates.Approved)
+            {
+                return Task.FromResult(new UnlockDelivery(request.State, request.CardSerial, null, null, null));
+            }
+
+            var envelope = Envelopes[(request.CardSerial, SecretKind.Puk)];
+            request.State = UnlockStates.Delivered;
+            // The same event an ordinary reveal writes: the PUK left the server.
+            Disclosures.Add((request.CardSerial, SecretKind.Puk, request.Reason ?? "", actor));
+            UnlockAudits.Add(("puk.disclosed", id, actor));
+
+            return Task.FromResult(new UnlockDelivery(UnlockStates.Delivered, request.CardSerial,
+                envelope.IssuanceId, envelope.Envelope, envelope.KekVersion));
+        }
+    }
+
+    public Task FinishUnlockAsync(Guid id, byte[] secretHash, bool ok, string? error, Actor actor, CancellationToken ct = default)
+    {
+        var request = Unlocks.TryGetValue(id, out var found) && found.SecretHash.SequenceEqual(secretHash)
+            ? found
+            : throw Rule("BL002", ErrorCodes.NotFound);
+
+        lock (request)
+        {
+            if (request.State != UnlockStates.Delivered)
+            {
+                throw Rule("BL001", ErrorCodes.UnlockInvalidState);
+            }
+
+            request.State = ok ? UnlockStates.Completed : UnlockStates.Failed;
+        }
+
+        UnlockAudits.Add((ok ? "unlock.completed" : "unlock.failed", id, actor));
+        return Task.CompletedTask;
+    }
+
+    private static void RequireRole(Actor actor, params Role[] allowed)
+    {
+        if (!actor.Roles.Any(allowed.Contains))
+        {
+            throw Rule("BL004", ErrorCodes.Forbidden);
+        }
+    }
+
     private static DatabaseRuleException Rule(string sqlState, string key) =>
         new(sqlState, key, null, new InvalidOperationException(key));
 
@@ -454,6 +571,27 @@ public sealed class RecordingProcedures : IProcedures
     }
 
     public Task<IReadOnlyList<ManagementKeyCandidate>> GetManagementKeyCandidatesAsync(long cardSerial, Actor actor, CancellationToken ct = default) => throw new NotSupportedException();
+}
+
+public sealed class FakeUnlock(long cardSerial, string code, byte[] secretHash, string workstation, string? sourceIp)
+{
+    public long CardSerial { get; } = cardSerial;
+
+    public string Code { get; } = code;
+
+    public byte[] SecretHash { get; } = secretHash;
+
+    public string Workstation { get; } = workstation;
+
+    public string? SourceIp { get; } = sourceIp;
+
+    public DateTime CreatedAt { get; } = DateTime.UtcNow;
+
+    public string State { get; set; } = UnlockStates.Pending;
+
+    public string? ApproverUpn { get; set; }
+
+    public string? Reason { get; set; }
 }
 
 public sealed class FakeTotp(byte[] envelope, short kekVersion)

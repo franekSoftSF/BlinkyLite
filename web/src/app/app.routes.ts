@@ -4,6 +4,7 @@ import { Auth } from './core/auth.service';
 import { AuditPage } from './pages/audit.page';
 import { IssuancesPage } from './pages/issuances.page';
 import { ToolsPage } from './pages/tools.page';
+import { UnlockPage } from './pages/unlock.page';
 import { LoginPage } from './pages/login.page';
 
 /**
@@ -13,6 +14,10 @@ import { LoginPage } from './pages/login.page';
  * form.
  */
 const signedIn: CanActivateFn = () => inject(Auth).signedIn() || inject(Router).parseUrl('/login');
+
+/** The same roles that may reveal a PUK by hand decide a remote unblock (0057). */
+const unlocking: CanActivateFn = () =>
+  (inject(Auth).signedIn() && inject(Auth).hasRole('Admin', 'SecurityOfficer', 'Helpdesk')) || inject(Router).parseUrl('/');
 
 /** Only to spare an Admin-less operator a page of 403s; the server is what refuses. */
 /** The station installer is for those who issue; Helpdesk has no station to install. */
@@ -27,5 +32,6 @@ export const routes: Routes = [
   { path: '', component: IssuancesPage, canActivate: [signedIn] },
   { path: 'audit', component: AuditPage, canActivate: [admin] },
   { path: 'tools', component: ToolsPage, canActivate: [issuing] },
+  { path: 'unlock', component: UnlockPage, canActivate: [unlocking] },
   { path: '**', redirectTo: '' },
 ];

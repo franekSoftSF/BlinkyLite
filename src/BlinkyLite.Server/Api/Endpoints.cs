@@ -7,6 +7,13 @@ namespace BlinkyLite.Server.Api;
 public static class Endpoints
 {
     public const string LoginRateLimit = "login";
+
+    /// <summary>
+    /// Its own limiter, not the sign-in's (0057): a workstation waiting for an
+    /// approval asks every few seconds, which is normal here and would look
+    /// like a password attack under the sign-in's ten a minute.
+    /// </summary>
+    public const string UnlockRateLimit = "unlock";
     public const int DirectorySearchLimit = 25;
 
     /// <summary>

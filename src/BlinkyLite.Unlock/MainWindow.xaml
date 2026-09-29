@@ -5,7 +5,7 @@
         Title="{l:Loc unlock.title}"
         Icon="Assets/blinkylite.ico"
         Width="620"
-        Height="800"
+        Height="820"
         MinWidth="560"
         MinHeight="600"
         WindowStartupLocation="CenterScreen"
@@ -15,7 +15,7 @@
         FontSize="14">
 
     <!-- One window, top to bottom, in the order the person does it: the key,
-         the PUK from the helpdesk, the new PIN. -->
+         the PUK (typed, or fetched over the telephone), the new PIN. -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -81,12 +81,59 @@
                         </StackPanel>
                     </Button>
 
-                    <!-- 2. The PUK, from the helpdesk -->
+                    <!-- 2. The PUK: typed by hand, or fetched after somebody at
+                         the helpdesk approves the code. Two buttons rather than
+                         tabs, because there are exactly two ways and both have
+                         to be readable from across the desk. -->
                     <TextBlock Text="{l:Loc unlock.step.puk}" Style="{StaticResource FieldLabel}" />
-                    <PasswordBox x:Name="PukBox" FontSize="18" FontFamily="{StaticResource Mono}" MaxLength="8" PasswordChanged="Typed" />
-                    <TextBlock Text="{l:Loc unlock.puk.hint}" Style="{StaticResource Hint}" Margin="2,6,0,20" />
+                    <UniformGrid Columns="2" Margin="0,0,0,14">
+                        <Button x:Name="PukModeButton" Click="PukModeChosen" Margin="0,0,4,0" Padding="10,10">
+                            <TextBlock Text="{l:Loc unlock.mode.puk}" TextWrapping="Wrap" TextAlignment="Center" />
+                        </Button>
+                        <Button x:Name="RemoteModeButton" Click="RemoteModeChosen" Margin="4,0,0,0" Padding="10,10">
+                            <TextBlock Text="{l:Loc unlock.mode.remote}" TextWrapping="Wrap" TextAlignment="Center" />
+                        </Button>
+                    </UniformGrid>
 
-                    <!-- 3. The new PIN, twice -->
+                    <StackPanel x:Name="PukPanel">
+                        <PasswordBox x:Name="PukBox" FontSize="18" FontFamily="{StaticResource Mono}" MaxLength="8" PasswordChanged="Typed" />
+                        <TextBlock Text="{l:Loc unlock.puk.hint}" Style="{StaticResource Hint}" Margin="2,6,0,20" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="RemotePanel" Visibility="Collapsed" Margin="0,0,0,20">
+                        <TextBlock Text="{l:Loc unlock.remote.explain}" Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                        <TextBlock Text="{l:Loc unlock.remote.server}" Style="{StaticResource FieldLabel}" />
+                        <TextBox x:Name="ServerBox" TextChanged="Typed" />
+
+                        <!-- The code, once there is one: big, spaced and in a
+                             mono font, because it is going to be read out over
+                             a telephone. -->
+                        <Border x:Name="CodePanel"
+                                Visibility="Collapsed"
+                                Margin="0,14,0,0"
+                                Background="{DynamicResource Background}"
+                                BorderBrush="{DynamicResource Border}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="16,14">
+                            <StackPanel>
+                                <TextBlock Text="{l:Loc unlock.remote.code}" Style="{StaticResource Hint}" />
+                                <TextBlock x:Name="CodeText"
+                                           FontFamily="{StaticResource Mono}"
+                                           FontSize="34"
+                                           FontWeight="Bold"
+                                           Margin="0,6,0,0"
+                                           Foreground="{DynamicResource AccentText}" />
+                                <TextBlock x:Name="ExpiryText" Style="{StaticResource Hint}" Margin="0,4,0,0" />
+                                <TextBlock x:Name="WaitingText" Margin="0,8,0,0" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource MutedText}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- 3. The new PIN, twice. The same two boxes whichever way
+                         the PUK arrives. -->
                     <TextBlock Text="{l:Loc unlock.step.pin}" Style="{StaticResource FieldLabel}" />
                     <PasswordBox x:Name="PinBox" FontSize="18" FontFamily="{StaticResource Mono}" MaxLength="8" PasswordChanged="Typed" />
 
@@ -112,7 +159,7 @@
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE785;" FontFamily="{StaticResource Icons}" FontSize="16" VerticalAlignment="Center"
                                        Margin="0,0,10,0" Foreground="{DynamicResource OnAccent}" />
-                            <TextBlock Text="{l:Loc unlock.action}" VerticalAlignment="Center" Foreground="{DynamicResource OnAccent}" />
+                            <TextBlock x:Name="UnlockButtonText" VerticalAlignment="Center" Foreground="{DynamicResource OnAccent}" />
                         </StackPanel>
                     </Button>
                 </StackPanel>

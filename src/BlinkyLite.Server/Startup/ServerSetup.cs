@@ -121,6 +121,17 @@ public static class ServerSetup
                     Window = TimeSpan.FromMinutes(1),
                     QueueLimit = 0,
                 }));
+
+            // Room for one workstation polling every three seconds for the ten
+            // minutes a code lives, and not much more (0057).
+            options.AddPolicy(Endpoints.UnlockRateLimit, context => RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = configuration.GetValue("RateLimits:UnlockPerMinute", 60),
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                }));
         });
     }
 
@@ -144,6 +155,7 @@ public static class ServerSetup
         services.TryAddSingleton(AttestationVerifier.ForYubico());
         services.AddScoped<IssuanceService>();
         services.AddScoped<BlinkyLite.Server.Browsing.BrowseService>();
+        services.AddScoped<BlinkyLite.Server.Unlocking.UnlockService>();
     }
 
     /// <summary>

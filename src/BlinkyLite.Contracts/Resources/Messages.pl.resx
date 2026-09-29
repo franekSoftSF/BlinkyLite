@@ -760,4 +760,94 @@
   <data name="web.login.blocked-pin" xml:space="preserve">
     <value>Zablokował Ci się PIN?</value>
   </data>
+  <data name="error.unlock.invalid-state" xml:space="preserve">
+    <value>To zgłoszenie zostało już obsłużone. Poproś o nowy kod.</value>
+  </data>
+  <data name="error.unlock.refused" xml:space="preserve">
+    <value>Helpdesk odrzucił to zgłoszenie.</value>
+  </data>
+  <data name="error.unlock.expired" xml:space="preserve">
+    <value>Kod już nie działa. Poproś o nowy.</value>
+  </data>
+  <data name="error.unlock.no-server" xml:space="preserve">
+    <value>Serwer jest nieosiągalny, więc nikt nie zatwierdzi odblokowania z tego okna. Poproś helpdesk o PUK.</value>
+  </data>
+  <data name="audit.unlock.requested" xml:space="preserve">
+    <value>Zgłoszono odblokowanie ze stacji</value>
+  </data>
+  <data name="audit.unlock.approved" xml:space="preserve">
+    <value>Zatwierdzono odblokowanie</value>
+  </data>
+  <data name="audit.unlock.refused" xml:space="preserve">
+    <value>Odrzucono odblokowanie</value>
+  </data>
+  <data name="audit.unlock.completed" xml:space="preserve">
+    <value>PIN odblokowany</value>
+  </data>
+  <data name="audit.unlock.failed" xml:space="preserve">
+    <value>Odblokowanie nie udało się na kluczu</value>
+  </data>
+  <data name="unlock.mode.puk" xml:space="preserve">
+    <value>Mam PUK</value>
+  </data>
+  <data name="unlock.mode.remote" xml:space="preserve">
+    <value>Odblokuj przez telefon</value>
+  </data>
+  <data name="unlock.remote.explain" xml:space="preserve">
+    <value>Zadzwoń na helpdesk i przeczytaj kod poniżej. Po zatwierdzeniu to okno ustawi nowy PIN - PUK nie jest czytany na głos.</value>
+  </data>
+  <data name="unlock.remote.start" xml:space="preserve">
+    <value>Poproś o kod</value>
+  </data>
+  <data name="unlock.remote.code" xml:space="preserve">
+    <value>Przeczytaj to helpdeskowi</value>
+  </data>
+  <data name="unlock.remote.waiting" xml:space="preserve">
+    <value>Czekam na zatwierdzenie przez helpdesk</value>
+  </data>
+  <data name="unlock.remote.expires" xml:space="preserve">
+    <value>Kod przestaje działać o {0}</value>
+  </data>
+  <data name="unlock.remote.approved" xml:space="preserve">
+    <value>Zatwierdzone. Nowy PIN jest ustawiany.</value>
+  </data>
+  <data name="unlock.remote.server" xml:space="preserve">
+    <value>Serwer</value>
+  </data>
+  <data name="web.nav.unlock" xml:space="preserve">
+    <value>Odblokowania</value>
+  </data>
+  <data name="web.unlock.title" xml:space="preserve">
+    <value>Zgłoszenia odblokowania PIN</value>
+  </data>
+  <data name="web.unlock.explain" xml:space="preserve">
+    <value>Ktoś z zablokowanym PIN-em przeczytał kod. Sprawdź, kto dzwoni, i zatwierdź - stacja sama pobierze PUK, nikt go nie czyta.</value>
+  </data>
+  <data name="web.unlock.empty" xml:space="preserve">
+    <value>Nikt nie czeka.</value>
+  </data>
+  <data name="web.unlock.code" xml:space="preserve">
+    <value>Kod</value>
+  </data>
+  <data name="web.unlock.from" xml:space="preserve">
+    <value>Z adresu</value>
+  </data>
+  <data name="web.unlock.asked" xml:space="preserve">
+    <value>Zgłoszone</value>
+  </data>
+  <data name="web.unlock.expires" xml:space="preserve">
+    <value>Ważne do</value>
+  </data>
+  <data name="web.unlock.approve" xml:space="preserve">
+    <value>Zatwierdź</value>
+  </data>
+  <data name="web.unlock.refuse" xml:space="preserve">
+    <value>Odrzuć</value>
+  </data>
+  <data name="web.unlock.reason.hint" xml:space="preserve">
+    <value>Zapisz, skąd wiesz, kto dzwonił. To trafia do dziennika audytu.</value>
+  </data>
+  <data name="web.unlock.decided" xml:space="preserve">
+    <value>Gotowe. Stacja działa dalej sama.</value>
+  </data>
 </root>

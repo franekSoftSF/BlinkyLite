@@ -224,3 +224,27 @@ Jeśli nie — hipotezy po jednej, każda z wynikiem w tabeli:
 | GUID w CHUID nie jest poprawnym UUID | wydać kartę po poprawce, porównać `certutil -scinfo` | poprawione; wpływu na Windows jeszcze nie zmierzono |
 | ~~sterownik czyta Discovery Object (`7E`) i bez niego nie wie, jak używać PIN-u~~ | — | **odpada**: YubiKey ma Discovery Object z firmware (`5F2F 40 00`), zrzut 21.09; i tak brak byłby zgodny z normą (SP 800-85A-4, TE05.12A.01) |
 | sterownik wymaga Key History Object (`5FC10C`) | zapisać pusty, powtórzyć | — |
+
+## Zablokowany PIN: karta nie ma nic zamiast PUK-a (0057)
+
+Reguła, nie hipoteza — wynika z tego, co karta przyjmuje, i potwierdził ją
+pomiar w labie (właściciel, 21 września 2026: „zablokowałem sobie PUK, jak go
+zmodyfikowałem — już nie mogę zmienić go management keyem").
+
+| Komenda | Czym się uwierzytelnia | Kiedy działa |
+|---|---|---|
+| `RESET RETRY COUNTER` (INS `2C`) — odblokowanie PIN-u | **tylko PUK** | zawsze, dopóki PUK ma próby |
+| `CHANGE REFERENCE DATA` (INS `24`) dla PUK-a | **stary PUK** | nie pomaga, gdy PUK jest zablokowany |
+| `SET PIN RETRIES` (INS `FA`) — resetuje PIN i PUK do fabrycznych | management key **i działający PIN** | nie pomaga przy zablokowanym PIN-ie |
+| `RESET` aplikacji PIV | tylko przy zablokowanych **obu** | czyści klucze i certyfikaty — klucz do wydania od nowa |
+
+Wnioski, na których stoi 0057:
+
+- **Uwierzytelnienie management keyem nie obejmuje odblokowania PIN-u.**
+  Management key otwiera slot na klucze i certyfikaty, nie licznik prób PIN-u.
+- **Nie da się zrobić prawdziwego challenge–response** na numer do przepisania
+  przez telefon: cokolwiek karta przyjmie, to będzie PUK, a PUK przeczytany na
+  głos zostaje w zeszycie osoby, która go usłyszała. Dlatego PUK jedzie po TLS
+  do aplikacji, która go użyje, a przez telefon jedzie tylko kod zgłoszenia.
+- **Zablokowany PUK to koniec drogi dla tej karty.** Nie ma komendy, która by
+  go podniosła bez działającego PIN-u; zostaje wydanie od nowa.

@@ -275,6 +275,24 @@ ważny do 19 września 2028.
 | Czytnik | port USB z YubiKey 5, włączony interfejs CCID |
 | PowerShell | 7.6+, jeśli ktoś woli wydawać z konsoli |
 
+### Stacja użytkownika: odblokowanie PIN (0056, 0057)
+
+Do odblokowania PIN-u wystarczy Windows z czytnikiem — bez domeny, bez
+certyfikatu EA, bez konta w BlinkyLite. Aplikacja `BlinkyLite.Unlock` z MSIX-a
+ze strony logowania robi to na dwa sposoby: z PUK-iem wpisanym z ręki albo
+przez telefon, z zatwierdzeniem w konsoli.
+
+Dla trybu telefonicznego warto wpisać adres serwera raz, maszynowo, żeby nikt
+z zablokowanym PIN-em nie musiał go znać — `%ProgramData%\BlinkyLite\unlock.json`:
+
+```json
+{ "server": "https://blinkylite.digitalworkspace.example" }
+```
+
+Adres wpisany przez użytkownika w okienku wygrywa i zapisuje się w jego
+profilu (`%AppData%\BlinkyLite\unlock.json`). Poza adresem nie ma tam nic —
+żadnego tokenu, PUK-a ani PIN-u.
+
 ## 5. Uruchomienie stacku (dziś)
 
 ```bash

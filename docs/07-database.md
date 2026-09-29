@@ -36,6 +36,11 @@ globalnymi domyślnymi uprawnieniami właściciela — wariant „per schemat”
 umie odebrać, tylko dodać), nadane `blinkylite_app` na liście funkcji `bl_*`.
 Pomocnicze `_bl_*` nie są nadane nikomu.
 
+**Kody odblokowania też poza zasięgiem `SELECT`** (0057): na
+`unlock_requests` żadna z dwóch ról nie ma `SELECT`, bo jedno zapytanie
+oddałoby wszystkie kody, które są w tej chwili aktualne. Jedyna droga to
+`bl_unlock_waiting`, która nie zwraca ani sekretu, ani koperty.
+
 **Koperty poza zasięgiem `SELECT`.** Gdyby rola aplikacji miała zwykły
 `SELECT` na `card_secrets`, jedno zapytanie LINQ przeczytałoby każdy PUK w
 bazie bez śladu w audycie. Uprawnienie kolumnowe zamyka tę drogę: jedynym
@@ -75,10 +80,19 @@ Każda przyjmuje aktora: `p_actor_upn`, `p_actor_sid`, `p_actor_roles text[]`,
 | `bl_totp_accept(step, aktor)` | — | `step` > `last_step` → zapis; inaczej `BL006`; bez potwierdzonego `BL008` | `auth.login` |
 | `bl_totp_backup_use(code_hash, aktor)` | `integer` — ile zostało | nieużyty kod → `used_at`; inaczej `BL006` | `auth.login` z `backup_codes_left` |
 | `bl_totp_reset(operator_sid, reason, aktor)` | — | usuwa składnik i kody; nie własny (`BL004`), powód ≥ 5 znaków (`BL005`) | `totp.reset` z powodem |
+| `bl_unlock_request(id, serial, code, secret_hash, workstation, minutes, aktor)` *(0057)* | — | karta z `Active` kopertą PUK → nowe `Pending`; poprzednie `Pending`/`Approved` tej karty → `Expired` (jeden aktualny kod na klucz); karta bez PUK-a → `BL002` | `unlock.requested` |
+| `bl_unlock_waiting(aktor)` *(0057)* | zbiór `(id, code, card_serial, workstation, source_ip, created_at, expires_at, target_display_name, target_sam)` — **bez koperty** | — | — (lista nie jest odsłonięciem) |
+| `bl_unlock_decide(id, approve, reason, aktor)` *(0057)* | — | `Pending` → `Approved` albo `Refused`, z UPN-em i powodem; inny stan → `BL001`; powód < 5 znaków → `BL005` | `unlock.approved` / `unlock.refused` z powodem |
+| `bl_unlock_collect(id, secret_hash, aktor)` *(0057)* | `(state, card_serial, issuance_id, envelope, kek_version)` — koperta tylko raz, przy `Approved` | `Approved` → `Delivered`, licznik odsłonięć PUK +1; zły `secret_hash` → `BL002` jak nieznane zgłoszenie | `puk.disclosed` z `remote: true`, powodem i UPN-em zatwierdzającego |
+| `bl_unlock_finish(id, secret_hash, ok, error, aktor)` *(0057)* | — | `Delivered` → `Completed` albo `Failed`; inny stan → `BL001` | `unlock.completed` / `unlock.failed` |
 | `bl_expiry_notified(issuance_id, threshold_days, outcome, entra_user_id, error)` *(0060, po 1.0)* | `boolean` — `false`, jeśli ten próg już zapisano | wiersz w `expiry_notifications` (unikalne `issuance_id` + `threshold_days`); `outcome` ∈ `sent`, `skipped`, `failed` | `cert.expiry-notified` / `cert.expiry-notify-failed` |
 
 Aktor `bl_expiry_notified` to stały aktor systemowy `system:expiry-notifier`
-— powiadomienie nie ma operatora, a audyt nie może mieć pustego pola.
+— powiadomienie nie ma operatora, a audyt nie może mieć pustego pola. Tak samo
+`bl_unlock_request`, `bl_unlock_collect` i `bl_unlock_finish`: woła je stacja,
+na której nikt nie jest zalogowany, więc aktorem jest `system:unlock` (SID
+`S-1-0-0`). Kto to zatwierdził, stoi na zdarzeniu zatwierdzenia i w `data`
+zdarzeń, które stacja spowodowała.
 
 Sprawdzenie ról (kto może wywołać co) robi serwer przez polityki ASP.NET
 Core. Funkcje sprawdzają to **drugi raz**, żeby błąd w polityce nie
@@ -92,6 +106,8 @@ wystarczył (`BL004`):
 | `bl_audit` | — (odmowa logowania nie ma jeszcze ról) |
 | `bl_totp_begin`, `_confirm`, `_accept`, `_backup_use` | dowolna z trzech ról — bilet dostaje tylko ktoś, kto ją ma |
 | `bl_totp_reset` | `Admin`, i nie dla własnego SID |
+| `bl_unlock_waiting`, `bl_unlock_decide` | `Admin`, `SecurityOfficer` albo `Helpdesk` — te same, co odsłonięcie PUK-a |
+| `bl_unlock_request`, `bl_unlock_collect`, `bl_unlock_finish` | — (stacja bez zalogowanego; zamiast roli sprawdzany jest `secret_hash`, a koperta wychodzi tylko po zatwierdzeniu) |
 
 Powód krótszy niż 5 znaków (po `trim`) jest odrzucany w bazie (`BL005`), nie
 tylko w UI. `actor_sid` może być pusty wyłącznie dla `auth.denied` — złe
@@ -111,7 +127,7 @@ Funkcje zgłaszają błędy własną klasą SQLSTATE `BL`:
 
 | SQLSTATE | Klucz komunikatu | HTTP |
 |---|---|---|
-| `BL001` | `error.issuance.invalid-state` | 409 |
+| `BL001` | `error.issuance.invalid-state`, a dla zgłoszeń odblokowania (0057) `error.unlock.invalid-state` — już rozpatrzone, pobrane albo zakończone | 409 |
 | `BL002` | `error.not-found` | 404 |
 | `BL003` | `error.card.reserved-elsewhere` — karta ma otwartą rezerwację innego wydania | 409 |
 | `BL004` | `error.forbidden` — rola aktora nie pozwala na tę funkcję | 403 |
@@ -166,6 +182,8 @@ db/
     0003_functions_secrets_audit.sql← bl_secret_disclose, bl_mgmt_key_candidates, bl_audit
     0004_grants.sql                 ← uprawnienia app/readonly
     0005_reserve_takes_issuance_id.sql ← id wydania z serwera (AAD kopert)
+    0006_operator_totp.sql          ← drugi składnik operatora i kody zapasowe
+    0007_unlock_requests.sql        ← zgłoszenia zdalnego odblokowania PIN
 ```
 
 - Serwer z `--migrate` (connection string `Owner`) zakłada schemat

@@ -12,7 +12,10 @@ namespace BlinkyLite.DbTests;
 public sealed class PrivilegeTests(DatabaseFixture db)
 {
     private static readonly string[] Tables =
-        ["cards", "issuances", "card_secrets", "audit_events", "schema_migrations", "operator_totp", "operator_backup_codes"];
+    [
+        "cards", "issuances", "card_secrets", "audit_events", "schema_migrations", "operator_totp",
+        "operator_backup_codes", "unlock_requests",
+    ];
 
     public static TheoryData<string, string> WritesOnEveryTable()
     {
@@ -84,6 +87,21 @@ public sealed class PrivilegeTests(DatabaseFixture db)
         Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, error.SqlState);
     }
 
+    [DbTheory]
+    [InlineData("app")]
+    [InlineData("readonly")]
+    public async Task The_codes_waiting_to_be_approved_cannot_be_read_around_bl_unlock_waiting(string role)
+    {
+        await using var connection = await Open(role);
+
+        // A SELECT here would hand out every code that is live right now, and a
+        // code plus a telephone call is most of a remote unblock (0057).
+        var error = await Assert.ThrowsAsync<PostgresException>(
+            () => Execute(connection, "select * from blinkylite.unlock_requests"));
+
+        Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, error.SqlState);
+    }
+
     [DbFact]
     public async Task The_application_can_execute_exactly_the_bl_API_and_PUBLIC_nothing()
     {
@@ -107,7 +125,8 @@ public sealed class PrivilegeTests(DatabaseFixture db)
             ["bl_audit", "bl_issuance_attested", "bl_issuance_customised", "bl_issuance_failed", "bl_issuance_issued",
              "bl_issuance_pending", "bl_issuance_reserve", "bl_issuance_submitted", "bl_mgmt_key_candidates",
              "bl_secret_disclose", "bl_totp_accept", "bl_totp_backup_use", "bl_totp_begin", "bl_totp_confirm",
-             "bl_totp_reset", "bl_totp_state"],
+             "bl_totp_reset", "bl_totp_state", "bl_unlock_collect", "bl_unlock_decide", "bl_unlock_finish",
+             "bl_unlock_request", "bl_unlock_waiting"],
             executable);
         Assert.Empty(publicExecutable);
     }

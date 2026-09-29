@@ -32,6 +32,12 @@ public static class ErrorCodes
     public const string KerberosFailed = "error.kerberos.failed";
     public const string KerberosNoAccount = "error.kerberos.no-account";
 
+    // Remote unblock (0057).
+    public const string UnlockInvalidState = "error.unlock.invalid-state";
+    public const string UnlockRefused = "error.unlock.refused";
+    public const string UnlockExpired = "error.unlock.expired";
+    public const string UnlockNoServer = "error.unlock.no-server";
+
     // What the issuance engine refuses before anything is written to a card.
     public const string ReaderNone = "error.reader.none";
     public const string CardNone = "error.card.none";

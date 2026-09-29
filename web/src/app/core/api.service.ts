@@ -75,6 +75,19 @@ export interface AuditEntry {
 
 export type SecretKind = 'puk' | 'management-key';
 
+/** One request to unblock a PIN, waiting for somebody to decide (0057). */
+export interface UnlockWaiting {
+  id: string;
+  code: string;
+  cardSerial: number;
+  workstation: string;
+  sourceIp: string | null;
+  createdAt: string;
+  expiresAt: string;
+  targetDisplayName: string;
+  targetSam: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class Api {
   private readonly http = inject(HttpClient);
@@ -100,6 +113,19 @@ export class Api {
     }
     const answer = await firstValueFrom(this.http.post<{ key: string; algorithm: string }>(url, { reason }));
     return `${answer.key}  (${answer.algorithm})`;
+  }
+
+  /**
+   * The requests waiting for a decision (0057). No secret in the answer: the
+   * workstation collects the PUK itself, once, after an approval.
+   */
+  unlockWaiting(): Promise<UnlockWaiting[]> {
+    return firstValueFrom(this.http.get<UnlockWaiting[]>('/api/unlock/requests'));
+  }
+
+  decideUnlock(id: string, approve: boolean, reason: string): Promise<void> {
+    const step = approve ? 'approve' : 'refuse';
+    return firstValueFrom(this.http.post<void>(`/api/unlock/requests/${encodeURIComponent(id)}/${step}`, { reason }));
   }
 
   audit(card: string, page: number): Promise<Page<AuditEntry>> {

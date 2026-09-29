@@ -760,4 +760,94 @@
   <data name="web.login.blocked-pin" xml:space="preserve">
     <value>Är din PIN-kod låst?</value>
   </data>
+  <data name="error.unlock.invalid-state" xml:space="preserve">
+    <value>Den här förfrågan är redan avklarad. Begär en ny kod.</value>
+  </data>
+  <data name="error.unlock.refused" xml:space="preserve">
+    <value>Helpdesken avslog den här förfrågan.</value>
+  </data>
+  <data name="error.unlock.expired" xml:space="preserve">
+    <value>Koden gäller inte längre. Begär en ny.</value>
+  </data>
+  <data name="error.unlock.no-server" xml:space="preserve">
+    <value>Servern går inte att nå, så ingen kan godkänna en upplåsning härifrån. Be helpdesken om PUK i stället.</value>
+  </data>
+  <data name="audit.unlock.requested" xml:space="preserve">
+    <value>Upplåsning begärd från en arbetsstation</value>
+  </data>
+  <data name="audit.unlock.approved" xml:space="preserve">
+    <value>Upplåsning godkänd</value>
+  </data>
+  <data name="audit.unlock.refused" xml:space="preserve">
+    <value>Upplåsning avslagen</value>
+  </data>
+  <data name="audit.unlock.completed" xml:space="preserve">
+    <value>PIN-kod upplåst</value>
+  </data>
+  <data name="audit.unlock.failed" xml:space="preserve">
+    <value>Upplåsning misslyckades vid nyckeln</value>
+  </data>
+  <data name="unlock.mode.puk" xml:space="preserve">
+    <value>Jag har PUK</value>
+  </data>
+  <data name="unlock.mode.remote" xml:space="preserve">
+    <value>Lås upp via telefon</value>
+  </data>
+  <data name="unlock.remote.explain" xml:space="preserve">
+    <value>Ring helpdesken och läs upp koden nedan. När de godkänner den sätter det här fönstret din nya PIN-kod - PUK läses aldrig upp.</value>
+  </data>
+  <data name="unlock.remote.start" xml:space="preserve">
+    <value>Begär en kod</value>
+  </data>
+  <data name="unlock.remote.code" xml:space="preserve">
+    <value>Läs upp detta för helpdesken</value>
+  </data>
+  <data name="unlock.remote.waiting" xml:space="preserve">
+    <value>Väntar på att helpdesken godkänner</value>
+  </data>
+  <data name="unlock.remote.expires" xml:space="preserve">
+    <value>Koden slutar gälla {0}</value>
+  </data>
+  <data name="unlock.remote.approved" xml:space="preserve">
+    <value>Godkänd. Den nya PIN-koden sätts.</value>
+  </data>
+  <data name="unlock.remote.server" xml:space="preserve">
+    <value>Server</value>
+  </data>
+  <data name="web.nav.unlock" xml:space="preserve">
+    <value>Upplåsning</value>
+  </data>
+  <data name="web.unlock.title" xml:space="preserve">
+    <value>Förfrågningar om att låsa upp en PIN-kod</value>
+  </data>
+  <data name="web.unlock.explain" xml:space="preserve">
+    <value>Någon med en låst PIN-kod har läst upp en kod. Kontrollera vem som ringer och godkänn sedan - arbetsstationen hämtar PUK själv, ingen läser upp den.</value>
+  </data>
+  <data name="web.unlock.empty" xml:space="preserve">
+    <value>Ingen väntar.</value>
+  </data>
+  <data name="web.unlock.code" xml:space="preserve">
+    <value>Kod</value>
+  </data>
+  <data name="web.unlock.from" xml:space="preserve">
+    <value>Från</value>
+  </data>
+  <data name="web.unlock.asked" xml:space="preserve">
+    <value>Begärd</value>
+  </data>
+  <data name="web.unlock.expires" xml:space="preserve">
+    <value>Gäller till</value>
+  </data>
+  <data name="web.unlock.approve" xml:space="preserve">
+    <value>Godkänn</value>
+  </data>
+  <data name="web.unlock.refuse" xml:space="preserve">
+    <value>Avslå</value>
+  </data>
+  <data name="web.unlock.reason.hint" xml:space="preserve">
+    <value>Skriv ner hur du vet vem som ringde. Det hamnar i granskningsloggen.</value>
+  </data>
+  <data name="web.unlock.decided" xml:space="preserve">
+    <value>Klart. Arbetsstationen fortsätter själv.</value>
+  </data>
 </root>

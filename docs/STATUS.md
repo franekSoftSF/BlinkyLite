@@ -9,9 +9,11 @@ wydań). Logowanie ma obowiązkowy drugi składnik TOTP (0027) — napisany i
 sprawdzony testami i pierwszym logowaniem do konsoli. Przeglądarka (0030):
 lista wydań dla trzech ról, PUK jednej karty z powodem, szczegóły dla Admin/SO,
 MK i dziennik audytu dla Admina, a „Zweryfikuj klucz” w WPF i PowerShell —
-napisana i przetestowana, jeszcze nie sprawdzona w labie. 517 testów
-jednostkowych i 104 na PostgreSQL 16. Otwarte przed 1.0: ponowne wydanie
-znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031),
+napisana i przetestowana, jeszcze nie sprawdzona w labie. Zablokowany PIN
+odblokowuje osobna aplikacja: PUK-iem z helpdesku (0056) albo przez telefon,
+z zatwierdzeniem w konsoli i PUK-iem, którego nikt nie wypowiada (0057).
+566 testów jednostkowych i 120 na PostgreSQL 16. Otwarte przed 1.0: ponowne
+wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031),
 instalatory. Logowanie kontem Windows (0025) napisane, keytab w labie
 zweryfikowany, czeka na pierwsze logowanie ze stacji.
 
@@ -358,6 +360,7 @@ wersji, przez którą przeszło wydanie.
 | 0051 | 5 | Serwer Windows — MSIX | `open` |
 | 0052 | 5 | Klient — MSIX | `partly-done` |
 | 0056 | 3 | Odblokowanie PIN dla posiadacza klucza | `done-unverified` |
+| 0057 | 3 | Odblokowanie PIN przez telefon | `done-unverified` |
 | 0053 | 5 | Test end-to-end | `open` |
 | 0054 | 5 | Eksport do Blinky | `open` |
 | 0060 | 6 | Powiadomienie o wygaśnięciu przez bota Teams (po 1.0) | `open` |
@@ -398,6 +401,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-28 | Admin konfiguruje w aplikacji web **profile (CA, szablon)** i **importuje keytab** — odwołuje „bez ekranu edycji" z D-21; profile w bazie z audytem, role dalej w `appsettings.json` |
 | D-27 | Kerberos dla **wszystkich** klientów (web, WPF, PowerShell) i dla **każdej** nazwy serwisu |
 | D-26 | Całość w Dockerze **za nginx**; TLS także między nginx a serwerem |
+| D-37 | **Zdalne odblokowanie PIN: aplikacja pyta serwer, operator zatwierdza w konsoli.** Karta nie ma challenge–response dla PUK-a (`RESET RETRY COUNTER` bierze tylko PUK, `SET PIN RETRIES` wymaga działającego PIN-u), więc każda „liczba do przepisania" byłaby samym PUK-iem — zamiast tego kod przez telefon, zatwierdzenie z powodem i koperta pobrana przez stację raz. Trzy endpointy bez tokenu, decyzja dla tych samych ról co odsłonięcie PUK-a, bez rotacji PUK-a i bez cmdletów |
 | D-36 | **Odblokowanie PIN PUK-iem wchodzi do produktu** jako osobna aplikacja (`BlinkyLite.Unlock`) i osobny MSIX ze strony logowania — bez logowania i bez serwera; zmiana PUK i reset dalej u Blinky. Instalator klienta widoczny dopiero po zalogowaniu; wspólny wygląd z `BlinkyLite.Ui` |
 | D-35 | Instalator stacji: **MSIX x64** do pobrania z konsoli web (Narzędzia); skrót na pulpicie, `blinkylite-cardlab` w cmd przez alias aplikacji, moduł PowerShell w paczce, kopiowany dla użytkownika przy starcie; CardLab w wydaniu **Station** — bez `reset`/`personalise`/`eobo-probe`; podpis certyfikatem z firmowego ADCS. Odwołuje `.nupkg` z D-11 |
 | D-34 | Licencja **Apache-2.0**, jak Blinky; dane labu w dokumentacji zanonimizowane (`DIGITALWORKSPACE`, `dw-ad`, `jan.kowalski`) |

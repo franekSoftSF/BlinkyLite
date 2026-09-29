@@ -39,5 +39,10 @@ Tłumaczenia pisze autor kodu razem z kluczem (D-15). Ten słowniczek pilnuje,
 | key pair (on the YubiKey) | Schlüsselpaar | nyckelpar | para kluczy |
 | code (TOTP) | Code | kod | kod |
 | secret (TOTP, not the YubiKey) | Geheimcode | hemlig kod | sekret |
+| helpdesk | Helpdesk | helpdesk | helpdesk |
+| to unblock (a PIN) | entsperren | låsa upp | odblokować |
+| request (to unblock) | Anfrage | förfrågan | zgłoszenie |
+| to approve | genehmigen | godkänna | zatwierdzić |
+| to refuse | ablehnen | avslå | odrzucić |
 
 Nowy termin dopisuje się tutaj **zanim** trafi do `Messages.resx`.

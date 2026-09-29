@@ -79,6 +79,21 @@ public sealed record ManagementKeyCandidate(
 /// <summary>An operator's sealed TOTP secret, as <c>bl_totp_state</c> returns it.</summary>
 public sealed record TotpState(byte[] SecretEnvelope, short KekVersion, bool Confirmed);
 
+/// <summary>What <c>bl_unlock_collect</c> answers: the state, and once, the envelope.</summary>
+public sealed record UnlockDelivery(string State, long CardSerial, Guid? IssuanceId, byte[]? Envelope, short? KekVersion);
+
+/// <summary>One request waiting for a decision, as the console lists them.</summary>
+public sealed record UnlockWaitingRow(
+    Guid Id,
+    string Code,
+    long CardSerial,
+    string Workstation,
+    string? SourceIp,
+    DateTime CreatedAt,
+    DateTime ExpiresAt,
+    string TargetDisplayName,
+    string TargetSam);
+
 /// <summary>Events <c>bl_audit</c> accepts; everything else is written by the function that caused it.</summary>
 public enum AuditAction
 {
@@ -108,6 +123,15 @@ public interface IProcedures
     Task AcceptTotpAsync(long step, Actor actor, CancellationToken ct = default);
     Task<int> UseBackupCodeAsync(byte[] codeHash, Actor actor, CancellationToken ct = default);
     Task ResetTotpAsync(string operatorSid, string reason, Actor actor, CancellationToken ct = default);
+
+    // Remote unblock (0057). The asking side has nobody signed in, so its
+    // calls carry the secret's hash instead of an actor with a SID.
+    Task RequestUnlockAsync(Guid id, long cardSerial, string code, byte[] secretHash, string workstation,
+        int minutes, Actor actor, CancellationToken ct = default);
+    Task<IReadOnlyList<UnlockWaitingRow>> UnlockWaitingAsync(Actor actor, CancellationToken ct = default);
+    Task DecideUnlockAsync(Guid id, bool approve, string reason, Actor actor, CancellationToken ct = default);
+    Task<UnlockDelivery> CollectUnlockAsync(Guid id, byte[] secretHash, Actor actor, CancellationToken ct = default);
+    Task FinishUnlockAsync(Guid id, byte[] secretHash, bool ok, string? error, Actor actor, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -220,6 +244,43 @@ public sealed class Procedures(NpgsqlDataSource dataSource) : IProcedures
 
     public Task ResetTotpAsync(string operatorSid, string reason, Actor actor, CancellationToken ct = default) =>
         ScalarAsync("bl_totp_reset", [Text(operatorSid), Text(reason)], actor, ct);
+
+    public Task RequestUnlockAsync(Guid id, long cardSerial, string code, byte[] secretHash, string workstation,
+        int minutes, Actor actor, CancellationToken ct = default) =>
+        ScalarAsync("bl_unlock_request",
+            [Uuid(id), Bigint(cardSerial), Text(code), Bytes(secretHash), Text(workstation), Integer(minutes)], actor, ct);
+
+    public Task<IReadOnlyList<UnlockWaitingRow>> UnlockWaitingAsync(Actor actor, CancellationToken ct = default) =>
+        RowsAsync("bl_unlock_waiting", [], actor,
+            reader => new UnlockWaitingRow(
+                reader.GetGuid(0),
+                reader.GetString(1),
+                reader.GetInt64(2),
+                reader.GetString(3),
+                reader.IsDBNull(4) ? null : reader.GetFieldValue<System.Net.IPAddress>(4).ToString(),
+                reader.GetDateTime(5),
+                reader.GetDateTime(6),
+                reader.IsDBNull(7) ? "" : reader.GetString(7),
+                reader.IsDBNull(8) ? "" : reader.GetString(8)), ct);
+
+    public Task DecideUnlockAsync(Guid id, bool approve, string reason, Actor actor, CancellationToken ct = default) =>
+        ScalarAsync("bl_unlock_decide", [Uuid(id), Bool(approve), Text(reason)], actor, ct);
+
+    public async Task<UnlockDelivery> CollectUnlockAsync(Guid id, byte[] secretHash, Actor actor, CancellationToken ct = default)
+    {
+        var rows = await RowsAsync("bl_unlock_collect", [Uuid(id), Bytes(secretHash)], actor,
+            reader => new UnlockDelivery(
+                reader.GetString(0),
+                reader.GetInt64(1),
+                reader.IsDBNull(2) ? null : reader.GetGuid(2),
+                reader.IsDBNull(3) ? null : reader.GetFieldValue<byte[]>(3),
+                reader.IsDBNull(4) ? null : reader.GetInt16(4)), ct);
+
+        return rows.Single();
+    }
+
+    public Task FinishUnlockAsync(Guid id, byte[] secretHash, bool ok, string? error, Actor actor, CancellationToken ct = default) =>
+        ScalarAsync("bl_unlock_finish", [Uuid(id), Bytes(secretHash), Bool(ok), Text(error)], actor, ct);
 
     private async Task<object?> ScalarAsync(string function, NpgsqlParameter[] args, Actor actor, CancellationToken ct)
     {

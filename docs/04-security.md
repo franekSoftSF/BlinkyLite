@@ -122,6 +122,44 @@ proszeniem o jedyną rzecz, której nie ma.
 - Zablokowany PUK i klucz bez PUK-u (Bio) kończą się zdaniem „klucz trzeba
   wydać od nowa", nie kolejną próbą.
 
+### Odblokowanie PIN przez telefon (0057, D-37)
+
+Drugi tryb tej samej aplikacji, dla kogoś, kto nie ma jak dostać PUK-a na
+kartce. Posiadacz klucza czyta operatorowi sześcioznakowy kod, operator
+zatwierdza to jedno zgłoszenie w konsoli, a **stacja sama** pobiera kopertę i
+ustawia nowy PIN. PUK nie pada w rozmowie i nie pojawia się na żadnym ekranie.
+
+Dlaczego nie prawdziwe challenge–response: karta go tu nie ma. `RESET RETRY
+COUNTER` przyjmuje wyłącznie PUK — uwierzytelnienie management keyem tej
+komendy nie obejmuje, a `SET PIN RETRIES` wymaga **działającego** PIN-u, czyli
+dokładnie tego, czego nie ma. Każde „wyliczone" hasło musiałoby więc być samym
+PUK-iem, a PUK odczytany przez telefon zostaje w zeszycie osoby, która go
+usłyszała. Stąd zatwierdzenie online zamiast liczby do przepisania.
+
+- **Trzy endpointy bez tokenu** (`POST /api/unlock/start`, `.../{id}/state`,
+  `.../{id}/result`) — trzecia i ostatnia rzecz obok `/health` i
+  `/api/auth/login`, która nie wymaga logowania. Musi tak być: zablokowany PIN
+  to stan braku czegokolwiek, czym można się zalogować. Limit zapytań na adres
+  jest ten sam co przy logowaniu.
+- **Kod sam nie wystarcza.** Przy zgłoszeniu stacja losuje 32-bajtowy sekret,
+  serwer trzyma tylko jego SHA-256, a bez niego pobranie koperty odpowiada tak,
+  jakby zgłoszenia nie było — ktoś, kto podsłuchał kod, nie dostaje nic.
+- **Decyduje człowiek z rolą**, tą samą co przy odsłonięciu PUK-a
+  (`CanRevealPuk`: Admin, SecurityOfficer, Helpdesk), zawsze z powodem. Powód
+  to zdanie, skąd operator wie, kto dzwoni — po trzech miesiącach to jedyna
+  rzecz, która to wyjaśnia.
+- **Koperta wychodzi raz.** `bl_unlock_collect` blokuje wiersz, przestawia stan
+  na `Delivered`, podbija licznik odsłonięć i zapisuje `puk.disclosed` w tej
+  samej instrukcji, która wydaje kopertę. Osiem równoległych pobrań kończy się
+  jednym wydaniem (test w `DbTests`).
+- **Ślad jest kompletny:** `unlock.requested` (aktor `system:unlock`, adres
+  stacji), `unlock.approved` albo `unlock.refused` z powodem i UPN-em
+  operatora, `puk.disclosed` z `remote: true`, na końcu `unlock.completed`
+  albo `unlock.failed` z tym, co powiedziała karta. Zgłoszenie, którego nikt
+  nie zatwierdzi w dziesięć minut, przechodzi w `Expired`.
+- Tabeli `unlock_requests` nie może czytać ani rola aplikacji, ani rola do
+  raportów: `SELECT` oddałby wszystkie kody, które są w tej chwili aktualne.
+
 ## Autoryzacja
 
 Polityki ASP.NET Core: `CanIssue` (Admin, SecurityOfficer), `CanList`
@@ -136,7 +174,9 @@ szablonie Enrollment Agent i są wpisane jako Restricted Enrollment Agents na
 CA. Dzięki temu „kto może wydać” jest jedną listą, a nie dwiema, które można
 rozjechać. Serwer odmawia startu, jeśli obie te role nie mają żadnej grupy.
 
-Nieuwierzytelnione są tylko `/health` i `/api/auth/login`; reszta ma politykę,
+Nieuwierzytelnione są tylko `/health`, `/api/auth/login` i trzy endpointy
+zdalnego odblokowania (`/api/unlock/start`, `/api/unlock/{id}/state`,
+`/api/unlock/{id}/result` — 0057, powód wyżej); reszta ma politykę,
 a domyślna polityka i tak wymaga tokenu. Endpoint listy zwraca inny DTO niż
 endpoint szczegółów — Helpdesk
 nie dostaje „ukrytych” pól, których klient tylko nie pokazuje. Odsłonięcie

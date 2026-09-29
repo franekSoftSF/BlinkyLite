@@ -7,9 +7,12 @@ usługa Windows), logowanie AD → JWT, role Admin / SecurityOfficer / Helpdesk.
 **Nie jest CMS-em.** Robi trzy rzeczy: **wydaje** klucz, pozwala go
 **zweryfikować** (tylko odczyt) i pozwala posiadaczowi **odblokować PIN**
 PUK-iem z helpdesku (`src/BlinkyLite.Unlock`, 0056, D-36 — osobna aplikacja,
-bez logowania i bez serwera, bo z zablokowanym PIN-em nie ma czym się
-zalogować). Po 1.0 dochodzi jedna trzecia: wiadomość
-od jednokierunkowego bota Teams, że certyfikat wygaśnie (0060,
+bez logowania, bo z zablokowanym PIN-em nie ma czym się zalogować). Ta sama
+aplikacja robi to też **przez telefon**: użytkownik czyta operatorowi kod,
+operator zatwierdza zgłoszenie w konsoli, a stacja sama pobiera PUK raz i
+ustawia nowy PIN — PUK nie pada w rozmowie (0057, D-37). Po 1.0 dochodzi
+czwarta rzecz: wiadomość od jednokierunkowego bota Teams, że certyfikat
+wygaśnie (0060,
 [docs/09](docs/09-expiry-notification.md)) — tylko informacja, bez
 odnawiania, bez rozmowy z botem. Zmiana PUK, reset, dalsze życie karty — to
 robi Blinky, nie BlinkyLite. Lista w „Poza zakresem” w
@@ -117,8 +120,12 @@ dotnet publish tools/BlinkyLite.CardLab -c Release -r win-x64 --self-contained t
   stan) nigdy nie zawiera PUK; PUK zawsze dla jednej wskazanej karty.
   Szczegóły to osobny DTO i osobna polityka — nie ukrywaj pól w kliencie.
 - **Każdy endpoint ma politykę** z `Policies` albo jawne `AllowAnonymous`, a
-  anonimowe są tylko `/health` i `/api/auth/login` — pilnuje tego test
-  chodzący po tablicy tras. Domyślna polityka i tak wymaga tokenu.
+  anonimowe są tylko `/health`, `/api/auth/login` i trzy endpointy zdalnego
+  odblokowania (`/api/unlock/start`, `/api/unlock/{id}/state`,
+  `/api/unlock/{id}/result` — 0057; z zablokowanym PIN-em nie ma czym się
+  zalogować, a bez zatwierdzenia i bez sekretu stacji nie oddają niczego) —
+  pilnuje tego test chodzący po tablicy tras. Domyślna polityka i tak wymaga
+  tokenu.
 - **Serwer nie tłumaczy.** Błąd wychodzi jako ProblemDetails z `code`
   (klucz komunikatu z `ErrorCodes`) i `args`; nowy kod = wpis w `ErrorCodes`
   plus klucz w czterech językach.

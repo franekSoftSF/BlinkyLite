@@ -760,4 +760,94 @@
   <data name="web.login.blocked-pin" xml:space="preserve">
     <value>PIN gesperrt?</value>
   </data>
+  <data name="error.unlock.invalid-state" xml:space="preserve">
+    <value>Diese Anfrage wurde bereits bearbeitet. Fordern Sie einen neuen Code an.</value>
+  </data>
+  <data name="error.unlock.refused" xml:space="preserve">
+    <value>Der Helpdesk hat diese Anfrage abgelehnt.</value>
+  </data>
+  <data name="error.unlock.expired" xml:space="preserve">
+    <value>Der Code gilt nicht mehr. Fordern Sie einen neuen an.</value>
+  </data>
+  <data name="error.unlock.no-server" xml:space="preserve">
+    <value>Der Server ist nicht erreichbar, daher kann niemand ein Entsperren von hier genehmigen. Fragen Sie den Helpdesk stattdessen nach dem PUK.</value>
+  </data>
+  <data name="audit.unlock.requested" xml:space="preserve">
+    <value>Entsperren von einer Arbeitsstation angefragt</value>
+  </data>
+  <data name="audit.unlock.approved" xml:space="preserve">
+    <value>Entsperren genehmigt</value>
+  </data>
+  <data name="audit.unlock.refused" xml:space="preserve">
+    <value>Entsperren abgelehnt</value>
+  </data>
+  <data name="audit.unlock.completed" xml:space="preserve">
+    <value>PIN entsperrt</value>
+  </data>
+  <data name="audit.unlock.failed" xml:space="preserve">
+    <value>Entsperren am Schlüssel fehlgeschlagen</value>
+  </data>
+  <data name="unlock.mode.puk" xml:space="preserve">
+    <value>Ich habe den PUK</value>
+  </data>
+  <data name="unlock.mode.remote" xml:space="preserve">
+    <value>Per Telefon entsperren</value>
+  </data>
+  <data name="unlock.remote.explain" xml:space="preserve">
+    <value>Rufen Sie den Helpdesk an und lesen Sie den Code unten vor. Nach der Genehmigung setzt dieses Fenster Ihren neuen PIN - der PUK wird nie vorgelesen.</value>
+  </data>
+  <data name="unlock.remote.start" xml:space="preserve">
+    <value>Code anfordern</value>
+  </data>
+  <data name="unlock.remote.code" xml:space="preserve">
+    <value>Lesen Sie dies dem Helpdesk vor</value>
+  </data>
+  <data name="unlock.remote.waiting" xml:space="preserve">
+    <value>Warten auf die Genehmigung durch den Helpdesk</value>
+  </data>
+  <data name="unlock.remote.expires" xml:space="preserve">
+    <value>Der Code gilt bis {0}</value>
+  </data>
+  <data name="unlock.remote.approved" xml:space="preserve">
+    <value>Genehmigt. Der neue PIN wird gesetzt.</value>
+  </data>
+  <data name="unlock.remote.server" xml:space="preserve">
+    <value>Server</value>
+  </data>
+  <data name="web.nav.unlock" xml:space="preserve">
+    <value>Entsperren</value>
+  </data>
+  <data name="web.unlock.title" xml:space="preserve">
+    <value>Anfragen zum Entsperren eines PIN</value>
+  </data>
+  <data name="web.unlock.explain" xml:space="preserve">
+    <value>Jemand mit einem gesperrten PIN hat einen Code vorgelesen. Prüfen Sie, wer anruft, und genehmigen Sie dann - die Arbeitsstation holt den PUK selbst, niemand liest ihn vor.</value>
+  </data>
+  <data name="web.unlock.empty" xml:space="preserve">
+    <value>Niemand wartet.</value>
+  </data>
+  <data name="web.unlock.code" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="web.unlock.from" xml:space="preserve">
+    <value>Von</value>
+  </data>
+  <data name="web.unlock.asked" xml:space="preserve">
+    <value>Angefragt</value>
+  </data>
+  <data name="web.unlock.expires" xml:space="preserve">
+    <value>Gültig bis</value>
+  </data>
+  <data name="web.unlock.approve" xml:space="preserve">
+    <value>Genehmigen</value>
+  </data>
+  <data name="web.unlock.refuse" xml:space="preserve">
+    <value>Ablehnen</value>
+  </data>
+  <data name="web.unlock.reason.hint" xml:space="preserve">
+    <value>Halten Sie fest, woher Sie wissen, wer angerufen hat. Das kommt in das Audit-Protokoll.</value>
+  </data>
+  <data name="web.unlock.decided" xml:space="preserve">
+    <value>Fertig. Die Arbeitsstation macht selbst weiter.</value>
+  </data>
 </root>
