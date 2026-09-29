@@ -64,6 +64,9 @@ public sealed class IssuanceMap : ClassMap<Issuance>
         Map(x => x.CreatedAt).Column("created_at").CustomSqlType(Sql.Timestamp).Not.Nullable();
         Map(x => x.UpdatedAt).Column("updated_at").CustomSqlType(Sql.Timestamp).Not.Nullable();
         Map(x => x.CompletedAt).Column("completed_at").CustomSqlType(Sql.Timestamp);
+        Map(x => x.WithdrawnAt).Column("withdrawn_at").CustomSqlType(Sql.Timestamp);
+        Map(x => x.WithdrawnBy).Column("withdrawn_by").CustomSqlType("text");
+        Map(x => x.WithdrawnReason).Column("withdrawn_reason").CustomSqlType("text");
     }
 }
 

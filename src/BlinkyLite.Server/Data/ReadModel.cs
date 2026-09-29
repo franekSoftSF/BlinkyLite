@@ -57,6 +57,11 @@ public class Issuance
     public virtual DateTime CreatedAt { get; protected set; }
     public virtual DateTime UpdatedAt { get; protected set; }
     public virtual DateTime? CompletedAt { get; protected set; }
+
+    // 0058: ustawiane razem ze stanem Withdrawn, zawsze we trojke.
+    public virtual DateTime? WithdrawnAt { get; protected set; }
+    public virtual string? WithdrawnBy { get; protected set; }
+    public virtual string? WithdrawnReason { get; protected set; }
 }
 
 /// <summary>

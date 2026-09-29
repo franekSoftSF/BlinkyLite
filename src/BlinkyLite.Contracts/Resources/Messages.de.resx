@@ -853,4 +853,28 @@
   <data name="client.server.policy" xml:space="preserve">
     <value>Ihr Administrator hat diese Adresse festgelegt. Hier muss sie niemand eingeben und niemand kann sie ändern.</value>
   </data>
+  <data name="issuance.state.Withdrawn" xml:space="preserve">
+    <value>Zurückgezogen</value>
+  </data>
+  <data name="error.card.withdrawn" xml:space="preserve">
+    <value>Dieser Schlüssel wurde bereits zurückgezogen oder hat nichts mehr zurückzuziehen.</value>
+  </data>
+  <data name="web.withdraw.title" xml:space="preserve">
+    <value>Diesen Schlüssel zurückziehen</value>
+  </data>
+  <data name="web.withdraw.explain" xml:space="preserve">
+    <value>Für einen Schlüssel, der gelöscht, verloren oder zurückgegeben wurde. Der Eintrag behauptet dann nicht mehr, einen PUK zu kennen, der nichts mehr öffnet: PUK und Management key dieser Karte kann niemand mehr anzeigen, und ein Entsperren aus der Ferne wird abgelehnt. Nichts wird gelöscht und auf dem Schlüssel selbst ändert sich nichts.</value>
+  </data>
+  <data name="web.withdraw.confirm" xml:space="preserve">
+    <value>Zurückziehen</value>
+  </data>
+  <data name="web.withdraw.done" xml:space="preserve">
+    <value>Der Schlüssel wurde zurückgezogen.</value>
+  </data>
+  <data name="web.details.withdrawn" xml:space="preserve">
+    <value>Zurückgezogen am {0} von {1}</value>
+  </data>
+  <data name="audit.card.withdrawn" xml:space="preserve">
+    <value>Schlüssel außer Dienst gestellt</value>
+  </data>
 </root>

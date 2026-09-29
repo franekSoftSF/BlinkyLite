@@ -13,4 +13,11 @@ public enum IssuanceState
     Issued,
     Failed,
     Superseded,
+
+    /// <summary>
+    /// Wycofane z użycia (0058): klucz skasowano, zgubiono albo oddano poza
+    /// BlinkyLite, więc zapisany PUK i management key już do niczego nie
+    /// pasują. Stan, nie usunięcie - historia jest tylko dopisywana.
+    /// </summary>
+    Withdrawn,
 }

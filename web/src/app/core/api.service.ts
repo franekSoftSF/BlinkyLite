@@ -59,6 +59,9 @@ export interface IssuanceDetails {
   pukDisclosedCount: number;
   createdAt: string;
   completedAt: string | null;
+  withdrawnAt: string | null;
+  withdrawnBy: string | null;
+  withdrawnReason: string | null;
 }
 
 export interface AuditEntry {
@@ -126,6 +129,11 @@ export class Api {
   decideUnlock(id: string, approve: boolean, reason: string): Promise<void> {
     const step = approve ? 'approve' : 'refuse';
     return firstValueFrom(this.http.post<void>(`/api/unlock/requests/${encodeURIComponent(id)}/${step}`, { reason }));
+  }
+
+  /** A key that left service (0058). Nothing is deleted; the record stops claiming a PUK. */
+  withdraw(serial: number, reason: string): Promise<void> {
+    return firstValueFrom(this.http.post<void>(`/api/cards/${serial}/withdraw`, { reason }));
   }
 
   audit(card: string, page: number): Promise<Page<AuditEntry>> {

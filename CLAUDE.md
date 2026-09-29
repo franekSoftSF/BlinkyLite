@@ -155,7 +155,10 @@ dotnet publish tools/BlinkyLite.CardLab -c Release -r win-x64 --self-contained t
   że oczywista alternatywa została sprawdzona i zawiodła.
 - **Historia jest tylko dopisywana.** `audit_events`, `issuances` i
   `card_secrets` nie mają `DELETE` w API. Wydanie przechodzi stany, koperta
-  przechodzi w `Retired`, nigdy nie znika. Profile i mapowanie ról są w
+  przechodzi w `Retired`, nigdy nie znika. Dotyczy to też „usunięcia" klucza:
+  klucz skasowany poza BlinkyLite **wycofuje się** (`Withdrawn`, 0058), a nie
+  kasuje — po wycofaniu żaden sekret tej karty nie wychodzi, bo obie drogi do
+  nich patrzą na kopertę `Active`. Profile i mapowanie ról są w
   `appsettings.json` serwera, bez ekranu edycji; wydanie kopiuje dane profilu
   do swojego wiersza, żeby zmiana konfiguracji nie przepisała historii.
 

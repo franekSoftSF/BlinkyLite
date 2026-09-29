@@ -24,7 +24,8 @@ kolumn `snake_case`. Czas zawsze `timestamptz` w UTC.
 |---|---|---|
 | `id` | `uuid` PK | |
 | `card_serial` | `bigint` FK | |
-| `state` | `text` | `Reserved`, `Customised`, `Attested`, `PendingCa`, `Issued`, `Failed`, `Superseded` |
+| `state` | `text` | `Reserved`, `Customised`, `Attested`, `PendingCa`, `Issued`, `Failed`, `Superseded`, `Withdrawn` |
+| `withdrawn_at`, `withdrawn_by`, `withdrawn_reason` | `timestamptz`, `text`, `text` | wypełnione razem ze stanem `Withdrawn` (0058): klucz wyszedł z użycia poza BlinkyLite — skasowany, zgubiony, oddany. Powód jest obowiązkowy |
 | `target_sam` | `text` | `DOMENA\sAMAccountName` — to, co poszło w `RequesterName` |
 | `target_upn` | `text` | |
 | `target_sid` | `text` | `objectSid` z AD, porównywany z rozszerzeniem SID certyfikatu |

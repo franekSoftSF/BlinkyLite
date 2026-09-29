@@ -58,7 +58,10 @@ public sealed record IssuanceDetails(
     string? Error,
     int PukDisclosedCount,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? CompletedAt);
+    DateTimeOffset? CompletedAt,
+    DateTimeOffset? WithdrawnAt = null,
+    string? WithdrawnBy = null,
+    string? WithdrawnReason = null);
 
 /// <summary>
 /// <c>GET /api/cards/{serial}</c>: what "Verify card" compares with the token
@@ -75,6 +78,13 @@ public sealed record CardRecord(
 
 /// <summary>Body of the two disclosure endpoints. The reason goes into the audit before the value leaves.</summary>
 public sealed record RevealRequest(string Reason);
+
+/// <summary>
+/// <c>POST /api/cards/{serial}/withdraw</c> (0058): ten klucz wyszedł z
+/// użycia. Powód jest obowiązkowy, bo za pół roku nikt nie odtworzy, dlaczego
+/// karta z certyfikatem została odstawiona.
+/// </summary>
+public sealed record WithdrawRequest(string Reason);
 
 public sealed record RevealedPuk(long CardSerial, string Puk);
 

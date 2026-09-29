@@ -13,7 +13,9 @@ napisana i przetestowana, jeszcze nie sprawdzona w labie. Zablokowany PIN
 odblokowuje osobna aplikacja: PUK-iem z helpdesku (0056) albo przez telefon,
 z zatwierdzeniem w konsoli i PUK-iem, którego nikt nie wypowiada (0057).
 Adres serwera dla obu okien ustawia administrator przez GPO, więc nikt go nie
-wpisuje. 570 testów jednostkowych i 120 na PostgreSQL 16. Otwarte przed 1.0: ponowne
+wpisuje. Klucz, który wyszedł z użycia, da się wycofać — zapis przestaje wtedy
+twierdzić, że zna PUK, który już niczego nie otwiera (0058).
+580 testów jednostkowych i 133 na PostgreSQL 16. Otwarte przed 1.0: ponowne
 wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031),
 instalatory. Logowanie kontem Windows (0025) napisane, keytab w labie
 zweryfikowany, czeka na pierwsze logowanie ze stacji.
@@ -362,6 +364,7 @@ wersji, przez którą przeszło wydanie.
 | 0052 | 5 | Klient — MSIX | `partly-done` |
 | 0056 | 3 | Odblokowanie PIN dla posiadacza klucza | `done-unverified` |
 | 0057 | 3 | Odblokowanie PIN przez telefon | `done-unverified` |
+| 0058 | 3 | Wycofanie klucza z użycia | `done-unverified` |
 | 0053 | 5 | Test end-to-end | `open` |
 | 0054 | 5 | Eksport do Blinky | `open` |
 | 0060 | 6 | Powiadomienie o wygaśnięciu przez bota Teams (po 1.0) | `open` |

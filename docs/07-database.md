@@ -71,6 +71,7 @@ Każda przyjmuje aktora: `p_actor_upn`, `p_actor_sid`, `p_actor_roles text[]`,
 | `bl_issuance_pending(id, aktor)` | — | `Attested` → `PendingCa` | `issuance.pending` |
 | `bl_issuance_issued(id, cert_der, cert_serial, thumbprint, not_before, not_after, aktor)` | — | `Attested`/`PendingCa` → `Issued`; poprzednie `Issued` karty → `Superseded`; `cards.current_issuance_id` | `issuance.issued` |
 | `bl_issuance_failed(id, error, aktor)` | — | każdy niekońcowy → `Failed`; **koperty zostają** | `issuance.failed` |
+| `bl_card_withdraw(serial, reason, aktor)` *(0058)* | — | bieżące wydanie `Issued` → `Withdrawn` (z `withdrawn_at`, `_by`, `_reason`), koperta `Active` → `Retired`, `cards.current_issuance_id` → `NULL`, zgłoszenia odblokowania w toku → `Expired`; nic do wycofania → `BL001` | `card.withdrawn` z powodem |
 | `bl_secret_disclose(serial, kind, reason, aktor)` | `(issuance_id uuid, envelope bytea, kek_version smallint)` — `issuance_id`, bo jest częścią AAD koperty | koperta `Active` karty; licznik odsłonięć PUK +1 | `puk.disclosed` / `mgmt-key.disclosed` z powodem |
 | `bl_mgmt_key_candidates(serial, aktor)` | zbiór `(secret_id, issuance_id, secret_state, envelope, mgmt_key_algorithm, kek_version)`: `Active`, potem nowsze `Reserved`, od najnowszej | — | `mgmt-key.used` z listą `secret_ids` |
 | `bl_audit(action, data jsonb, aktor)` | — | — | **tylko** `auth.login` i `auth.denied`; inna akcja → `22023` (otwarta funkcja pozwoliłaby serwerowi podrobić `puk.disclosed`) |
@@ -106,6 +107,7 @@ wystarczył (`BL004`):
 | `bl_audit` | — (odmowa logowania nie ma jeszcze ról) |
 | `bl_totp_begin`, `_confirm`, `_accept`, `_backup_use` | dowolna z trzech ról — bilet dostaje tylko ktoś, kto ją ma |
 | `bl_totp_reset` | `Admin`, i nie dla własnego SID |
+| `bl_card_withdraw` | `Admin` albo `SecurityOfficer` — kto może wydać, ten może wycofać |
 | `bl_unlock_waiting`, `bl_unlock_decide` | `Admin`, `SecurityOfficer` albo `Helpdesk` — te same, co odsłonięcie PUK-a |
 | `bl_unlock_request`, `bl_unlock_collect`, `bl_unlock_finish` | — (stacja bez zalogowanego; zamiast roli sprawdzany jest `secret_hash`, a koperta wychodzi tylko po zatwierdzeniu) |
 
@@ -127,7 +129,7 @@ Funkcje zgłaszają błędy własną klasą SQLSTATE `BL`:
 
 | SQLSTATE | Klucz komunikatu | HTTP |
 |---|---|---|
-| `BL001` | `error.issuance.invalid-state`, a dla zgłoszeń odblokowania (0057) `error.unlock.invalid-state` — już rozpatrzone, pobrane albo zakończone | 409 |
+| `BL001` | `error.issuance.invalid-state`; dla zgłoszeń odblokowania (0057) `error.unlock.invalid-state` — już rozpatrzone, pobrane albo zakończone; dla wycofania (0058) `error.card.withdrawn` — karta już wycofana albo nie ma czego wycofać | 409 |
 | `BL002` | `error.not-found` | 404 |
 | `BL003` | `error.card.reserved-elsewhere` — karta ma otwartą rezerwację innego wydania | 409 |
 | `BL004` | `error.forbidden` — rola aktora nie pozwala na tę funkcję | 403 |

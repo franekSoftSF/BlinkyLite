@@ -54,6 +54,13 @@ internal sealed class Scenario(DatabaseFixture db)
 
     public async Task<Guid> IssuanceIn(IssuanceState state, long serial)
     {
+        if (state == IssuanceState.Withdrawn)
+        {
+            var issued = await IssuanceIn(IssuanceState.Issued, serial);
+            await Procedures.WithdrawCardAsync(serial, "wycofane na potrzeby testu", Officer);
+            return issued;
+        }
+
         if (state == IssuanceState.Superseded)
         {
             var first = await IssuanceIn(IssuanceState.Issued, serial);

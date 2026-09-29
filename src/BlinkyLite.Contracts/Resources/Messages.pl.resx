@@ -853,4 +853,28 @@
   <data name="client.server.policy" xml:space="preserve">
     <value>Adres ustawił administrator. Nikt tutaj nie musi go wpisywać ani nie może go zmienić.</value>
   </data>
+  <data name="issuance.state.Withdrawn" xml:space="preserve">
+    <value>Wycofane</value>
+  </data>
+  <data name="error.card.withdrawn" xml:space="preserve">
+    <value>Ten klucz jest już wycofany albo nie ma czego wycofać.</value>
+  </data>
+  <data name="web.withdraw.title" xml:space="preserve">
+    <value>Wycofaj ten klucz</value>
+  </data>
+  <data name="web.withdraw.explain" xml:space="preserve">
+    <value>Dla klucza, który skasowano, zgubiono albo oddano. Zapis przestaje twierdzić, że zna PUK, który już niczego nie otwiera: nikt nie odsłoni PUK-a ani management key tej karty, a odblokowanie zdalne zostanie odrzucone. Nic nie jest kasowane i nic nie zmienia się na samym kluczu.</value>
+  </data>
+  <data name="web.withdraw.confirm" xml:space="preserve">
+    <value>Wycofaj</value>
+  </data>
+  <data name="web.withdraw.done" xml:space="preserve">
+    <value>Klucz został wycofany.</value>
+  </data>
+  <data name="web.details.withdrawn" xml:space="preserve">
+    <value>Wycofane {0} przez {1}</value>
+  </data>
+  <data name="audit.card.withdrawn" xml:space="preserve">
+    <value>Klucz wycofany z użycia</value>
+  </data>
 </root>

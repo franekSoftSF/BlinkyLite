@@ -120,12 +120,43 @@ const TOUCH_POLICY: Record<number, string> = { 1: 'Never', 2: 'Always', 3: 'Cach
               @if (d.completedAt) {
                 <dt>{{ i18n.t('web.details.completed') }}</dt><dd>{{ i18n.date(d.completedAt) }}</dd>
               }
+              @if (d.withdrawnAt) {
+                <dt>{{ i18n.t('issuance.state.Withdrawn') }}</dt>
+                <dd>
+                  {{ i18n.t('web.details.withdrawn', i18n.date(d.withdrawnAt), d.withdrawnBy ?? '') }}
+                  <small class="muted block">{{ d.withdrawnReason }}</small>
+                </dd>
+              }
             </dl>
           }
 
           <bl-reveal kind="puk" [serial]="row.cardSerial" />
           @if (isAdmin()) {
             <bl-reveal kind="management-key" [serial]="row.cardSerial" />
+          }
+
+          <!-- Only while there is something to withdraw: a key already out of
+               service has no button, which says more than a disabled one. -->
+          @if (canWithdraw() && details()?.isCurrent) {
+            <section class="reveal">
+              <h3>{{ i18n.t('web.withdraw.title') }}</h3>
+              <p class="muted small">{{ i18n.t('web.withdraw.explain') }}</p>
+              <form (ngSubmit)="withdraw(row.cardSerial)">
+                <label>
+                  <span>{{ i18n.t('common.reason') }}</span>
+                  <input name="withdraw-reason" [(ngModel)]="withdrawReason" maxlength="500" autocomplete="off" required />
+                  <small class="muted">{{ i18n.t('web.unlock.reason.hint') }}</small>
+                </label>
+
+                @if (withdrawn()) {
+                  <p role="status"><span aria-hidden="true">✓</span> {{ i18n.t('web.withdraw.done') }}</p>
+                }
+
+                <button type="submit" [disabled]="withdrawing() || withdrawReason.trim().length < 5">
+                  {{ i18n.t('web.withdraw.confirm') }}
+                </button>
+              </form>
+            </section>
           }
         } @else {
           <div class="empty">
@@ -152,6 +183,14 @@ export class IssuancesPage implements OnInit {
   protected readonly problem = signal<string | null>(null);
 
   protected readonly isAdmin = computed(() => this.auth.user()?.roles.includes('Admin') ?? false);
+
+  /** The issuing roles, as on the server: whoever may put a key into service may take it out. */
+  protected readonly canWithdraw = computed(() =>
+    this.auth.user()?.roles.some((r) => r === 'Admin' || r === 'SecurityOfficer') ?? false);
+
+  protected withdrawReason = '';
+  protected readonly withdrawing = signal(false);
+  protected readonly withdrawn = signal(false);
   private readonly canSeeDetails = computed(() =>
     this.auth.user()?.roles.some((r) => r === 'Admin' || r === 'SecurityOfficer') ?? false);
 
@@ -197,6 +236,30 @@ export class IssuancesPage implements OnInit {
       }
     } catch (error) {
       this.problem.set(problemCode(error));
+    }
+  }
+
+  protected async withdraw(serial: number): Promise<void> {
+    this.problem.set(null);
+    this.withdrawn.set(false);
+    this.withdrawing.set(true);
+
+    try {
+      await this.api.withdraw(serial, this.withdrawReason);
+      this.withdrawReason = '';
+      this.withdrawn.set(true);
+
+      // The list carries the state, and the panel the withdrawal itself, so
+      // both are read again rather than patched here.
+      const row = this.selected();
+      await this.go(this.page()?.pageNumber ?? 1);
+      if (row) {
+        await this.select(row);
+      }
+    } catch (error) {
+      this.problem.set(problemCode(error));
+    } finally {
+      this.withdrawing.set(false);
     }
   }
 

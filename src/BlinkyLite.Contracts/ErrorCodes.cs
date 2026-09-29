@@ -32,6 +32,9 @@ public static class ErrorCodes
     public const string KerberosFailed = "error.kerberos.failed";
     public const string KerberosNoAccount = "error.kerberos.no-account";
 
+    /// <summary>Karta jest już wycofana albo nie ma czego wycofać (0058).</summary>
+    public const string CardWithdrawn = "error.card.withdrawn";
+
     // Remote unblock (0057).
     public const string UnlockInvalidState = "error.unlock.invalid-state";
     public const string UnlockRefused = "error.unlock.refused";

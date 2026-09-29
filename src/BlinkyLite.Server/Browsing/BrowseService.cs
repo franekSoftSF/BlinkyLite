@@ -69,6 +69,17 @@ public sealed class BrowseService(
         }
     }
 
+    /// <summary>
+    /// A key that left service (0058). Nothing is deleted: the issuance moves
+    /// to <c>Withdrawn</c> and the envelope to <c>Retired</c>, which is what
+    /// stops the PUK being disclosed or handed to a workstation.
+    /// </summary>
+    public async Task WithdrawAsync(long serial, string reason, Actor actor, CancellationToken ct)
+    {
+        await procedures.WithdrawCardAsync(serial, reason, actor, ct);
+        logger.LogWarning("Card {Serial} withdrawn by {Upn}", serial, actor.Upn);
+    }
+
     public async Task<RevealedManagementKey> RevealManagementKeyAsync(
         long serial, string reason, Actor actor, CancellationToken ct)
     {
@@ -138,7 +149,10 @@ public sealed class BrowseService(
         i.Error,
         reader.SecretOf(i.Id)?.PukDisclosedCount ?? 0,
         Utc(i.CreatedAt),
-        i.CompletedAt is { } done ? Utc(done) : null);
+        i.CompletedAt is { } done ? Utc(done) : null,
+        i.WithdrawnAt is { } withdrawn ? Utc(withdrawn) : null,
+        i.WithdrawnBy,
+        i.WithdrawnReason);
 
     // timestamptz comes back as UTC; saying so keeps the offset from being
     // guessed from the server's time zone on the way out.

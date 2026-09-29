@@ -430,6 +430,41 @@ public sealed class RecordingProcedures : IProcedures
         return Task.CompletedTask;
     }
 
+    /// <summary>Cards taken out of service (0058), by serial.</summary>
+    public List<(long Serial, string Reason, Actor Actor)> Withdrawals { get; } = [];
+
+    public Task WithdrawCardAsync(long cardSerial, string reason, Actor actor, CancellationToken ct = default)
+    {
+        RequireRole(actor, Role.Admin, Role.SecurityOfficer);
+
+        if (reason.Trim().Length < 5)
+        {
+            throw Rule("BL005", ErrorCodes.ReasonRequired);
+        }
+
+        // As in migration 0008: what stops the secrets being handed out is the
+        // envelope leaving Active, not a flag somewhere else.
+        var removed = Envelopes.Keys.Where(k => k.Serial == cardSerial).ToList();
+        if (removed.Count == 0)
+        {
+            throw Rule("BL001", ErrorCodes.CardWithdrawn);
+        }
+
+        foreach (var key in removed)
+        {
+            Envelopes.Remove(key);
+        }
+
+        foreach (var request in Unlocks.Values.Where(u => u.CardSerial == cardSerial
+                                                          && u.State is UnlockStates.Pending or UnlockStates.Approved))
+        {
+            request.State = UnlockStates.Expired;
+        }
+
+        Withdrawals.Add((cardSerial, reason, actor));
+        return Task.CompletedTask;
+    }
+
     /// <summary>Requests for a remote unblock, with the rules of migration 0007.</summary>
     public ConcurrentDictionary<Guid, FakeUnlock> Unlocks { get; } = new();
 

@@ -50,6 +50,17 @@ public static class BrowseEndpoints
                 Results.Ok(await browse.RevealManagementKeyAsync(serial, request?.Reason ?? "", ActorOf(context), ct)))
             .RequireAuthorization(Policies.CanRevealMgmtKey);
 
+        // Withdrawing is the issuing roles' job: whoever may put a key into
+        // service may take it out of service. POST, and a reason, for the same
+        // reason as a disclosure - it is written down before anything changes.
+        app.MapPost("/api/cards/{serial:long}/withdraw", async (long serial, WithdrawRequest? request,
+                HttpContext context, BrowseService browse, CancellationToken ct) =>
+            {
+                await browse.WithdrawAsync(serial, request?.Reason ?? "", ActorOf(context), ct);
+                return Results.NoContent();
+            })
+            .RequireAuthorization(Policies.CanIssue);
+
         app.MapGet("/api/audit", (long? card, int? page, int? pageSize, BrowseService browse) =>
             {
                 var (number, size) = BrowseService.Paging(page, pageSize);

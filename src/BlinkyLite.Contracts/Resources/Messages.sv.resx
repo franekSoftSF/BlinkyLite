@@ -853,4 +853,28 @@
   <data name="client.server.policy" xml:space="preserve">
     <value>Din administratör har angett adressen. Ingen här behöver skriva in den och ingen kan ändra den.</value>
   </data>
+  <data name="issuance.state.Withdrawn" xml:space="preserve">
+    <value>Indraget</value>
+  </data>
+  <data name="error.card.withdrawn" xml:space="preserve">
+    <value>Den här nyckeln är redan indragen, eller har inget kvar att dra in.</value>
+  </data>
+  <data name="web.withdraw.title" xml:space="preserve">
+    <value>Dra in den här nyckeln</value>
+  </data>
+  <data name="web.withdraw.explain" xml:space="preserve">
+    <value>För en nyckel som raderats, tappats bort eller lämnats tillbaka. Posten påstår sig inte längre känna till en PUK som inte öppnar något: ingen kan visa PUK eller management key för det här kortet igen, och en upplåsning på distans avslås. Ingenting raderas och ingenting på själva nyckeln ändras.</value>
+  </data>
+  <data name="web.withdraw.confirm" xml:space="preserve">
+    <value>Dra in</value>
+  </data>
+  <data name="web.withdraw.done" xml:space="preserve">
+    <value>Nyckeln har dragits in.</value>
+  </data>
+  <data name="web.details.withdrawn" xml:space="preserve">
+    <value>Indragen {0} av {1}</value>
+  </data>
+  <data name="audit.card.withdrawn" xml:space="preserve">
+    <value>Nyckel indragen</value>
+  </data>
 </root>

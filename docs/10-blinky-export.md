@@ -56,6 +56,7 @@ uwierzytelnianie.
 | `issuances.target_*` | `Cardholder` | Blinky rozwiązuje osobę po `objectSid`, który eksportujemy |
 | `issuances` w stanie `Issued` | `Credential` w slocie `9A` | Jedno wydanie = jeden certyfikat |
 | `issuances` w stanie `Superseded` | `Credential` historyczny | Blinky trzyma historię, więc idą też stare |
+| `issuances` w stanie `Withdrawn` + `withdrawn_at`, `_by`, `_reason` | `Credential` wycofany, z datą, operatorem i powodem | Klucz wyszedł z użycia poza BlinkyLite (0058). Dla CMS to różnica między „zastąpione nowszym wydaniem" a „tego klucza już nie ma" — zapisany PUK i management key nie pasują do niczego, więc Blinky nie może ich podać (D-19) |
 | `card_secrets.puk_envelope` | `SecretEnvelope` (escrow PUK) | Przeszyfrowany kluczem Blinky przy imporcie |
 | `card_secrets.mgmt_key_envelope` | `SecretEnvelope` (management key) | Blinky wyprowadza MK z mastera, ale ma stan na klucze **niewyprowadzalne** — nasze są właśnie takie (D-05) |
 | `audit_events` | — | Zostają w BlinkyLite; Blinky zaczyna własny dziennik od importu |

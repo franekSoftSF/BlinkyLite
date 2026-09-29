@@ -124,6 +124,12 @@ public interface IProcedures
     Task<int> UseBackupCodeAsync(byte[] codeHash, Actor actor, CancellationToken ct = default);
     Task ResetTotpAsync(string operatorSid, string reason, Actor actor, CancellationToken ct = default);
 
+    /// <summary>
+    /// A key that left service (0058): the record stops claiming a PUK for a
+    /// card that no longer has it.
+    /// </summary>
+    Task WithdrawCardAsync(long cardSerial, string reason, Actor actor, CancellationToken ct = default);
+
     // Remote unblock (0057). The asking side has nobody signed in, so its
     // calls carry the secret's hash instead of an actor with a SID.
     Task RequestUnlockAsync(Guid id, long cardSerial, string code, byte[] secretHash, string workstation,
@@ -244,6 +250,9 @@ public sealed class Procedures(NpgsqlDataSource dataSource) : IProcedures
 
     public Task ResetTotpAsync(string operatorSid, string reason, Actor actor, CancellationToken ct = default) =>
         ScalarAsync("bl_totp_reset", [Text(operatorSid), Text(reason)], actor, ct);
+
+    public Task WithdrawCardAsync(long cardSerial, string reason, Actor actor, CancellationToken ct = default) =>
+        ScalarAsync("bl_card_withdraw", [Bigint(cardSerial), Text(reason)], actor, ct);
 
     public Task RequestUnlockAsync(Guid id, long cardSerial, string code, byte[] secretHash, string workstation,
         int minutes, Actor actor, CancellationToken ct = default) =>

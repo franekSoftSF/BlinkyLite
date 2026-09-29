@@ -122,7 +122,7 @@ public sealed class PrivilegeTests(DatabaseFixture db)
             """);
 
         Assert.Equal(
-            ["bl_audit", "bl_issuance_attested", "bl_issuance_customised", "bl_issuance_failed", "bl_issuance_issued",
+            ["bl_audit", "bl_card_withdraw", "bl_issuance_attested", "bl_issuance_customised", "bl_issuance_failed", "bl_issuance_issued",
              "bl_issuance_pending", "bl_issuance_reserve", "bl_issuance_submitted", "bl_mgmt_key_candidates",
              "bl_secret_disclose", "bl_totp_accept", "bl_totp_backup_use", "bl_totp_begin", "bl_totp_confirm",
              "bl_totp_reset", "bl_totp_state", "bl_unlock_collect", "bl_unlock_decide", "bl_unlock_finish",
