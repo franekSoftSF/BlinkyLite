@@ -418,6 +418,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 |---|---|---|
 | Q-07 | Czy paczka eksportu ma być dodatkowo podpisana (CMS SignedData), nie tylko zaszyfrowana? | 0054 |
 | Q-08 | Czy eksport ma umieć wybrać podzbiór kart, czy zawsze całość? | 0054 |
+| Q-10 | Czy bot Teams ma brać udział w odblokowaniu PIN (0057)? Trzy osobne rzeczy: **(a)** powiadomienie na kanał helpdesku, że kod czeka — jednokierunkowe, mieści się w bocie z 0060; **(b)** potwierdzenie u właściciela klucza, że to on prosi — drugi kanał dla tego, co dziś sprawdza tylko operator rozpoznający głos; **(c)** zatwierdzanie klikiem w Teams — wejściowy, publicznie osiągalny endpoint i drugi model uprawnień (Entra obok grup AD), więc osobna decyzja. Odblokowanie **bez człowieka odpada**: numer seryjny jest wydrukowany na kluczu, więc bez zatwierdzenia każdy odblokuje dowolną kartę. Przeczy decyzji o bocie jednokierunkowym i potrzebuje bota z 0060 | 0060 |
 
 Zamknięte 2026-09-21: Q-02 (licencja) — **Apache-2.0** (D-34).
 

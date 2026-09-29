@@ -447,6 +447,14 @@
         "0054"
       ],
       "needs": "decyzja właściciela"
+    },
+    {
+      "id": "Q-10",
+      "question": "Czy bot Teams ma brać udział w odblokowaniu PIN (0057)? Trzy osobne rzeczy: (a) powiadomienie na kanał helpdesku, że kod czeka na zatwierdzenie — jednokierunkowe, mieści się w bocie z 0060; (b) potwierdzenie u właściciela klucza, że to on prosi — drugi kanał dla tego, co dziś sprawdza tylko operator rozpoznający głos; (c) zatwierdzanie klikiem w Teams — wymaga wejściowego, publicznie osiągalnego endpointu i drugiego modelu uprawnień (Entra obok grup AD), więc osobna decyzja. Odblokowanie BEZ człowieka odpada: numer seryjny jest wydrukowany na kluczu, więc bez zatwierdzenia każdy odblokuje dowolną kartę. Przeczy decyzji o bocie jednokierunkowym i potrzebuje instalacji Graph/bota z 0060, więc nie wcześniej niż po 0060.",
+      "blocks": [
+        "0060"
+      ],
+      "needs": "decyzja wlasciciela po 0060"
     }
   ],
   "closedQuestions": [
