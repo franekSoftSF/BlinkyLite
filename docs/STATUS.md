@@ -349,7 +349,7 @@ wersji, przez którą przeszło wydanie.
 | 0002 | 0 | Baza danych (NHibernate + procedury `bl_*`) | `done-unverified` |
 | 0003 | 0 | Serwer | `done` |
 | 0004 | 0 | Języki EN / DE / SV / PL | `done` |
-| 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `partly-done` |
+| 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `done` |
 | 0010 | 1 | Import `Blinky.Piv` | `done` |
 | 0011 | 1 | Personalizacja i klucz | `done` |
 | 0020 | 2 | API wydań | `done` |

@@ -654,10 +654,10 @@
       "id": "0005",
       "phase": 0,
       "title": "Sekrety poza konfiguracją (DPAPI / Docker secrets)",
-      "state": "partly-done",
+      "state": "done",
       "owner": "cloud-ai",
-      "proof": "2026-09-19: ISecretStore (plik z Secrets:Files, potem Secrets:Directory - najpierw .dpapi, potem zwykly; na koncu BLINKYLITE_SECRET_<NAZWA>), haslo bazy doklejane do connection stringa w pamieci, --protect-secret pisze plik DPAPI w zakresie maszyny. 164 testy jednostkowe: sekret w appsettings.json zatrzymuje start i podaje nazwe klucza, nie wartosc; w deweloperce przechodzi; plik wygrywa ze zmienna; brak sekretu mowi gdzie szukano; round trip DPAPI. Serwer naprawde: Production + sekret w konfiguracji -> kod 2 z lista kluczy; klucz JWT z pliku DPAPI, KEK i haslo bazy z plikow -> start, schema ok, /health, a w pliku .dpapi nie widac wartosci.",
-      "gap": "Ostrzezenie o zbyt szerokich prawach pliku dziala na Linuksie (prawa POSIX); na Windows ACL ustawia i sprawdza instalator (0051), bo projekt serwera jest wieloplatformowy i nie ma w nim API do ACL."
+      "proof": "2026-09-19: ISecretStore (plik z Secrets:Files, potem Secrets:Directory - najpierw .dpapi, potem zwykly; na koncu BLINKYLITE_SECRET_<NAZWA>), haslo bazy doklejane do connection stringa w pamieci, --protect-secret pisze plik DPAPI w zakresie maszyny. 164 testy jednostkowe: sekret w appsettings.json zatrzymuje start i podaje nazwe klucza, nie wartosc; w deweloperce przechodzi; plik wygrywa ze zmienna; brak sekretu mowi gdzie szukano; round trip DPAPI. Serwer naprawde: Production + sekret w konfiguracji -> kod 2 z lista kluczy; klucz JWT z pliku DPAPI, KEK i haslo bazy z plikow -> start, schema ok, /health, a w pliku .dpapi nie widac wartosci. 2026-10-08: stan podniesiony z partly-done na done bez pisania ani linii kodu. Jedyna luka odsylala do instalatora Windows (0051), ktory D-38 usunal z zakresu - serwer stoi wylacznie w Dockerze, wiec ostrzezenie o zbyt szerokich prawach pliku dziala wszedzie, gdzie serwer w ogole chodzi. DoD z roadmapy jest spelniony w calosci.",
+      "gap": ""
     },
     {
       "id": "0010",
