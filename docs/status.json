@@ -37,7 +37,7 @@
     "hardware": "YubiKey 5 series (PIV applet)"
   },
   "status": {
-    "updated": "2026-09-29",
+    "updated": "2026-10-08",
     "phase": 2,
     "phaseTitle": "Wydanie",
     "state": "open",
@@ -125,6 +125,12 @@
     {
       "id": 6,
       "title": "Po 1.0: powiadomienie o wygaśnięciu (Teams)",
+      "state": "open",
+      "done": false
+    },
+    {
+      "id": 7,
+      "title": "Po 1.0: Linux i drugie poswiadczenie",
       "state": "open",
       "done": false
     }
@@ -441,6 +447,12 @@
       "choice": "Obrazy serwera i konsoli web publikowane na ghcr.io/franeksoftsf (blinkylite-server, blinkylite-web), budowane i wypychane przez GitHub Actions na tagu vX.Y.Z. To samo konto i te same uprawnienia co repozytorium, zaden sekret do trzymania (GITHUB_TOKEN wystarcza), brak limitow pobran dla anonimowych. Wypychanie z laptopa odpada - nikt nie odtworzy, z czego powstal obraz. Wdrozenie z wydanych obrazow: docker-compose.ghcr.yml obok zwyklego compose, ktory dalej buduje z checkoutu. Wydane 2026-09-29 jako v0.1.91: testy bazodanowe zielone, oba obrazy w rejestrze z tagami 0.1.91, 0.1, latest i sha-3261886, pobieralne anonimowo (paczki wyszly publiczne bez klikania), obraz serwera uruchomiony z rejestru.",
       "state": "locked",
       "decidedOn": "2026-09-29"
+    },
+    {
+      "id": "D-40",
+      "choice": "Po 1.0 BlinkyLite poszerza sie o Linuksa i o drugie poswiadczenie na tym samym kluczu: agent .deb do odblokowania PIN (0070) oraz FIDO2 w Entra ID i Okta - najpierw sam zapis przy kluczu (0071), potem PORT KeyEnroll Ignacego Nowakowskiego (0072), a nie wlasna implementacja. Powod, dla ktorego to jedno narzedzie, a nie dwa: kodu wspolnego miedzy PIV a FIDO2 prawie nie ma, ale zapis, audyt, role, konsola i cztery jezyki sa wspolne - a klucz jest jeden. Osobna faza 7, bo to poszerzenie zakresu, nie dopisek do istniejacej fazy. Do paczki linuksowej dochodzi tez sssd-smartcard jako narzedzie diagnostyczne (0073), ale jako OSOBNY pakiet: jest na GPL-3.0-or-later, a BlinkyLite na Apache-2.0 - wydanie obok siebie to agregacja i jest dozwolone, polaczenie w jeden program nie.",
+      "state": "locked",
+      "decidedOn": "2026-10-08"
     }
   ],
   "openQuestions": [
@@ -467,6 +479,14 @@
         "0060"
       ],
       "needs": "decyzja wlasciciela po 0060"
+    },
+    {
+      "id": "Q-11",
+      "question": "Czym robic CTAP2 w .NET przy porcie KeyEnroll (0072)? KeyEnroll stoi na python-fido2. Po naszej stronie w gre wchodza: SDK Yubico (Apache-2.0, umie FIDO2 po stronie klienta - ale D-02 odrzucilo je dla PIV, wiec trzeba powiedziec, czemu dla FIDO2 jest inaczej), wlasna warstwa CTAP2 nad HID (duzo pracy, pelna kontrola) albo wywolywanie KeyEnrolla jako procesu (wtedy to nie jest port). Decyzja przesadza o rozmiarze 0072 i o tym, czy w repozytorium pojawi sie Python obok .NET.",
+      "blocks": [
+        "0072"
+      ],
+      "needs": "decyzja wlasciciela plus zgoda autora KeyEnroll"
     }
   ],
   "closedQuestions": [
@@ -813,6 +833,42 @@
       "owner": "cloud-ai",
       "proof": "2026-09-29: POST /api/cards/{serial}/withdraw z powodem, polityka CanIssue (Admin, SecurityOfficer; Helpdesk dostaje 403). Migracja 0008: bl_card_withdraw przestawia biezace wydanie Issued -> Withdrawn z withdrawn_at/_by/_reason, koperte Active -> Retired, cards.current_issuance_id -> NULL i wygasza zgloszenia odblokowania w toku. Zadnego DELETE - wiersze i koperty zostaja, bo koperta moze byc jedyna kopia management key karty lezacej na czyims biurku. Sprawdzone na prawdziwym PostgreSQL: po wycofaniu bl_secret_disclose odmawia dla PUK i MK (BL002), bl_unlock_request odmawia, zgloszenie juz zatwierdzone oddaje Expired zamiast koperty, drugie wycofanie to BL001 error.card.withdrawn, a ponowne wydanie tej samej karty dziala i znow daje PUK. Zaden bl_issuance_* nie przyjmuje wydania w stanie Withdrawn (teoria przejsc w IssuanceFunctionTests objela nowy stan sama). Kolumny withdrawn_* opisane w eksporcie do Blinky (D-19, docs/10). 580 testow jednostkowych, 133 bazodanowe.",
       "gap": "Nie sprawdzone w labie: przycisk \"Wycofaj ten klucz\" w konsoli web na prawdziwym wydaniu i to, ze po wycofaniu helpdesk nie widzi juz PUK. Paczka serwera z ta migracja nie jest jeszcze wdrozona."
+    },
+    {
+      "id": "0070",
+      "phase": 7,
+      "title": "Agent DEB: odblokowanie PIN na Linuksie",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": "",
+      "gap": "Port okna BlinkyLite.Unlock na Linuksa w paczce .deb (Debian, Ubuntu): oba tryby, ktore juz sa - PUK z helpdesku i kod przez telefon. Po stronie serwera nic nie dochodzi, bo 0057 juz to umie. Zaczyna sie od warstwy pcsc-lite: winscard.dll i pcsc-lite to nie te same funkcje pod inna nazwa, bo DWORD w pcsc-lite ma szerokosc rejestru i kazdy parametr dlugosci marshalluje sie inaczej (powod stoi w Pcsc/PcscInterop.cs). Paczka niesie regule udev i zalezy od pcscd."
+    },
+    {
+      "id": "0071",
+      "phase": 7,
+      "title": "Zapis poswiadczenia FIDO2 przy kluczu",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": "",
+      "gap": "Jeden klucz = jeden zapis. Karta moze miec obok certyfikatu PIV poswiadczenie FIDO2 w Entra ID albo Okta; BlinkyLite je ZAPISUJE i POKAZUJE, nie rejestruje. Nowa tabela, funkcja bl_* z audytem, endpoint pod CanIssue, widok w szczegolach, kolumny w eksporcie do Blinky (D-19). Zadnego CTAP2 po naszej stronie - patch jest skonczony, nawet gdyby 0072 nigdy nie powstal."
+    },
+    {
+      "id": "0072",
+      "phase": 7,
+      "title": "Port KeyEnroll: enrollment FIDO2 do Entra ID i Okta",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": "",
+      "gap": "PORT, nie wlasna implementacja: przeniesienie KeyEnroll Ignacego Nowakowskiego (MIT, github.com/inowakowski/KeyEnroll) - rejestracja FIDO2/WebAuthn przez CTAP2 w Entra ID i Okta, z opcjami, ktore juz przemyslal. Wymaga jego zgody (licencja pozwala, ale to kolega, nie licencja) i zachowania noty MIT. Wynik zapisuje sie przez 0071. Otwarte przed startem: czym robic CTAP2 w .NET (Q-11)."
+    },
+    {
+      "id": "0073",
+      "phase": 7,
+      "title": "Narzedzie diagnostyczne SSSD w paczce",
+      "state": "open",
+      "owner": "cloud-ai",
+      "proof": "",
+      "gap": "Do agenta z 0070 dochodzi sssd-smartcard (projekt wlasciciela): czyta karte, ocenia mechanizmy mapowania, wypisuje gotowa sekcje [certmap/...] do sssd.conf, ma doctor, sprawdzenie Kerberosa i wykrywanie PKCS#11 - odpowiedz na \"dlaczego ta karta nie loguje mnie do tego Linuksa\". OSOBNY pakiet blinkylite-diag, bo sssd-smartcard jest na GPL-3.0-or-later, a my na Apache-2.0: wydanie obok siebie to agregacja i jest dozwolone, polaczenie w jeden program nie. Agent moze najwyzej wywolac jego CLI jako osobny proces. Dzis projekt wydaje sie jako tarball z install.sh; dochodzi regula debian/."
     }
   ],
   "notVerified": [

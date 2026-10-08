@@ -371,6 +371,10 @@ wersji, przez którą przeszło wydanie.
 | 0053 | 5 | Test end-to-end | `open` |
 | 0054 | 5 | Eksport do Blinky | `open` |
 | 0060 | 6 | Powiadomienie o wygaśnięciu przez bota Teams (po 1.0) | `open` |
+| 0070 | 7 | Agent DEB: odblokowanie PIN na Linuksie (po 1.0) | `open` |
+| 0073 | 7 | Narzędzie diagnostyczne SSSD w paczce (po 1.0) | `open` |
+| 0071 | 7 | Zapis poświadczenia FIDO2 przy kluczu (po 1.0) | `open` |
+| 0072 | 7 | Port KeyEnroll: FIDO2 do Entra ID i Okta (po 1.0) | `open` |
 
 ## Zdecydowane
 
@@ -409,6 +413,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 | D-27 | Kerberos dla **wszystkich** klientów (web, WPF, PowerShell) i dla **każdej** nazwy serwisu |
 | D-26 | Całość w Dockerze **za nginx**; TLS także między nginx a serwerem |
 | D-37 | **Zdalne odblokowanie PIN: aplikacja pyta serwer, operator zatwierdza w konsoli.** Karta nie ma challenge–response dla PUK-a (`RESET RETRY COUNTER` bierze tylko PUK, `SET PIN RETRIES` wymaga działającego PIN-u), więc każda „liczba do przepisania" byłaby samym PUK-iem — zamiast tego kod przez telefon, zatwierdzenie z powodem i koperta pobrana przez stację raz. Trzy endpointy bez tokenu, decyzja dla tych samych ról co odsłonięcie PUK-a, bez rotacji PUK-a i bez cmdletów |
+| D-40 | **Po 1.0 BlinkyLite idzie na Linuksa i po drugie poświadczenie.** Agent `.deb` do odblokowania PIN (0070) z narzędziem diagnostycznym `sssd-smartcard` jako **osobnym pakietem** (0073, bo GPL-3.0 obok naszego Apache-2.0 to agregacja, a nie jeden program), oraz FIDO2 w Entra ID i Okta: najpierw sam zapis przy kluczu (0071), potem **port** KeyEnroll Ignacego Nowakowskiego (0072), nie własna implementacja. Kodu wspólnego między PIV a FIDO2 prawie nie ma — wspólne są zapis, audyt, role, konsola i cztery języki, a klucz jest jeden |
 | D-39 | **Obrazy publikowane na ghcr.io** (`franeksoftsf/blinkylite-server`, `-web`), budowane przez GitHub Actions na tagu `vX.Y.Z` po przejściu testów bazodanowych; `docker-compose.ghcr.yml` uruchamia wydanie bez budowania. To samo konto co repozytorium, żaden sekret do trzymania, brak limitów pobrań |
 | D-38 | **Serwer tylko jako obraz Dockera.** Usługa Windows w MSIX (0051) i ryzyko R-05 odpadają: dwa sposoby instalacji to dwa zestawy ścieżek, praw i źródeł sekretów, z których jeden bywa sprawdzany raz na kwartał, a serwer jest czystym `net10.0`. Windows zostaje po stronie stacji |
 | D-36 | **Odblokowanie PIN PUK-iem wchodzi do produktu** jako osobna aplikacja (`BlinkyLite.Unlock`) i osobny MSIX ze strony logowania — bez logowania i bez serwera; zmiana PUK i reset dalej u Blinky. Instalator klienta widoczny dopiero po zalogowaniu; wspólny wygląd z `BlinkyLite.Ui` |
@@ -426,6 +431,7 @@ Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#
 |---|---|---|
 | Q-07 | Czy paczka eksportu ma być dodatkowo podpisana (CMS SignedData), nie tylko zaszyfrowana? | 0054 |
 | Q-08 | Czy eksport ma umieć wybrać podzbiór kart, czy zawsze całość? | 0054 |
+| Q-11 | Czym robić CTAP2 w .NET przy porcie KeyEnroll? KeyEnroll stoi na `python-fido2`. Po naszej stronie: **SDK Yubico** (Apache-2.0, umie FIDO2 po stronie klienta — ale D-02 odrzuciło je dla PIV, więc trzeba powiedzieć, czemu dla FIDO2 jest inaczej), **własna warstwa CTAP2 nad HID** (dużo pracy, pełna kontrola) albo **wywoływanie KeyEnrolla jako procesu** (wtedy to nie jest port). Przesądza o rozmiarze 0072 i o tym, czy w repozytorium pojawi się Python obok .NET. Potrzebna też zgoda autora | 0072 |
 | Q-10 | Czy bot Teams ma brać udział w odblokowaniu PIN (0057)? Trzy osobne rzeczy: **(a)** powiadomienie na kanał helpdesku, że kod czeka — jednokierunkowe, mieści się w bocie z 0060; **(b)** potwierdzenie u właściciela klucza, że to on prosi — drugi kanał dla tego, co dziś sprawdza tylko operator rozpoznający głos; **(c)** zatwierdzanie klikiem w Teams — wejściowy, publicznie osiągalny endpoint i drugi model uprawnień (Entra obok grup AD), więc osobna decyzja. Odblokowanie **bez człowieka odpada**: numer seryjny jest wydrukowany na kluczu, więc bez zatwierdzenia każdy odblokuje dowolną kartę. Przeczy decyzji o bocie jednokierunkowym i potrzebuje bota z 0060 | 0060 |
 
 Zamknięte 2026-09-21: Q-02 (licencja) — **Apache-2.0** (D-34).

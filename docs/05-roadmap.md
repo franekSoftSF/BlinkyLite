@@ -79,6 +79,29 @@ Nie rozrasta się w CMS: jeden kanał (Teams), nie odnawia, bot nie
 prowadzi rozmowy, nie ma kolejki — odnowienie robi Blinky albo operator
 nowym wydaniem.
 
+## Faza 7 — Po 1.0: Linux i drugie poświadczenie
+
+Pomysły właściciela z 8 października 2026, wszystkie **po 1.0** i wszystkie
+poszerzające zakres — dlatego osobna faza, a nie dopisek do istniejącej (D-40).
+Dwie pary, stąd kolejność w tabeli nie idzie po numerach: **0070 i 0073** to
+paczka dla Linuksa, **0071 i 0072** to drugie poświadczenie na tym samym
+kluczu.
+
+| Patch | Tytuł | DoD |
+|---|---|---|
+| 0070 | Agent DEB: odblokowanie PIN na Linuksie | Port okna `BlinkyLite.Unlock` na Linuksa, w paczce `.deb` dla Debiana i Ubuntu: oba tryby, które już są — PUK z helpdesku i kod przez telefon (0057; serwer umie to dziś, trzy endpointy są bez tokenu, nic po stronie serwera nie dochodzi). **Zaczyna się od warstwy `pcsc-lite`**, bo `BlinkyLite.Piv` rozmawia z `winscard.dll`, a to nie są te same funkcje pod inną nazwą: `DWORD` w pcsc-lite ma szerokość rejestru, więc `SCARD_IO_REQUEST` i każdy parametr długości marshallują się inaczej (powód stoi w `Pcsc/PcscInterop.cs`). Reguły stanu karty, `PinRules` i teksty w czterech językach są wspólne — różni się transport i okno. Paczka instaluje regułę `udev` dla czytnika i zależy od `pcscd`. **Dowód:** na czystym Ubuntu z czytnikiem i prawdziwym kluczem odblokowany PIN oboma trybami, a pakiet instaluje się i usuwa bez ręcznych kroków |
+| 0073 | Narzędzie diagnostyczne SSSD w paczce | Do agenta z 0070 dochodzi `sssd-smartcard` (projekt właściciela, dziś `~/Project/SSSD CertAuth`): czyta kartę, ocenia, które mechanizmy mapowania ten certyfikat w ogóle może obsłużyć, i wypisuje gotową sekcję `[certmap/...]` do `sssd.conf` — plus `doctor`, sprawdzenie Kerberosa i wykrywanie PKCS#11. To jest odpowiedź na pytanie „dlaczego ta karta nie loguje mnie do tego Linuksa", którego nasz agent sam nie umie zadać. **Osobny pakiet `blinkylite-diag`, nie jeden plik .deb z agentem** — zob. niżej o licencjach. Dziś projekt wydaje się jako tarball z `install.sh`; tu dochodzi reguła `debian/` i wpis w naszym repozytorium pakietów. **Dowód:** na stacji z Ubuntu `sssd-smartcard cert inspect --from-card` rozpoznaje kartę wydaną BlinkyLitem i wypisuje regułę, która faktycznie loguje ją do tego hosta |
+| 0071 | Zapis poświadczenia FIDO2 przy kluczu | Jeden klucz = jeden zapis. Karta może mieć obok certyfikatu PIV **poświadczenie FIDO2** zarejestrowane w Entra ID albo Okta; BlinkyLite je **zapisuje i pokazuje**, nie rejestruje: rodzaj, dostawca tożsamości, identyfikator poświadczenia, kiedy i przez kogo, z jakiego narzędzia. Nowa tabela, funkcja `bl_*` z audytem, endpoint pod `CanIssue`, widok w szczegółach w konsoli, kolumny w eksporcie do Blinky (D-19). **Żadnego CTAP2 po naszej stronie** — ten patch jest skończony, nawet gdyby 0072 nigdy nie powstał. **Dowód:** poświadczenie zarejestrowane KeyEnrollem widać przy właściwej karcie w konsoli i w eksporcie, a w audycie jest kto i kiedy je dopisał |
+| 0072 | Port KeyEnroll: enrollment FIDO2 do Entra ID i Okta | **Port**, nie własna implementacja: przeniesienie [KeyEnroll](https://github.com/inowakowski/KeyEnroll) Ignacego Nowakowskiego (MIT) — rejestracja FIDO2/WebAuthn przez CTAP2 w Entra ID i Okta, z opcjami, które już przemyślał (reset, losowy PIN, minimalna długość, wymuszona zmiana, „always require UV", atestacja enterprise, tryb hurtowy). Wymaga **jego zgody** — licencja pozwala, ale to kolega, nie licencja — oraz zachowania noty MIT i atrybucji w plikach. Wynik zapisuje się przez 0071, więc jeden klucz ma jeden zapis i jeden audyt. **Otwarte przed startem:** czym robić CTAP2 w .NET (Q-11). **Dowód:** klucz zarejestrowany w testowym tenancie Entra i w Okta, oba wpisy widoczne w konsoli, a ten sam klucz dalej loguje do Windows certyfikatem PIV |
+
+**Licencje: trzy różne, więc trzy osobne pakiety, nie jeden.** Agent (0070) jest nasz, Apache-2.0. `sssd-smartcard` (0073) jest na **GPL-3.0-or-later**, a KeyEnroll (0072) na MIT i ciągnie PySide6 na LGPLv3. Kod na GPL-3.0 wolno **wydać obok** naszego w tym samym repozytorium pakietów i nawet w jednym archiwum — to zwykła agregacja, na którą GPL pozwala wprost. Czego nie wolno: połączyć ich w jeden program, czyli nasz agent nie importuje `sssd-smartcard` jako biblioteki ani go nie linkuje; wywołuje co najwyżej jego CLI jako osobny proces. Stąd osobne pakiety z osobnym `debian/copyright` w każdym. Właściciel jest autorem obu projektów i mógłby zmienić licencję, ale agregacja jest i tak czystsza: nic nie trzeba przelicencjonowywać.
+
+FIDO2 i PIV to **dwa różne poświadczenia na tym samym kluczu**: inny protokół
+(CTAP2 kontra PC/SC i APDU), inny model zaufania (dostawca tożsamości kontra
+firmowe CA), inne sekrety (PIN FIDO kontra PUK i management key). Kodu do
+ponownego użycia między nimi prawie nie ma — wspólne są serwer, zapis, audyt,
+konsola i cztery języki, i to jest cała wartość trzymania tego razem.
+
 ## Poza zakresem
 
 BlinkyLite **wydaje** klucz i pozwala go **zweryfikować**. Nic poza tym —
