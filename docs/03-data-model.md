@@ -1,153 +1,156 @@
-# 03 — Model danych
+# 03 — Data model
 
-PostgreSQL 16+, schemat `blinkylite`, numerowane skrypty w `db/migrations`.
-Odczyt przez NHibernate + FluentNHibernate, **zapis tylko przez funkcje
-`bl_*`** — jak i dlaczego: [07 — Baza danych](07-database.md). Nazwy tabel i
-kolumn `snake_case`. Czas zawsze `timestamptz` w UTC.
+PostgreSQL 16+, schema `blinkylite`, numbered scripts in `db/migrations`.
+Reading through NHibernate + FluentNHibernate, **writing only through the
+`bl_*` functions** — how and why: [07 — Database](07-database.md). Table and
+column names are `snake_case`. Time is always `timestamptz` in UTC.
 
-## Tabele
+## Tables
 
-### `cards` — klucz fizyczny
+### `cards` — the physical token
 
-| Kolumna | Typ | Uwagi |
+| Column | Type | Notes |
 |---|---|---|
-| `serial` | `text` PK | identyfikator karty **w jej rodzinie** (0081, migracja 0009): YubiKey — serial z `GET SERIAL` dziesiętnie, potwierdzony atestacją `.3.7`; Crescendo — CUID, 20 znaków hex wielkimi literami. Do 0008 był to `bigint`; cyfry istniejących kart się nie zmieniły |
-| `family` | `text` | `YubiKey` albo `Crescendo`; nadawana przy pierwszym wydaniu, nigdy zmieniana. `cards_serial_check` pilnuje, żeby serial miał postać swojej rodziny — postaci się nie pokrywają, więc serial sam wskazuje kartę |
-| `firmware` | `text` | np. `5.7.1` |
-| `form_factor` | `smallint` | z atestacji `.3.9`; bit `0x80` = FIPS |
-| `has_puk` | `boolean` | `false` dla Bio Multi-protocol |
+| `serial` | `text` PK | the token's identifier **within its family** (0081, migration 0009): YubiKey — the serial from `GET SERIAL` in decimal, confirmed by attestation `.3.7`; Crescendo — the CUID, 20 upper-case hex characters. Up to 0008 this was a `bigint`; the digits of existing cards did not change |
+| `family` | `text` | `YubiKey` or `Crescendo`; assigned at the first issuance, never changed. `cards_serial_check` makes sure a serial has the shape of its family — the shapes do not overlap, so a serial identifies the card by itself |
+| `firmware` | `text` | e.g. `5.7.1` |
+| `form_factor` | `smallint` | from attestation `.3.9`; bit `0x80` = FIPS |
+| `has_puk` | `boolean` | `false` for Bio Multi-protocol |
 | `first_seen_at` | `timestamptz` | |
-| `current_issuance_id` | `uuid` null | ostatnie wydanie w stanie `Issued` |
+| `current_issuance_id` | `uuid` null | the most recent issuance in state `Issued` |
 
-### `issuance_profiles` — profile wydania (0031, migracja 0010)
+### `issuance_profiles` — issuance profiles (0031, migration 0010)
 
-| Kolumna | Typ | Uwagi |
+| Column | Type | Notes |
 |---|---|---|
-| `name` | `text` PK | to, co operator widzi; bez spacji na brzegach |
-| `template_name`, `ca_config` | `text` | szablon (nazwa, nie nazwa wyświetlana) i CA `HOST\CN` |
-| `key_algorithm`, `pin_policy`, `touch_policy` | `text` | tylko wartości, które parsuje stacja (CHECK) |
-| `allow_unattested_keys` | `boolean` | D-43: klucz bez atestacji producenta (Crescendo); domyślnie `false`, seed z pliku nigdy go nie włącza |
-| `enabled` | `boolean` | wyłączony profil zostaje, stacje go nie dostają |
-| `created_at`, `updated_at`, `updated_by` | | historia zmian jest w audycie (`before` / `after`) |
+| `name` | `text` PK | what the operator sees; no leading or trailing spaces |
+| `template_name`, `ca_config` | `text` | the template (its name, not its display name) and the CA as `HOST\CN` |
+| `key_algorithm`, `pin_policy`, `touch_policy` | `text` | only values the station can parse (CHECK) |
+| `allow_unattested_keys` | `boolean` | D-43: a key with no manufacturer attestation (Crescendo); `false` by default, and seeding from a file never turns it on |
+| `enabled` | `boolean` | a disabled profile stays; stations do not receive it |
+| `created_at`, `updated_at`, `updated_by` | | the history of changes is in the audit trail (`before` / `after`) |
 
-### `service_keytabs` — keytab Kerberos usługi (0031, migracja 0011)
+### `service_keytabs` — the service's Kerberos keytab (0031, migration 0011)
 
-| Kolumna | Typ | Uwagi |
+| Column | Type | Notes |
 |---|---|---|
-| `id` | `uuid` PK | część AAD koperty (`keytab|{id}`) |
-| `state` | `text` | `Active` (najwyżej jeden) albo `Retired` — nic nie znika |
-| `envelope` | `bytea` | keytab zapieczętowany KEK-iem; **bez `SELECT` dla aplikacji**, droga do niego to `bl_keytab_current` |
+| `id` | `uuid` PK | part of the envelope's AAD (`keytab|{id}`) |
+| `state` | `text` | `Active` (at most one) or `Retired` — nothing disappears |
+| `envelope` | `bytea` | the keytab sealed with the KEK; **no `SELECT` for the application**, the way to it is `bl_keytab_current` |
 | `kek_version` | `smallint` | |
-| `sha256` | `text` | odcisk całego pliku, wielkie hex — jedyne, co widać w konsoli obok principali |
-| `principals` | `text[]` | np. `HTTP/blinkylite.dw-ad.example@DW-AD.EXAMPLE` |
+| `sha256` | `text` | the whole file's fingerprint, upper-case hex — the only thing the console shows next to the principals |
+| `principals` | `text[]` | e.g. `HTTP/blinkylite.dw-ad.example@DW-AD.EXAMPLE` |
 | `uploaded_at`, `uploaded_by`, `retired_at` | | |
 
-### `recycle_operations` — czyszczenie tokena (0090, migracja 0013)
+### `recycle_operations` — wiping a token (0090, migration 0013)
 
-Stan **tokena**, osobno od stanu jego certyfikatów (`revocation_requests`):
-Helpdesk kończy pierwszy, nie dotyka drugiego (D-44).
+The state of the **token**, separate from the state of its certificates
+(`revocation_requests`): Helpdesk finishes the first and never touches the
+second (D-44).
 
-| Kolumna | Typ | Uwagi |
+| Column | Type | Notes |
 |---|---|---|
-| `id` | `uuid` PK | wybiera stacja — to samo żądanie dwa razy to jeden Recycle |
+| `id` | `uuid` PK | chosen by the station — the same request twice is one Recycle |
 | `card_serial`, `card_family` | `text` | |
-| `state` | `text` | `RecycleRequested` → `RevocationQueued` → `ResetAuthorized` → `ResetInProgress` → `ResetCompleted` → `RevocationPending` → `Completed`; `Failed` (nic nie zapisano na tokenie), `ManualActionRequired` (reset przerwany). Najwyżej jeden na kartę w fazie tokena |
-| `reason`, `workstation`, `issuance_id` | | bieżące wydanie w chwili startu |
+| `state` | `text` | `RecycleRequested` → `RevocationQueued` → `ResetAuthorized` → `ResetInProgress` → `ResetCompleted` → `RevocationPending` → `Completed`; plus `Failed` (nothing was written to the token) and `ManualActionRequired` (the reset was interrupted). At most one per card in the token phase |
+| `reason`, `workstation`, `issuance_id` | | the issuance current at the moment it started |
 | `requested_by`, `requested_by_sid`, `requested_roles` | | |
-| `nonce_hash`, `nonce_expires_at`, `authorized_at`, `authorized_by` | | jednorazowa autoryzacja resetu; sam nonce jest tylko na stacji |
+| `nonce_hash`, `nonce_expires_at`, `authorized_at`, `authorized_by` | | the one-time authorisation of the reset; the nonce itself exists only at the station |
 | `reset_attempts`, `reset_started_at`, `reset_completed_at`, `reset_outcome`, `reset_detail` | | `Reset` / `NotStarted` / `Interrupted` |
 | `created_at`, `updated_at`, `completed_at` | `timestamptz` | |
 
-### `revocation_requests` — kolejka unieważnień (0090, migracja 0013)
+### `revocation_requests` — the revocation queue (0090, migration 0013)
 
-| Kolumna | Typ | Uwagi |
+| Column | Type | Notes |
 |---|---|---|
 | `id` | `uuid` PK | |
-| `issuance_id`, `card_serial`, `recycle_id` | | `recycle_id` puste dla żądania spoza Recycle |
-| `ca_config`, `cert_serial`, `cert_thumbprint`, `cert_not_after`, `target_sam` | | **kopiowane z wydania** — stacja dostaje do unieważnienia tylko to; jeden wiersz na certyfikat (`ca_config`, `cert_serial`) |
-| `reason_code` | `smallint` | `CRL_REASON_*`: 0, 1, 3, 4, 5 — bez 2 (kompromitacja CA) i 6 (zawieszenie, odwracalne) |
+| `issuance_id`, `card_serial`, `recycle_id` | | `recycle_id` is empty for a request that did not come from a Recycle |
+| `ca_config`, `cert_serial`, `cert_thumbprint`, `cert_not_after`, `target_sam` | | **copied from the issuance** — that is all the station is given to revoke; one row per certificate (`ca_config`, `cert_serial`) |
+| `reason_code` | `smallint` | `CRL_REASON_*`: 0, 1, 3, 4, 5 — not 2 (CA compromise) and not 6 (hold, which is reversible) |
 | `reason` | `text` | |
-| `state` | `text` | `RevocationRequested`, `RevocationPending` (próba w toku), `Revoked` (tylko na słowo stacji, że CA potwierdził), `RevocationFailed`, `ManualActionRequired` |
+| `state` | `text` | `RevocationRequested`, `RevocationPending` (an attempt is under way), `Revoked` (on the station's word that the CA confirmed it), `RevocationFailed`, `ManualActionRequired` |
 | `attempts`, `last_attempt_at`, `last_attempt_by`, `last_error` | | |
 | `revoked_at`, `revoked_by`, `completed_at` | | |
 
-### `issuances` — jedno wydanie
+### `issuances` — one issuance
 
-| Kolumna | Typ | Uwagi |
+| Column | Type | Notes |
 |---|---|---|
 | `id` | `uuid` PK | |
-| `card_serial` | `text` FK | jak `cards.serial` |
+| `card_serial` | `text` FK | as `cards.serial` |
 | `state` | `text` | `Reserved`, `Customised`, `Attested`, `PendingCa`, `Issued`, `Failed`, `Superseded`, `Withdrawn` |
-| `withdrawn_at`, `withdrawn_by`, `withdrawn_reason` | `timestamptz`, `text`, `text` | wypełnione razem ze stanem `Withdrawn` (0058): klucz wyszedł z użycia poza BlinkyLite — skasowany, zgubiony, oddany. Powód jest obowiązkowy |
-| `target_sam` | `text` | `DOMENA\sAMAccountName` — to, co poszło w `RequesterName` |
+| `withdrawn_at`, `withdrawn_by`, `withdrawn_reason` | `timestamptz`, `text`, `text` | filled in together with the `Withdrawn` state (0058): the token went out of use outside BlinkyLite — wiped, lost, handed on. The reason is mandatory |
+| `target_sam` | `text` | `DOMAIN\sAMAccountName` — what went into `RequesterName` |
 | `target_upn` | `text` | |
-| `target_sid` | `text` | `objectSid` z AD, porównywany z rozszerzeniem SID certyfikatu |
+| `target_sid` | `text` | `objectSid` from AD, compared with the certificate's SID extension |
 | `target_display_name` | `text` | |
-| `profile_name` | `text` | nazwa profilu w chwili wydania (kopiowana, nie FK) |
-| `template_name` | `text` | nazwa szablonu ADCS |
+| `profile_name` | `text` | the profile's name at the time of issuance (copied, not an FK) |
+| `template_name` | `text` | the ADCS template's name |
 | `ca_config` | `text` | `HOST\CA CN` |
-| `ca_request_id` | `integer` null | z `ICertRequest3` |
-| `operator_upn` / `operator_sid` | `text` | z JWT |
-| `windows_identity` | `text` | konto Windows, które wysłało EOBO |
-| `ea_thumbprint` | `text` | który certyfikat EA podpisał CMC |
-| `workstation` | `text` | nazwa stacji |
+| `ca_request_id` | `integer` null | from `ICertRequest3` |
+| `operator_upn` / `operator_sid` | `text` | from the JWT |
+| `windows_identity` | `text` | the Windows account that submitted the EOBO request |
+| `ea_thumbprint` | `text` | which EA certificate signed the CMC |
+| `workstation` | `text` | the station's name |
 | `key_algorithm` | `text` | `Rsa2048`, `EccP256`, … |
-| `pin_policy` / `touch_policy` | `smallint` | z atestacji `.3.8` |
-| `attestation_der` / `attestation_intermediate_der` | `bytea` | dowód, że klucz jest na tym tokenie |
+| `pin_policy` / `touch_policy` | `smallint` | from attestation `.3.8` |
+| `attestation_der` / `attestation_intermediate_der` | `bytea` | the proof that the key is on this token |
 | `csr_der` | `bytea` | |
-| `recycled_at`, `recycle_id` | | *(0090)* stan `Recycled`: token wyczyszczony przez ten Recycle, certyfikat w kolejce unieważnień |
-| `key_evidence` | `text` | *(0083, migracja 0012)* czym wydanie dowiodło, gdzie powstał klucz: `YubicoAttestation` (atestacja sprawdzona przez serwer) albo `GeneratedOnCard` (słowo karty Crescendo, niepodpisane, tylko z profilu z D-43); `NULL` przed atestacją |
+| `recycled_at`, `recycle_id` | | *(0090)* state `Recycled`: the token was wiped by this Recycle and the certificate is in the revocation queue |
+| `key_evidence` | `text` | *(0083, migration 0012)* how the issuance proved where the key was created: `YubicoAttestation` (an attestation the server checked) or `GeneratedOnCard` (the Crescendo card's word, unsigned, only from a profile under D-43); `NULL` before attestation |
 | `certificate_der` | `bytea` null | |
 | `cert_serial` / `cert_thumbprint` | `text` null | |
 | `cert_not_before` / `cert_not_after` | `timestamptz` null | |
-| `error` | `text` null | komunikat CA dosłownie albo kod PC/SC |
+| `error` | `text` null | the CA's message verbatim, or a PC/SC code |
 | `created_at` / `updated_at` / `completed_at` | `timestamptz` | |
 
-**Nigdy PIN.** Nie ma na niego kolumny i nie ma pola w żadnym DTO — to
-sprawdza test (patch 0003).
+**Never a PIN.** There is no column for one and no field in any DTO — a test
+checks that (patch 0003).
 
-### `card_secrets` — koperty PUK i management key
+### `card_secrets` — the PUK and management key envelopes
 
-| Kolumna | Typ | Uwagi |
+| Column | Type | Notes |
 |---|---|---|
 | `id` | `uuid` PK | |
-| `issuance_id` | `uuid` FK | rezerwacja, która wygenerowała parę |
-| `card_serial` | `text` FK | jak `cards.serial` |
-| `state` | `text` | `Reserved` → `Active` → `Retired`; nigdy usuwane |
-| `puk_envelope` | `bytea` null | null dla karty bez PUK |
+| `issuance_id` | `uuid` FK | the reservation that generated the pair |
+| `card_serial` | `text` FK | as `cards.serial` |
+| `state` | `text` | `Reserved` → `Active` → `Retired`; never deleted |
+| `puk_envelope` | `bytea` null | null for a card with no PUK |
 | `mgmt_key_envelope` | `bytea` | |
 | `mgmt_key_algorithm` | `smallint` | `0x03` 3DES, `0x0A` AES-192, … |
-| `kek_version` | `smallint` | którym KEK zaszyfrowano |
-| `puk_disclosed_count` | `integer` | ile razy odsłonięto — widoczne w przeglądarce |
+| `kek_version` | `smallint` | which KEK it was encrypted with |
+| `puk_disclosed_count` | `integer` | how many times it has been revealed — visible in the browser |
 | `created_at` / `activated_at` / `retired_at` | `timestamptz` | |
 
-Kolumn `puk_envelope` i `mgmt_key_envelope` rola aplikacji **nie może
-przeczytać** (uprawnienie kolumnowe, [07](07-database.md#trzy-role-w-bazie)) —
-jedyna droga do nich to `bl_secret_disclose` z audytem.
+The application role **cannot read** the `puk_envelope` and
+`mgmt_key_envelope` columns (a column privilege,
+[07](07-database.md#three-roles-in-the-database)) — the only way to them is
+`bl_secret_disclose`, which audits.
 
-Jedna karta ma w danej chwili co najwyżej jedną kopertę `Active`. Nowe
-wydanie na znanej karcie przechodzi starą w `Retired` dopiero po
-`/customised` nowej — wcześniej karta wciąż ma stary MK.
+A card has at most one `Active` envelope at any moment. A new issuance on a
+known card retires the old one only after the new one's `/customised` — before
+that, the card still has the old MK.
 
-Token **wycofany** (0058) i **wyczyszczony** (Recycle, D-44) nie ma koperty
-`Active`, więc `bl_secret_disclose` niczego nie odda. Konsola od tej pory
-nie pokazuje przy takim wydaniu odnośników „Pokaż PUK" i „Pokaż management
-key": formularz, który i tak skończyłby się odmową, wygląda jak usterka, a
-nie jak zasada.
+A **withdrawn** token (0058) and a **wiped** one (Recycle, D-44) have no
+`Active` envelope, so `bl_secret_disclose` returns nothing. From then on the
+console shows no "Show PUK" or "Show management key" links on such an issuance:
+a form that would end in a refusal anyway looks like a fault rather than a
+rule.
 
-### `expiry_notifications` — wysłane powiadomienia (0060, po 1.0)
+### `expiry_notifications` — notices that were sent (0060, after 1.0)
 
 `issuance_id` FK, `threshold_days` (`smallint`), `channel` (`teams`),
 `outcome` (`sent` / `skipped` / `failed`), `entra_user_id` (`text` null),
-`error` (`text` null), `at`; klucz unikalny `(issuance_id, threshold_days)` —
-ten sam próg nie wychodzi dwa razy, nawet po restarcie serwera. Błąd
-przejściowy (Graph niedostępny) nie tworzy wiersza, żeby próg wrócił przy
-następnym uruchomieniu ([09](09-expiry-notification.md#błędy)).
+`error` (`text` null), `at`; unique key `(issuance_id, threshold_days)` — the
+same threshold does not go out twice, not even after the server restarts. A
+transient failure (Graph unavailable) creates no row, so the threshold comes
+back at the next run ([09](09-expiry-notification.md#errors)).
 
-### Profile i role — nie w bazie
+### Profiles and roles — not in the database
 
-Profile wydania i mapowanie grup AD na role są w `appsettings.json` serwera
-(D-13), nie w tabelach — mniej kodu i żadnego CRUD na start:
+Issuance profiles and the mapping of AD groups to roles live in the server's
+`appsettings.json` (D-13), not in tables — less code and no CRUD to begin
+with:
 
 ```json
 "Profiles": [
@@ -162,97 +165,99 @@ Profile wydania i mapowanie grup AD na role są w `appsettings.json` serwera
 }
 ```
 
-Grupy po SID, nie po nazwie — zmiana nazwy grupy w AD nie może po cichu
-odebrać ani nadać uprawnień. Wydanie kopiuje nazwę profilu, szablon i CA do
-swojego wiersza, więc późniejsza zmiana konfiguracji nie przepisuje historii.
+Groups by SID, not by name — renaming a group in AD must not quietly grant or
+remove privileges. An issuance copies the profile's name, the template and the
+CA into its own row, so a later configuration change does not rewrite history.
 
-### `operator_totp` i `operator_backup_codes` — drugi składnik (0027)
+### `operator_totp` and `operator_backup_codes` — the second factor (0027)
 
-| Kolumna | Typ | Uwagi |
+| Column | Type | Notes |
 |---|---|---|
-| `operator_sid` | `text` PK | SID operatora z AD |
-| `operator_upn` | `text` | do audytu i do resetu przez Admina |
-| `secret_envelope` | `bytea` | sekret TOTP w kopercie związanej z SID ([koperta](#koperta-sekretu), kontekst `totp\|<SID>`) |
-| `kek_version` | `smallint` | wersja KEK koperty **i** klucza HMAC kodów zapasowych |
-| `confirmed_at` | `timestamptz` null | null = konfiguracja nieskończona, taki sekret nikogo nie loguje |
-| `last_step` | `bigint` null | ostatni przyjęty krok 30 s; starszy lub równy jest odrzucany |
+| `operator_sid` | `text` PK | the operator's SID from AD |
+| `operator_upn` | `text` | for the audit trail and for a reset by an Admin |
+| `secret_envelope` | `bytea` | the TOTP secret in an envelope bound to the SID ([envelope](#the-secret-envelope), context `totp\|<SID>`) |
+| `kek_version` | `smallint` | the KEK version of the envelope **and** of the HMAC key for the backup codes |
+| `confirmed_at` | `timestamptz` null | null = the setup was never finished, and such a secret signs nobody in |
+| `last_step` | `bigint` null | the last accepted 30-second step; anything older or equal is rejected |
 
-`operator_backup_codes`: `operator_sid` (FK z `ON DELETE CASCADE`),
-`code_hash bytea(32)` (HMAC-SHA256), `used_at`. Nie ma w nich nic, co
-przydałoby się Blinky — nie trafiają do eksportu ([10](10-blinky-export.md)).
-Reset przez Admina **usuwa** wiersz: to nie historia, historią jest audyt
-`totp.reset`.
+`operator_backup_codes`: `operator_sid` (FK with `ON DELETE CASCADE`),
+`code_hash bytea(32)` (HMAC-SHA256), `used_at`. There is nothing in them that
+Blinky could use — they are not part of the export
+([10](10-blinky-export.md)). A reset by an Admin **deletes** the row: this is
+not history; the history is the `totp.reset` audit event.
 
-### `operator_credentials` i `webauthn_challenges` — klucz bezpieczeństwa (0028, migracja 0015)
+### `operator_credentials` and `webauthn_challenges` — security keys (0028, migration 0015)
 
-`operator_credentials` to klucz FIDO2 zarejestrowany jednemu operatorowi.
-Nic w tym wierszu nie jest sekretem: klucz publiczny WebAuthn jest publiczny
-z założenia i na tym stoi cały schemat — kopia tej tabeli nikogo nie zaloguje,
-bo klucz prywatny nie opuszcza tokena.
+`operator_credentials` is a FIDO2 key registered to one operator. Nothing in
+that row is a secret: a WebAuthn public key is public by design and the whole
+scheme rests on that — a copy of this table signs nobody in, because the
+private key never leaves the token.
 
-| Kolumna | Dlaczego |
+| Column | Why |
 |---|---|
-| `credential_id` | identyfikator, który nadał authenticator; **unikalny w całej tabeli** — dwa wiersze z tym samym czyniłyby asercję niejednoznaczną |
-| `public_key` | `COSE_Key` dokładnie tak, jak go oddał authenticator |
-| `aaguid` | model, za jaki klucz się podał przy rejestracji. Zapisany, bo asercja go nie niesie — to, w co uwierzyliśmy, zostaje czytelne (D-49) |
-| `sign_count` | licznik podpisów; nie może się cofnąć (`BL015`) |
-| `label` | nazwa od właściciela — ktoś z dwoma kluczami musi poznać, który zgubił |
-| `retired_at`, `_by`, `_reason` | klucz wychodzi z użycia jak koperta: wiersz zostaje |
+| `credential_id` | the identifier the authenticator assigned; **unique across the whole table** — two rows with the same one would make an assertion ambiguous |
+| `public_key` | the `COSE_Key` exactly as the authenticator returned it |
+| `aaguid` | the model the key claimed to be at registration. Recorded because an assertion does not carry it — what we believed stays readable (D-49) |
+| `sign_count` | the signature counter; it must not go backwards (`BL015`) |
+| `label` | a name from the owner — somebody with two keys has to be able to tell which one they lost |
+| `retired_at`, `_by`, `_reason` | a key goes out of use the way an envelope does: the row stays |
 
-`webauthn_challenges` to ceremonia w toku: jeden wiersz na parę (operator,
-cel `register`/`assert`), z `expires_at`. Prośba o nowe wyzwanie porzuca
-poprzednie, a zakończenie je zabiera — odpowiedź wysłana drugi raz nie ma do
-czego pasować. Tabela jest **jedyną** w schemacie, której wiersz znika; nie
-jest historią, tylko stanem trwającym pięć minut, a historię logowania trzyma
-`audit_events`.
+`webauthn_challenges` is a ceremony in progress: one row per (operator,
+purpose `register`/`assert`) pair, with an `expires_at`. Asking for a new
+challenge abandons the previous one, and finishing takes it away — a response
+sent a second time has nothing to match. This table is the **only** one in the
+schema whose rows disappear; it is not history, it is state that lasts five
+minutes, and the sign-in history is kept by `audit_events`.
 
-`blinkylite_app` ma `SELECT` na `operator_credentials` (konsola pokazuje listę)
-i **żadnego prawa** na `webauthn_challenges` — wyzwanie wychodzi i wraca
-wyłącznie przez funkcje `bl_webauthn_challenge_*`.
+`blinkylite_app` has `SELECT` on `operator_credentials` (the console shows the
+list) and **no privilege at all** on `webauthn_challenges` — a challenge goes
+out and comes back exclusively through the `bl_webauthn_challenge_*` functions.
 
-### `audit_events` — historia, tylko INSERT
+### `audit_events` — history, INSERT only
 
-| Kolumna | Typ | Uwagi |
+| Column | Type | Notes |
 |---|---|---|
 | `id` | `bigint` identity | |
 | `at` | `timestamptz` | |
-| `actor_upn` / `actor_sid` | `text` | `actor_sid` pusty tylko dla `auth.denied` (złe hasło nie daje SID) |
+| `actor_upn` / `actor_sid` | `text` | `actor_sid` is empty only for `auth.denied` (a wrong password yields no SID) |
 | `actor_roles` | `text[]` | |
-| `action` | `text` | kod akcji; wyświetlany jako `audit.<kod>` w języku operatora |
+| `action` | `text` | the action's code; displayed as `audit.<code>` in the operator's language |
 | `card_serial` / `issuance_id` | null | |
-| `data` | `jsonb` | serializowany obiekt, nigdy sklejany string |
+| `data` | `jsonb` | a serialised object, never a concatenated string |
 | `source_ip` | `inet` | |
 
-Wiersze dopisują wyłącznie funkcje `bl_*`, w tej samej transakcji co zmiana,
-której dotyczą. Rola aplikacji nie ma `INSERT`, `UPDATE` ani `DELETE` na
-żadnej tabeli ([07](07-database.md#trzy-role-w-bazie)). Akcje:
+Rows are appended exclusively by the `bl_*` functions, in the same transaction
+as the change they describe. The application role has no `INSERT`, `UPDATE` or
+`DELETE` on any table ([07](07-database.md#three-roles-in-the-database)). The
+actions:
 
 `auth.login`, `auth.denied`, `issuance.reserved`, `issuance.customised`,
 `issuance.attested`, `issuance.submitted`, `issuance.pending`,
 `issuance.issued`, `issuance.failed`, `issuance.superseded`, `puk.disclosed`,
-`mgmt-key.disclosed`, `mgmt-key.used` (MK wydany stacji do ponownego
-wydania), `totp.setup-started`, `totp.enrolled`, `totp.reset`.
+`mgmt-key.disclosed`, `mgmt-key.used` (the MK was handed to a station for a
+re-issuance), `totp.setup-started`, `totp.enrolled`, `totp.reset`.
 
-`auth.login` pisze od 0027 funkcja drugiego kroku (`bl_totp_confirm`,
-`bl_totp_accept`, `bl_totp_backup_use`), z `data.second_factor` = `totp` albo
-`backup-code` — samo poprawne hasło nie jest już logowaniem i nie ma swojego
-zdarzenia.
+Since 0027, `auth.login` is written by the second-step function
+(`bl_totp_confirm`, `bl_totp_accept`, `bl_totp_backup_use`), with
+`data.second_factor` = `totp` or `backup-code` — a correct password alone is no
+longer a sign-in and has no event of its own.
 
-## Koperta sekretu
+## The secret envelope
 
 ```
-koperta = wersja(1) ‖ kek_version(2) ‖ nonce(12) ‖ szyfrogram ‖ tag(16)
-klucz   = HKDF-Expand(KEK_v, "blinkylite/secret/v1|{rodzaj}|{serial}|{hex nonce}", 32)
-AAD     = "{rodzaj}|{serial}|{issuance_id}"      rodzaj ∈ {puk, mgmt-key}
-          serial jako tekst: serial YubiKey dziesiętnie (tak samo jak przed 0081,
-          kiedy był liczbą — stare koperty otwierają się bez zmian), CUID wielkimi
-szyfr   = AES-256-GCM
+envelope = version(1) ‖ kek_version(2) ‖ nonce(12) ‖ ciphertext ‖ tag(16)
+key      = HKDF-Expand(KEK_v, "blinkylite/secret/v1|{kind}|{serial}|{nonce hex}", 32)
+AAD      = "{kind}|{serial}|{issuance_id}"      kind ∈ {puk, mgmt-key}
+           the serial as text: a YubiKey serial in decimal (exactly as before 0081,
+           when it was a number — old envelopes still open), a CUID in upper case
+cipher   = AES-256-GCM
 ```
 
-Klucz per koperta i AAD wiążące kopertę z kartą i wydaniem pochodzą z
-`PukEscrow` w Blinky (generacja 2). Przeniesienie koperty do innego wiersza
-kończy się błędem uwierzytelnienia, a nie cichym zwróceniem cudzego PUK.
+A key per envelope, and an AAD binding the envelope to the card and the
+issuance, both come from `PukEscrow` in Blinky (generation 2). Moving an
+envelope to another row ends in an authentication failure rather than quietly
+returning somebody else's PUK.
 
-PUK: 8 cyfr z `RandomNumberGenerator.GetInt32(0, 10)`. Management key:
-24 bajty z `RandomNumberGenerator` (3DES i AES-192 mają tę samą długość);
-dla 3DES sprawdzane, że nie jest kluczem słabym.
+The PUK is 8 digits from `RandomNumberGenerator.GetInt32(0, 10)`. The
+management key is 24 bytes from `RandomNumberGenerator` (3DES and AES-192 are
+the same length); for 3DES it is checked not to be a weak key.

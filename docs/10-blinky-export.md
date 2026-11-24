@@ -1,48 +1,50 @@
-# 10 — Eksport danych do Blinky
+# 10 — Exporting the data to Blinky
 
-BlinkyLite jest narzędziem do wydawania, nie do trzymania kart przez lata.
-Kiedy organizacja urośnie do pełnego CMS, wszystko, co BlinkyLite wie o
-kartach, musi dać się przenieść do [Blinky](../../blinky) — inaczej przejście
-oznaczałoby ponowne wydanie każdej karty. Dlatego eksport jest zaplanowany od
-początku (D-19), a nie dopisany, kiedy ktoś o niego poprosi.
+BlinkyLite is a tool for issuing, not for keeping cards for years. When an
+organisation grows into a full CMS, everything BlinkyLite knows about its cards
+has to be movable into [Blinky](../../blinky) — otherwise the move would mean
+re-issuing every card. That is why the export was planned from the start
+(D-19) rather than added when somebody asked for it.
 
-Patch **0054**, przed 1.0. Ten dokument jest projektem, nie opisem
-działającego kodu.
+Patch **0054**, before 1.0. This document is a design, not a description of
+working code.
 
-## Zasada
+## The principle
 
-- **Eksport oddaje wszystko, co ma wartość po stronie Blinky**: karty,
-  komu wydano, certyfikaty i — osobno, zaszyfrowane — PUK-i i management key.
-- **Sekrety nigdy nie leżą w pliku jawnie.** Plik eksportu zawiera je
-  zaszyfrowane **do certyfikatu Blinky** (CMS EnvelopedData, RFC 5652). Plik,
-  który wycieknie, jest bezużyteczny bez klucza prywatnego Blinky.
-- **Każdy odczyt sekretu przechodzi przez `bl_secret_disclose`**, czyli
-  eksport zostawia w audycie tyle samo śladu, co ręczne odsłonięcie każdej
-  karty po kolei — plus jedno zdarzenie zbiorcze.
-- **Eksport niczego nie kasuje ani nie zmienia.** BlinkyLite po eksporcie
-  wygląda tak samo; to import po stronie Blinky decyduje, co dalej.
+- **The export hands over everything that has value on Blinky's side**: the
+  cards, who they were issued to, the certificates and — separately, encrypted
+  — the PUKs and management keys.
+- **Secrets are never in the file in the clear.** The export file holds them
+  encrypted **to Blinky's certificate** (CMS EnvelopedData, RFC 5652). A file
+  that leaks is useless without Blinky's private key.
+- **Every read of a secret goes through `bl_secret_disclose`**, so an export
+  leaves as much of a trail in the audit log as revealing each card by hand,
+  one after another — plus one aggregate event.
+- **The export deletes and changes nothing.** BlinkyLite looks the same
+  afterwards; what happens next is decided by the import on Blinky's side.
 
-## Co jest w paczce
+## What is in the package
 
-Paczka to jeden plik ZIP:
+The package is a single ZIP file:
 
 ```
-manifest.json          wersja formatu, data, kto eksportował, liczby, SHA-256 każdego pliku
-cards.jsonl            jedna karta na wiersz: rodzina, serial, firmware, form factor, czy ma PUK
-issuances.jsonl        jedno wydanie: karta, użytkownik (SAM, UPN, SID), profil, szablon, CA,
-                       operator, stacja, stan, daty, odcisk i numer certyfikatu, polityka PIN/touch,
-                       key_evidence (0083: atestacja Yubico czy słowo karty Crescendo)
-certificates/<serial>-<thumbprint>.cer   certyfikat i atestacja w DER
-attestations/<serial>-<issuance>.p7b     certyfikat atestacji + pośredni
-secrets.p7m            CMS EnvelopedData: w środku secrets.jsonl z PUK i management key
-audit.jsonl            dziennik audytu tych kart (tylko do wglądu; Blinky ma własny)
+manifest.json          format version, date, who exported it, the counts, the SHA-256 of every file
+cards.jsonl            one card per line: family, serial, firmware, form factor, whether it has a PUK
+issuances.jsonl        one issuance: card, user (SAM, UPN, SID), profile, template, CA,
+                       operator, station, state, dates, the certificate's thumbprint and serial,
+                       PIN/touch policy, key_evidence (0083: a Yubico attestation or the Crescendo
+                       card's word)
+certificates/<serial>-<thumbprint>.cer   the certificate and attestation in DER
+attestations/<serial>-<issuance>.p7b     the attestation certificate + intermediate
+secrets.p7m            CMS EnvelopedData: inside it, secrets.jsonl with the PUKs and management keys
+audit.jsonl            the audit log for those cards (for reference only; Blinky has its own)
 ```
 
-Drugi składnik operatorów (`operator_totp`, kody zapasowe) **nie** jest
-eksportowany: to logowanie do BlinkyLite, nie dane karty, a Blinky ma własne
-uwierzytelnianie.
+The operators' second factor (`operator_totp`, the backup codes) is **not**
+exported: that is signing in to BlinkyLite, not card data, and Blinky has its
+own authentication.
 
-`secrets.jsonl` w środku `secrets.p7m`:
+`secrets.jsonl` inside `secrets.p7m`:
 
 ```json
 {"card_serial":29051525,"issuance_id":"…","kind":"puk","value":"48271930"}
@@ -50,58 +52,61 @@ uwierzytelnianie.
 {"card_serial":"4790D600901438296520","card_family":"Crescendo","issuance_id":"…","kind":"mgmt-key","value":"<base64 24 B>","algorithm":3}
 ```
 
-`card_serial` jest liczbą dla YubiKey i tekstem dla Crescendo (CUID), tak jak
-w API (0081); `card_family` jest w każdym wierszu karty, a w sekretach tylko
-tam, gdzie nie jest to YubiKey. Klucz admina Crescendo to XAUTH (3DES albo AES),
-nie management key PIV — Blinky musi go zapisać jako sekret innej rodziny.
+`card_serial` is a number for a YubiKey and text for a Crescendo (the CUID),
+as in the API (0081); `card_family` is on every card line, and in the secrets
+only where it is not a YubiKey. A Crescendo's admin key is XAUTH (3DES or AES),
+not a PIV management key — Blinky has to record it as a secret of another
+family.
 
-## Jak to mapuje się na Blinky
+## How it maps onto Blinky
 
-| BlinkyLite | Blinky | Uwaga |
+| BlinkyLite | Blinky | Note |
 |---|---|---|
-| `cards` | `Token` | Serial jest tożsamością po obu stronach; `family` mówi, czy to YubiKey, czy Crescendo (CUID zamiast seriala, XAUTH zamiast management key) |
-| `issuances.target_*` | `Cardholder` | Blinky rozwiązuje osobę po `objectSid`, który eksportujemy |
-| `issuances` w stanie `Issued` | `Credential` w slocie `9A` | Jedno wydanie = jeden certyfikat |
-| `issuances` w stanie `Superseded` | `Credential` historyczny | Blinky trzyma historię, więc idą też stare |
-| `issuances` w stanie `Withdrawn` + `withdrawn_at`, `_by`, `_reason` | `Credential` wycofany, z datą, operatorem i powodem | Klucz wyszedł z użycia poza BlinkyLite (0058). Dla CMS to różnica między „zastąpione nowszym wydaniem" a „tego klucza już nie ma" — zapisany PUK i management key nie pasują do niczego, więc Blinky nie może ich podać (D-19) |
-| `issuances` w stanie `Recycled` + `recycled_at`, `recycle_id` | `Credential` wycofany przez wyczyszczenie tokena | 0090: klucz zniszczony resetem w BlinkyLite — w odróżnieniu od `Withdrawn` wiadomo kto, kiedy i że token wrócił do stanu fabrycznego |
-| `recycle_operations` | historia `Token` | stan, powód, kto i z której stacji, wynik resetu (D-19) |
-| `revocation_requests` | unieważnienia `Credential` | CA, numer seryjny, powód CRL, stan, próby, kto i kiedy unieważnił — Blinky przejmuje też te, które jeszcze czekają |
-| `card_secrets.puk_envelope` | `SecretEnvelope` (escrow PUK) | Przeszyfrowany kluczem Blinky przy imporcie |
-| `card_secrets.mgmt_key_envelope` | `SecretEnvelope` (management key) | Blinky wyprowadza MK z mastera, ale ma stan na klucze **niewyprowadzalne** — nasze są właśnie takie (D-05) |
-| `audit_events` | — | Zostają w BlinkyLite; Blinky zaczyna własny dziennik od importu |
+| `cards` | `Token` | the serial is the identity on both sides; `family` says whether it is a YubiKey or a Crescendo (a CUID instead of a serial, XAUTH instead of a management key) |
+| `issuances.target_*` | `Cardholder` | Blinky resolves the person by `objectSid`, which we export |
+| `issuances` in state `Issued` | `Credential` in slot `9A` | one issuance = one certificate |
+| `issuances` in state `Superseded` | a historical `Credential` | Blinky keeps history, so the old ones go too |
+| `issuances` in state `Withdrawn` + `withdrawn_at`, `_by`, `_reason` | a withdrawn `Credential`, with the date, the operator and the reason | the key went out of use outside BlinkyLite (0058). For a CMS that is the difference between "superseded by a newer issuance" and "this key is gone" — the recorded PUK and management key no longer match anything, so Blinky must not hand them out (D-19) |
+| `issuances` in state `Recycled` + `recycled_at`, `recycle_id` | a `Credential` withdrawn by wiping the token | 0090: the key was destroyed by a reset inside BlinkyLite — unlike `Withdrawn`, it is known who, when, and that the token went back to its factory state |
+| `recycle_operations` | a `Token`'s history | the state, the reason, who and from which station, the reset's outcome (D-19) |
+| `revocation_requests` | `Credential` revocations | the CA, the serial number, the CRL reason, the state, the attempts, who revoked it and when — Blinky also takes over the ones still waiting |
+| `card_secrets.puk_envelope` | `SecretEnvelope` (PUK escrow) | re-encrypted with Blinky's key at import |
+| `card_secrets.mgmt_key_envelope` | `SecretEnvelope` (management key) | Blinky derives MKs from a master key, but has a state for **non-derivable** keys — ours are exactly those (D-05) |
+| `audit_events` | — | they stay in BlinkyLite; Blinky starts its own log at the import |
 
-**Czego nie eksportujemy:** PIN-ów (nie mamy ich i nie chcemy),
-konfiguracji (profile i role są w `appsettings.json` i w Blinky wyglądają
-inaczej), kluczy KEK.
+**What we do not export:** PINs (we do not have them and do not want them),
+the configuration (profiles and roles live in `appsettings.json` and look
+different in Blinky), and the KEKs.
 
-## Kto i jak
+## Who, and how
 
-- `POST /api/export/blinky` — polityka `CanRevealMgmtKey`, czyli **tylko
-  Admin**. W ciele: certyfikat odbiorcy (Blinky) w base64 i powód.
-- Serwer strumieniuje ZIP; nic nie zapisuje na dysku.
-- Audyt: `puk.disclosed` i `mgmt-key.disclosed` dla każdej karty z powodem
-  `export-to-blinky: <powód>` plus jedno `export.blinky` z liczbą kart, wydań
-  i odciskiem certyfikatu odbiorcy.
-- Certyfikat odbiorcy musi mieć klucz do szyfrowania i nie może być
-  przeterminowany; jego odcisk trafia do manifestu i do audytu, żeby dało się
-  powiedzieć, do kogo ta paczka mogła trafić.
+- `POST /api/export/blinky` — policy `CanRevealMgmtKey`, i.e. **Admin only**.
+  In the body: the recipient's (Blinky's) certificate in base64, and a reason.
+- The server streams the ZIP; nothing is written to disk.
+- The audit trail: `puk.disclosed` and `mgmt-key.disclosed` for every card,
+  with the reason `export-to-blinky: <reason>`, plus one `export.blinky` with
+  the number of cards and issuances and the recipient certificate's
+  fingerprint.
+- The recipient's certificate has to have a key usable for encryption and must
+  not be expired; its fingerprint goes into the manifest and into the audit
+  trail, so that it is possible to say who this package could have reached.
 
-## Co musi zrobić Blinky
+## What Blinky has to do
 
-Import jest po stronie Blinky i tam będzie własnym patchem. Z naszej strony:
+The import is on Blinky's side and will be a patch of its own there. From our
+side:
 
-1. Format jest wersjonowany (`manifest.format: 1`) i opisany tutaj.
-2. Import ma być **idempotentny**: klucz to `card_serial` + odcisk
-   certyfikatu. Powtórzony import niczego nie dubluje.
-3. Karta zaimportowana do Blinky ma management key, którego Blinky nie
-   wyprowadzi ze swojego mastera. Blinky może albo trzymać go jako
-   `SecretEnvelope` (ma na to miejsce), albo przy pierwszym kontakcie z kartą
-   zmienić klucz na swój wyprowadzony — to decyzja Blinky, nie nasza.
+1. The format is versioned (`manifest.format: 1`) and described here.
+2. The import is to be **idempotent**: the key is `card_serial` plus the
+   certificate's thumbprint. A repeated import duplicates nothing.
+3. A card imported into Blinky has a management key Blinky cannot derive from
+   its own master key. Blinky may either keep it as a `SecretEnvelope` (it has
+   a place for that) or, at the first contact with the card, change the key to
+   its own derived one — that is Blinky's decision, not ours.
 
-## Otwarte pytania
+## Open questions
 
-| ID | Pytanie |
+| ID | Question |
 |---|---|
-| Q-07 | Czy paczka ma być dodatkowo **podpisana** (CMS SignedData) certyfikatem serwera, żeby Blinky wiedział, że nie została podmieniona po drodze? Dziś jest tylko zaszyfrowana do odbiorcy i ma sumy kontrolne w manifeście |
-| Q-08 | Czy eksport ma umieć wybrać podzbiór (np. jedna jednostka organizacyjna), czy zawsze całość? |
+| Q-07 | Should the package also be **signed** (CMS SignedData) with the server's certificate, so that Blinky knows it was not swapped on the way? Today it is only encrypted to the recipient and has checksums in the manifest |
+| Q-08 | Should the export be able to select a subset (one organisational unit, say), or always everything? |

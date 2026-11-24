@@ -1,5 +1,7 @@
 # 11 — Wymagania i wdrożenie
 
+> Wersja polska. Podstawowa jest angielska: [11-requirements-and-deployment.md](../11-requirements-and-deployment.md).
+
 Co musi istnieć, żeby BlinkyLite działał, i co trzeba zrobić, żeby go
 uruchomić. Podzielone na trzy miejsca: **serwer**, **stacja operatora** i
 **Active Directory z CA**. Serwer sam z siebie nie wyda żadnej karty — wydaje
@@ -110,7 +112,7 @@ share, nie do gita, nie w mailu. Na serwer `scp` wprost z kontrolera domeny
 albo stacji administratora, do `/opt/blinkylite/secrets/blinkylite-http.keytab`,
 właściciel `1654` (użytkownik serwera w kontenerze, jak przy KEK), prawa `600`;
 kontener dostaje go jako Docker secret. Krok po kroku, ze skryptem:
-[tools/ad/INSTRUKCJA-KERBEROS.md](../tools/ad/INSTRUKCJA-KERBEROS.md).
+[tools/ad/INSTRUKCJA-KERBEROS.md](../../tools/ad/INSTRUKCJA-KERBEROS.md).
 
 Od 0031 jest druga droga, **lepsza przy wymianie**: Admin wgrywa plik w konsoli
 web (**Ustawienia → Logowanie Windows**), z powodem. Serwer trzyma go

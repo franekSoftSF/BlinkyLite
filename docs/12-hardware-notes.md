@@ -1,212 +1,227 @@
-# 12 — Notatki sprzętowe BlinkyLite
+# 12 — BlinkyLite hardware notes
 
-Reguły zmierzone na sprzęcie, które są **nowe dla BlinkyLite** — te przeniesione
-z Blinky są w [06](06-from-blinky.md). Każda ma datę, maszynę i kartę. Reguła,
-która okaże się błędna, jest tu oznaczana jako błędna, a nie usuwana.
+Rules measured on hardware that are **new to BlinkyLite** — the ones carried
+over from Blinky are in [06](06-from-blinky.md). Each one has a date, a machine
+and a card. A rule that turns out to be wrong is marked as wrong here, not
+removed.
 
-## Wbudowany sterownik PIV Windows (0026, D-29)
+## The built-in Windows PIV driver (0026, D-29)
 
-**Stan: rozstrzygnięte 21 września 2026 — działa.** Karta BlinkyLite loguje do
-Windows na `WS-01` wyłącznie ze sterownikiem Microsoftu (`msclmd`), bez
-minidrivera Yubico. Poniżej droga do tego wyniku, łącznie z pomyłkami po
-drodze, i jedna sprawa otwarta: ponowne wydanie tej samej karty (R-11).
+**Status: settled on 21 September 2026 — it works.** A BlinkyLite card signs in
+to Windows on `WS-01` with Microsoft's driver (`msclmd`) alone, with no Yubico
+minidriver. Below is the road to that result, mistakes along the way included,
+and one thing still open: re-issuing the same card (R-11).
 
-Blinky utknął tu 24 sierpnia 2026: wbudowany sterownik (`msclmd.dll`,
-„Identity Device (NIST SP 800-73 [PIV])") nie tworzył kontenera klucza dla
-karty spełniającej wszystko, co da się sprawdzić w SP 800-73 — CHUID obecny i
-unikalny, CCC zgodny strukturą z Yubico, certyfikat zakodowany `70 … 71 01 00
-FE 00`, RSA 2048, klucz zgodny z atestacją. `certutil -scinfo` odpowiadał
-`NTE_BAD_KEYSET`, minidriver Yubico naprawiał to od ręki. Przyczyny nikt nie
-ustalił, bo siedzi w `msclmd.dll`, którego nie da się przeczytać.
+Blinky got stuck here on 24 August 2026: the built-in driver (`msclmd.dll`,
+"Identity Device (NIST SP 800-73 [PIV])") would not create a key container for
+a card that met everything checkable in SP 800-73 — a CHUID present and
+unique, a CCC structurally matching Yubico's, a certificate encoded
+`70 … 71 01 00 FE 00`, RSA 2048, and a key matching the attestation.
+`certutil -scinfo` answered `NTE_BAD_KEYSET`, and the Yubico minidriver fixed
+it instantly. Nobody established the cause, because it sits inside
+`msclmd.dll`, which cannot be read.
 
-### Jak Windows wybiera sterownik — kolejność ma znaczenie
+### How Windows picks a driver — the order matters
 
-Z dokumentacji Microsoftu („Discovery Process", Winscard): sterownik dla karty
-jest wybierany **w tej kolejności**, i pierwszy trafiony wygrywa:
+From Microsoft's documentation ("Discovery Process", Winscard): the driver for
+a card is chosen **in this order**, and the first hit wins:
 
-1. wpis w `HKLM\SOFTWARE\Microsoft\Cryptography\Calais\SmartCards`, którego
-   `ATR` pasuje do karty — czyli sterownik producenta, jeśli kiedykolwiek był
-   zainstalowany (Yubico, ActivClient);
-2. pamięć podręczna `PIV Device ATR Cache` / `IDMP ATR Cache`;
-3. `SELECT` AID GIDS;
-4. `SELECT` AID PIV — **dopiero tu** wchodzi wbudowany sterownik PIV.
+1. an entry in `HKLM\SOFTWARE\Microsoft\Cryptography\Calais\SmartCards` whose
+   `ATR` matches the card — i.e. the manufacturer's driver, if it was ever
+   installed (Yubico, ActivClient);
+2. the `PIV Device ATR Cache` / `IDMP ATR Cache`;
+3. `SELECT` of the GIDS AID;
+4. `SELECT` of the PIV AID — **only here** does the built-in PIV driver come
+   in.
 
-Wniosek: „stacja bez minidrivera Yubico" to stacja **bez wpisu ATR karty** w
-`Calais\SmartCards`, a nie stacja, na której nikt świadomie nic nie instalował.
+The conclusion: "a station without the Yubico minidriver" is a station
+**without an ATR entry for the card** in `Calais\SmartCards`, not a station
+where nobody knowingly installed anything.
 
-Drugi mechanizm, Plug and Play, bierze bajty historyczne ATR jako identyfikator
-urządzenia i **sam pobiera z Windows Update** certyfikowany minidriver, który do
-nich pasuje — identyfikator urządzenia wygrywa z identyfikatorem zgodności
-„PIV". Jeśli minidriver Yubico jest dystrybuowany przez Windows Update (do
-sprawdzenia na stacji: dostawca sterownika karty), to czysta stacja może go
-dostać przy pierwszym włożeniu klucza, bez niczyjej wiedzy. Test sterownika
-wbudowanego wymaga wtedy zablokowania instalacji sterowników dla tego
-urządzenia.
+The second mechanism, Plug and Play, takes the ATR's historical bytes as a
+device identifier and **fetches a certified minidriver from Windows Update by
+itself** if one matches them — the device identifier beats the "PIV"
+compatible identifier. If the Yubico minidriver is distributed through Windows
+Update (to be checked on a station: the card device's driver provider), then a
+clean station can acquire it the first time a key is inserted, without
+anybody's knowledge. Testing the built-in driver then requires blocking driver
+installation for that device.
 
-### Co mówi NIST SP 800-73-5 i co z tego wynikło
+### What NIST SP 800-73-5 says, and what came of it
 
-| Wymóg | Źródło | U nas |
+| Requirement | Source | Here |
 |---|---|---|
-| GUID w CHUID (`34`) to **poprawny UUID RFC 4122 w wersji 1, 4 albo 5** | Part 1, 3.4.1 | **Naruszony, poprawiony 21 września 2026.** Pisaliśmy 16 losowych bajtów — poprawny UUID raz na 64. Karta 11111111 dostała GUID `07867eed…1465 5995…`: wersja 1, wariant NCS, czyli żaden UUID. Teraz UUID v4 w porządku sieciowym, z testem |
-| Discovery Object (`7E`: AID + polityka PIN) | Part 1, 3.3.2 | Opcjonalny, chyba że Global PIN, OCC albo VCI. Nie piszemy go. Hipoteza: sterownik czyta go, żeby wiedzieć, którym PIN-em się posłużyć |
-| CHUID podpisany (`3E`, CMS SignedData) | Part 1, 3.1.2.1 | Piszemy pusty `3E 00` — tak jak narzędzia Yubico. Mało prawdopodobne, żeby Windows to sprawdzał |
-| Data ważności w CHUID (`35`, ASCII `YYYYMMDD`) | Part 1, 3.1.2 | Jest, 10 lat |
+| The GUID in the CHUID (`34`) is a **valid RFC 4122 UUID of version 1, 4 or 5** | Part 1, 3.4.1 | **Violated, corrected on 21 September 2026.** We wrote 16 random bytes — a valid UUID once in 64. Card 11111111 got the GUID `07867eed…1465 5995…`: version 1, variant NCS, i.e. no UUID at all. Now it is a UUID v4 in network order, with a test |
+| A Discovery Object (`7E`: AID + PIN policy) | Part 1, 3.3.2 | Optional unless a Global PIN, OCC or VCI is used. We do not write it. The hypothesis was that the driver reads it to know which PIN to use |
+| A signed CHUID (`3E`, CMS SignedData) | Part 1, 3.1.2.1 | We write an empty `3E 00` — as Yubico's own tools do. It is unlikely that Windows checks it |
+| An expiry date in the CHUID (`35`, ASCII `YYYYMMDD`) | Part 1, 3.1.2 | Present, 10 years |
 
-**Ostrożnie z wnioskiem:** karta 11111111 z nieprawidłowym UUID zalogowała się do
-Windows 20 września (na `WS-01`, sterownik nieznany). Albo sterownik wbudowany tego nie sprawdza, albo logowanie
-obsłużył minidriver Yubico. Poprawka jest potrzebna niezależnie — to wymóg
-normy — ale nie wiadomo jeszcze, czy to ona była przyczyną w Blinky.
+**Careful with the conclusion:** card 11111111, with its invalid UUID, signed
+in to Windows on 20 September (on `WS-01`, with an unknown driver). Either the
+built-in driver does not check it, or the Yubico minidriver handled that
+sign-in. The correction is needed regardless — it is what the standard
+requires — but whether it was the cause in Blinky is still unknown.
 
-### `certutil -scinfo -silent` nie jest miarodajnym testem
+### `certutil -scinfo -silent` is not a meaningful test
 
-Zmierzone 21 września 2026 na `PC-POZA-DOMENA` (poza domeną), karta 11111111 w
-czytniku: kartę przejmuje **minidriver Yubico** (wpis „YubiKey Smart Card",
-`ykmd.dll`, dopasowany po ATR), a `certutil -scinfo -silent` i tak kończy się
-`0x80090016 NTE_BAD_KEYSET` na obu dostawcach. Ta sama karta 20 września
-**zalogowała się do Windows** — na `WS-01`, co wyszło dopiero później.
+Measured on 21 September 2026 on `PC-POZA-DOMENA` (outside the domain), with
+card 11111111 in the reader: the card is taken over by the **Yubico
+minidriver** (a "YubiKey Smart Card" entry, `ykmd.dll`, matched by ATR), and
+`certutil -scinfo -silent` still ends in `0x80090016 NTE_BAD_KEYSET` on both
+providers. That same card **signed in to Windows** on 20 September — on
+`WS-01`, which only came out later.
 
-Czyli ten sam błąd pojawia się z minidriverem Yubico i na karcie, która
-działa. Blinky oparł wniosek „wbudowany sterownik nie działa" właśnie na
-`NTE_BAD_KEYSET` z `certutil -scinfo` — **ten wniosek mógł wynikać ze złego
-przyrządu, a nie ze złego sterownika**. Nie jest to jeszcze rozstrzygnięte:
-trzeba zobaczyć `certutil` na `WS-02`, gdzie logowanie działa.
+So the same error appears with the Yubico minidriver, and on a card that
+works. Blinky based its conclusion that "the built-in driver does not work" on
+exactly that `NTE_BAD_KEYSET` from `certutil -scinfo` — **that conclusion may
+have come from a bad instrument rather than a bad driver**. It is not settled
+yet: `certutil` has to be seen on `WS-02`, where sign-in works.
 
-Testem jest `certutil -scinfo` **bez** `-silent` (Windows pyta o PIN i
-podpisuje kluczem z karty) — a ostatecznie logowanie kartą. Skrypt stacji
-robi to przełącznikiem `-TestSignature`.
+The test is `certutil -scinfo` **without** `-silent` (Windows asks for the PIN
+and signs with the card's key) — and ultimately a sign-in with the card. The
+station script does that with the `-TestSignature` switch.
 
-### Co mówi SP 800-85A-4 (procedury testowe)
+### What SP 800-85A-4 says (the test procedures)
 
-To wytyczne dla laboratoriów zgodności FIPS 201 — testują komendy karty i API
-middleware na własnej uprząży, a nie to, co robi Windows. Dwie rzeczy z nich
-są dla nas użyteczne:
+Those are guidelines for FIPS 201 conformance laboratories — they test card
+commands and middleware APIs on their own harness, not what Windows does. Two
+things in them are useful to us:
 
-- **TE05.12A.01** — karta bez Discovery Object albo z bitem 6 polityki PIN
-  równym zero używa wyłącznie PIN-u aplikacji PIV. Brak `7E` jest więc stanem
-  zgodnym z normą, nie wadą; hipoteza o Discovery Object słabnie.
-- **AS02.01** — siedem obiektów obowiązkowych dla karty federalnej: CCC, CHUID,
-  certyfikat PIV Authentication (`9A`), certyfikat Card Authentication
-  (`9E`), odciski palców, zdjęcie twarzy, Security Object. Piszemy dwa pierwsze
-  i `9A`. Pozostałe dotyczą legitymacji federalnej i Windows ich do logowania
-  nie potrzebuje — ale karta BlinkyLite **nie jest** „zgodna z PIV" w sensie
-  FIPS 201 i nie należy tak o niej mówić. Jest kartą używającą aplikacji PIV.
+- **TE05.12A.01** — a card with no Discovery Object, or with bit 6 of the PIN
+  policy set to zero, uses the PIV application's PIN only. The absence of `7E`
+  is therefore a standard-conforming state rather than a defect; the Discovery
+  Object hypothesis weakens.
+- **AS02.01** — seven mandatory objects for a federal card: the CCC, the CHUID,
+  the PIV Authentication certificate (`9A`), the Card Authentication
+  certificate (`9E`), fingerprints, a facial image and the Security Object. We
+  write the first two and `9A`. The rest concern a federal credential and
+  Windows does not need them to sign anybody in — but a BlinkyLite card is
+  **not** "PIV compliant" in the FIPS 201 sense and should not be described
+  that way. It is a card that uses the PIV application.
 
-### Skrypt stacji: `tools/station/Test-SmartCardDriver.ps1`
+### The station script: `tools/station/Test-SmartCardDriver.ps1`
 
-Bez przełączników tylko czyta i raportuje: ATR kart w czytnikach (prosto z
-winscard), wpisy w `Calais\SmartCards`, które **przejmują włożoną kartę**
-(liczone jak w Winscard — ATR z maską), programy, sterownik przypięty do
-urządzenia karty, pamięć podręczna ATR, zasada sterowników z Windows Update i
-wynik `certutil`. `-Apply` usuwa tylko to, co przejmuje **tę** kartę; bez
-karty w czytniku odmawia. Pierwsza wersja wybierała po nazwie producenta i
-na `PC-POZA-DOMENA` oznaczyła do usunięcia wszystkie wpisy HID Crescendo — innej
-karty, z innym ATR. Złapane próbnym odczytem, zanim skrypt trafił na stację.
+With no switches it only reads and reports: the ATRs of the cards in the
+readers (straight from winscard), the entries in `Calais\SmartCards` that
+**take over the inserted card** (matched as Winscard does — an ATR with a
+mask), the installed programs, the driver bound to the card device, the ATR
+cache, the Windows Update driver policy, and `certutil`'s result. `-Apply`
+removes only what takes over **this** card; with no card in the reader it
+refuses. The first version picked by the manufacturer's name and, on
+`PC-POZA-DOMENA`, marked every HID Crescendo entry for removal — a different
+card, with a different ATR. Caught by a trial read, before the script reached a
+station.
 
-### 21 września 2026: co pokazały pomiary i zrzut karty
+### 21 September 2026: what the measurements and a card dump showed
 
-**Poprawka faktu:** udane logowanie kartą z żądania 223 było 20 września na
-`WS-01`, **nie** na `WS-02`, i nie wiadomo, jakim sterownikiem.
-Wcześniejsze zdanie w tym dokumencie („ta sama karta zalogowała się na
-`WS-02`") było błędne.
+**A correction of fact:** the successful sign-in with the card from request 223
+was on 20 September on `WS-01`, **not** on `WS-02`, and with an unknown driver.
+An earlier sentence in this document ("the same card signed in on `WS-02`") was
+wrong.
 
-Pomiary skryptem stacji:
+Measurements with the station script:
 
-| Maszyna | Sterownik przypięty do karty | `certutil -scinfo` | Certyfikat w magazynie |
+| Machine | Driver bound to the card | `certutil -scinfo` | Certificate in the store |
 |---|---|---|---|
-| `WS-02` | Microsoft, `msclmd.inf` — nigdy nie było tam oprogramowania Yubico | `NTE_BAD_KEYSET` (także z PIN-em) | — |
-| `PC-POZA-DOMENA`, do 9:16 | Yubico, `ykmd.dll` | `NTE_BAD_KEYSET` | `F3C1…` (żądanie 223) |
-| `PC-POZA-DOMENA`, po usunięciu minidrivera | Microsoft, `msclmd.inf` | `NTE_BAD_KEYSET`; `certutil -key` na dostawcy kart **nie wylicza żadnego kontenera** | obecnego `1AC8…` (żądanie 225) **brak** — sterownik go nie wystawił |
+| `WS-02` | Microsoft, `msclmd.inf` — there has never been any Yubico software there | `NTE_BAD_KEYSET` (with a PIN as well) | — |
+| `PC-POZA-DOMENA`, until 9:16 | Yubico, `ykmd.dll` | `NTE_BAD_KEYSET` | `F3C1…` (request 223) |
+| `PC-POZA-DOMENA`, after removing the minidriver | Microsoft, `msclmd.inf` | `NTE_BAD_KEYSET`; `certutil -key` on the card provider **enumerates no container at all** | the current `1AC8…` (request 225) is **absent** — the driver never exposed it |
 
-Dziś kartą 11111111 (żądanie 225) nie da się już zalogować.
+Today card 11111111 (request 225) can no longer sign anybody in.
 
-Zrzut karty (`CardLab dump`, tylko odczyt):
+The card's dump (`CardLab dump`, read-only):
 
-| Obiekt | Zawartość | Wniosek |
+| Object | Content | Conclusion |
 |---|---|---|
-| CHUID | GUID `E3DD83AC…`, **nie RFC 4122**; ważność **`20300101`** | **nie nasz** — my piszemy ważność „za 10 lat" (`2036…`). Zapisało go cudze oprogramowanie, gdy zresetowana karta siedziała w stacji z minidriverem Yubico, a `EnsureCardIdentity` („tylko gdy brak") go zostawił przez kolejne wydania |
-| Discovery Object `7E` | `4F A0000003080000100001 00`, `5F2F 40 00` | karta ma go sama z firmware — **hipoteza o braku Discovery Object odpada** |
-| certyfikat `9A` | `1AC8…`, `71 00` bez kompresji | poprawny |
-| ADMIN DATA | `80 03 81 01 02` | nasza flaga „MK za PIN-em" |
-| Key History, Security Object, 9C/9D/9E | brak (`6A82`) | bez znaczenia dla logowania |
+| CHUID | GUID `E3DD83AC…`, **not RFC 4122**; expiry **`20300101`** | **not ours** — we write an expiry "ten years out" (`2036…`). It was written by somebody else's software while the reset card sat in a station with the Yubico minidriver, and `EnsureCardIdentity` ("only when absent") left it there across later issuances |
+| Discovery Object `7E` | `4F A0000003080000100001 00`, `5F2F 40 00` | the card has it from the firmware — **the "no Discovery Object" hypothesis is out** |
+| certificate `9A` | `1AC8…`, `71 00`, uncompressed | correct |
+| ADMIN DATA | `80 03 81 01 02` | our "MK behind the PIN" flag |
+| Key History, Security Object, 9C/9D/9E | absent (`6A82`) | irrelevant to signing in |
 
-**Hipoteza wiodąca: stara tożsamość karty z nowym kluczem.** Windows rozpoznaje
-kartę po GUID z CHUID. Trzy wydania z różnymi kluczami pod jednym GUID to dla
-Windows „ta sama, znana karta" — i może używać tego, co o niej zapamiętał.
-Reguła „pisz CHUID tylko gdy go brak" pochodzi z Blinky, a Blinky utknął na
-tym samym `NTE_BAD_KEYSET`. Od 21 września BlinkyLite pisze CHUID (z UUID v4)
-i CCC od nowa przy każdym wydaniu.
+**The leading hypothesis: the card's old identity with a new key.** Windows
+identifies a card by the GUID in the CHUID. Three issuances with different keys
+under one GUID are, to Windows, "the same card, already known" — and it may use
+what it remembers about it. The rule "write the CHUID only when it is absent"
+comes from Blinky, and Blinky got stuck on the same `NTE_BAD_KEYSET`. Since 21
+September BlinkyLite writes the CHUID (with a UUID v4) and the CCC afresh at
+every issuance.
 
-Test, który to rozstrzyga: `reset` → wydanie nową wersją → `dump` (GUID
-wersji 4, RFC 4122, ważność `2036…`) → karta na `WS-02` (tylko sterownik
-Microsoftu): czy certyfikat trafia do `Cert:\CurrentUser\My`, czy
-`Test-SmartCardDriver.ps1 -TestSignature` przechodzi, i czy logowanie działa.
+The test that settles it: `reset` → an issuance with the new version → `dump`
+(a version-4, RFC 4122 GUID, expiry `2036…`) → the card on `WS-02` (Microsoft's
+driver only): does the certificate reach `Cert:\CurrentUser\My`, does
+`Test-SmartCardDriver.ps1 -TestSignature` pass, and does signing in work.
 
-### 21 września 2026, 9:42: ta sama karta działa na `WS-01`
+### 21 September 2026, 9:42: the same card works on `WS-01`
 
-`Test-SmartCardDriver.ps1` na `WS-01`, uruchomiony jako **SYSTEM**, z tą
-samą kartą 11111111 (certyfikat `1ac8…`, cudzy CHUID `E3DD83AC…`/`20300101`) i
-**wyłącznie sterownikiem Microsoftu** (`msclmd.inf`, bez żadnego oprogramowania
-producenta):
+`Test-SmartCardDriver.ps1` on `WS-01`, run as **SYSTEM**, with that same card
+11111111 (certificate `1ac8…`, somebody else's CHUID `E3DD83AC…`/`20300101`)
+and **Microsoft's driver alone** (`msclmd.inf`, with no manufacturer software
+at all):
 
 ```
 Key Container = ac83dde3-87a8-a19d-4725-3609625fc105 [Default Container]
 Public key matching test succeeded
-Logowanie karty inteligentnej: Chain validates   (CERT_CHAIN_POLICY_NT_AUTH)
+Smart card logon: Chain validates   (CERT_CHAIN_POLICY_NT_AUTH)
 ```
 
-Wnioski:
+The conclusions:
 
-- **Wbudowany sterownik PIV Windows obsługuje kartę BlinkyLite.** Karta nie
-  potrzebuje minidrivera Yubico (D-29) — tu nie ma go wcale.
-- **Nazwa kontenera to GUID z CHUID** w microsoftowym układzie bajtów
-  (`E3DD83AC` → `ac83dde3`, `A887` → `87a8`, `9DA1` → `a19d`), z końcówką
-  zastąpioną tagiem obiektu certyfikatu `5FC105`. Windows buduje tożsamość
-  kontenera z CHUID — zmierzone, nie założone.
-- Ta sama karta daje `NTE_BAD_KEYSET` i zero kontenerów na `WS-02` i
-  `PC-POZA-DOMENA`, uruchamiana tam przez **zwykłych użytkowników, którzy widzieli
-  już tę kartę z kluczami z żądań 223 i 224 pod tym samym GUID**. SYSTEM na
-  `WS-01` tej tożsamości nie znał.
+- **The built-in Windows PIV driver handles a BlinkyLite card.** The card does
+  not need the Yubico minidriver (D-29) — here there is none at all.
+- **The container's name is the GUID from the CHUID** in Microsoft's byte order
+  (`E3DD83AC` → `ac83dde3`, `A887` → `87a8`, `9DA1` → `a19d`), with the tail
+  replaced by the certificate object's tag `5FC105`. Windows builds the
+  container's identity from the CHUID — measured, not assumed.
+- That same card gives `NTE_BAD_KEYSET` and zero containers on `WS-02` and
+  `PC-POZA-DOMENA`, where it was run by **ordinary users who had already seen
+  this card with the keys from requests 223 and 224 under the same GUID**.
+  SYSTEM on `WS-01` did not know that identity.
 
-**Wyjaśnienie wiodące:** Windows zapamiętuje stan karty pod jej tożsamością
-(GUID z CHUID); nowy klucz pod starą tożsamością trafia na nieaktualne dane.
-Zgadza się z udanym logowaniem 20 września (pierwsze spotkanie `WS-01` z
-tą kartą), z porażkami dziś i — najpewniej — z tym, na czym utknął Blinky: ta
-sama reguła „CHUID tylko gdy brak", te same wielokrotnie przepersonalizowywane
-karty. Poprawka (`ReplaceCardIdentity`, świeży CHUID przy każdym wydaniu) jest
-w kodzie od `c17c056`.
+**The leading explanation:** Windows remembers a card's state under its
+identity (the GUID from the CHUID); a new key under an old identity runs into
+stale data. That fits the successful sign-in on 20 September (`WS-01`'s first
+encounter with this card), the failures today and — most likely — what Blinky
+got stuck on: the same "CHUID only when absent" rule, and the same
+repeatedly re-personalised cards. The fix (`ReplaceCardIdentity`, a fresh CHUID
+at every issuance) has been in the code since `c17c056`.
 
-**9:47, ten sam przebieg z `-TestSignature` (PIN wpisany):** w sekcji Smart
-Card Key Storage Provider — kontener ten sam, `Public key matching test
-succeeded`, **`Private key verifies`** (podpis kluczem z karty po PIN-ie), łańcuch
-waliduje się pod NT_AUTH. To jest wszystko, czego potrzebuje logowanie kartą.
+**9:47, the same run with `-TestSignature` (the PIN typed in):** in the Smart
+Card Key Storage Provider section — the same container, `Public key matching
+test succeeded`, **`Private key verifies`** (a signature with the card's key
+after the PIN), and the chain validates under NT_AUTH. That is everything a
+smart-card sign-in needs.
 
-Jedyny „FAILED" w raporcie jest **oczekiwany**: `AES256+RSAES_OAEP(RSA:CNG) test
-FAILED … CRYPT_E_NO_DECRYPT_CERT (0x8009200c)`. `certutil` próbuje też
-odszyfrować kluczem z karty, a certyfikat z szablonu
-`DIGITALWORKSPACEYubicoSmartcardLogon` ma tylko `Key Usage: Digital Signature` — nie
-może być odbiorcą szyfrowania. PKINIT używa podpisu. Skrypt stacji mówi to
-teraz wprost, żeby ta linia nie była nigdy czytana jako wada karty.
+The only "FAILED" in the report is **expected**:
+`AES256+RSAES_OAEP(RSA:CNG) test FAILED … CRYPT_E_NO_DECRYPT_CERT
+(0x8009200c)`. `certutil` also tries to decrypt with the card's key, and a
+certificate from the `DIGITALWORKSPACEYubicoSmartcardLogon` template has only
+`Key Usage: Digital Signature` — it cannot be an encryption recipient. PKINIT
+uses the signature. The station script now says so outright, so that line is
+never read as a defect in the card.
 
-**Test potwierdzający, przed ponownym wydaniem:** `Restart-Service SCardSvr`
-na `WS-02`, potem skrypt jako zwykły użytkownik. Działa → pamięć leży w
-usłudze kart. Nie działa → leży gdzie indziej (profil); poprawka i tak ją omija.
+**The confirming test, before re-issuing:** `Restart-Service SCardSvr` on
+`WS-02`, then the script as an ordinary user. If it works, the memory lives in
+the smart card service. If it does not, it lives somewhere else (the profile);
+the fix bypasses it either way.
 
-### 21 września 2026: logowanie jako użytkownik — działa
+### 21 September 2026: signing in as a user — it works
 
-Właściciel zalogował się kartą 11111111 (żądanie 225) do Windows na
-`WS-01` jako użytkownik. Na tej stacji nie ma oprogramowania Yubico ani
-żadnego middleware. **0026 zamknięty.**
+The owner signed in to Windows on `WS-01` as a user with card 11111111
+(request 225). That station has no Yubico software and no middleware at all.
+**0026 closed.**
 
-**Ważne dla wniosków na produkcję:** brak minidrivera Yubico **nie był**
-różnicą między „działa" a „nie działa". `WS-02` też nigdy go nie miał, a
-ta sama karta tam nie działa. Różnica wiodąca: czy stacja lub użytkownik znał
-już tę kartę pod tym samym GUID z CHUID z innym kluczem (R-11). Usunięcie
-minidrivera jest warunkiem D-29, ale samo nie naprawi stacji, które pamiętają
-kartę z poprzedniego wydania.
+**Important for conclusions about production:** the absence of the Yubico
+minidriver was **not** the difference between "works" and "does not work".
+`WS-02` never had it either, and the same card does not work there. The leading
+difference: whether the station or the user already knew that card under the
+same CHUID GUID with a different key (R-11). Removing the minidriver is a
+condition of D-29, but on its own it will not fix stations that remember a card
+from a previous issuance.
 
-### Pomiar na `WS-02` — do zrobienia
+### The measurement on `WS-02` — still to do
 
-Który sterownik obsłużył logowanie kartą 11111111:
+Which driver handled the sign-in with card 11111111:
 
 ```powershell
 certutil -scinfo -silent | Select-String "Card:|Provider:|Reader:|NTE_|Error"
@@ -214,403 +229,437 @@ Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Cryptography\Calais\SmartCards' | Select
 Get-PnpDevice -Class SmartCard | Get-PnpDeviceProperty DEVPKEY_Device_DriverProvider | Select-Object InstanceId, Data
 ```
 
-Jeśli karta już działa bez niego, to jest reguła i 0026 zamyka się pomiarem.
-Jeśli nie — hipotezy po jednej, każda z wynikiem w tabeli:
+If the card already works without it, that is a rule and 0026 closes with a
+measurement. If not — the hypotheses one at a time, each with its result in the
+table:
 
-| Hipoteza | Jak sprawdzić | Wynik |
+| Hypothesis | How to check it | Result |
 |---|---|---|
-| wpis ATR sterownika producenta w `Calais\SmartCards` wygrywa, zanim sterownik PIV w ogóle zostanie zapytany | lista kluczy w `Calais\SmartCards` | — |
-| Windows Update sam zainstalował minidriver Yubico | dostawca sterownika urządzenia karty | — |
-| GUID w CHUID nie jest poprawnym UUID | wydać kartę po poprawce, porównać `certutil -scinfo` | poprawione; wpływu na Windows jeszcze nie zmierzono |
-| ~~sterownik czyta Discovery Object (`7E`) i bez niego nie wie, jak używać PIN-u~~ | — | **odpada**: YubiKey ma Discovery Object z firmware (`5F2F 40 00`), zrzut 21.09; i tak brak byłby zgodny z normą (SP 800-85A-4, TE05.12A.01) |
-| sterownik wymaga Key History Object (`5FC10C`) | zapisać pusty, powtórzyć | — |
+| A manufacturer driver's ATR entry in `Calais\SmartCards` wins before the PIV driver is even asked | the list of keys in `Calais\SmartCards` | — |
+| Windows Update installed the Yubico minidriver by itself | the card device's driver provider | — |
+| The GUID in the CHUID is not a valid UUID | issue a card after the fix, compare `certutil -scinfo` | corrected; the effect on Windows not measured yet |
+| ~~The driver reads the Discovery Object (`7E`) and without it does not know how to use the PIN~~ | — | **out**: a YubiKey has a Discovery Object from the firmware (`5F2F 40 00`), per the dump of 21.09; and its absence would conform to the standard anyway (SP 800-85A-4, TE05.12A.01) |
+| The driver needs a Key History Object (`5FC10C`) | write an empty one, repeat | — |
 
-## Zablokowany PIN: karta nie ma nic zamiast PUK-a (0057)
+## A blocked PIN: the card has nothing in place of a PUK (0057)
 
-Reguła, nie hipoteza — wynika z tego, co karta przyjmuje, i potwierdził ją
-pomiar w labie (właściciel, 21 września 2026: „zablokowałem sobie PUK, jak go
-zmodyfikowałem — już nie mogę zmienić go management keyem").
+A rule, not a hypothesis — it follows from what the card accepts, and a lab
+measurement confirmed it (the owner, 21 September 2026: "I blocked my own PUK
+when I modified it — now I cannot change it with the management key either").
 
-| Komenda | Czym się uwierzytelnia | Kiedy działa |
+| Command | What it authenticates with | When it works |
 |---|---|---|
-| `RESET RETRY COUNTER` (INS `2C`) — odblokowanie PIN-u | **tylko PUK** | zawsze, dopóki PUK ma próby |
-| `CHANGE REFERENCE DATA` (INS `24`) dla PUK-a | **stary PUK** | nie pomaga, gdy PUK jest zablokowany |
-| `SET PIN RETRIES` (INS `FA`) — resetuje PIN i PUK do fabrycznych | management key **i działający PIN** | nie pomaga przy zablokowanym PIN-ie |
-| `RESET` aplikacji PIV | tylko przy zablokowanych **obu** | czyści klucze i certyfikaty — klucz do wydania od nowa |
+| `RESET RETRY COUNTER` (INS `2C`) — unblocking the PIN | **the PUK only** | always, as long as the PUK has retries |
+| `CHANGE REFERENCE DATA` (INS `24`) for the PUK | **the old PUK** | no help when the PUK is blocked |
+| `SET PIN RETRIES` (INS `FA`) — resets the PIN and PUK to factory values | the management key **and a working PIN** | no help with a blocked PIN |
+| `RESET` of the PIV application | only with **both** blocked | wipes the keys and certificates — the key has to be issued again |
 
-Wnioski, na których stoi 0057:
+The conclusions 0057 stands on:
 
-- **Uwierzytelnienie management keyem nie obejmuje odblokowania PIN-u.**
-  Management key otwiera slot na klucze i certyfikaty, nie licznik prób PIN-u.
-- **Nie da się zrobić prawdziwego challenge–response** na numer do przepisania
-  przez telefon: cokolwiek karta przyjmie, to będzie PUK, a PUK przeczytany na
-  głos zostaje w zeszycie osoby, która go usłyszała. Dlatego PUK jedzie po TLS
-  do aplikacji, która go użyje, a przez telefon jedzie tylko kod zgłoszenia.
-- **Zablokowany PUK to koniec drogi dla tej karty.** Nie ma komendy, która by
-  go podniosła bez działającego PIN-u; zostaje wydanie od nowa.
+- **Authenticating with the management key does not cover unblocking a PIN.**
+  The management key opens the slots for keys and certificates, not the PIN's
+  retry counter.
+- **A real challenge–response with a number to read out over the phone is
+  impossible:** whatever the card accepts will be the PUK, and a PUK read aloud
+  stays in the notebook of whoever heard it. That is why the PUK travels over
+  TLS to the application that will use it, and only a request code travels over
+  the phone.
+- **A blocked PUK is the end of the road for that card.** There is no command
+  that lifts it without a working PIN; what is left is issuing the card again.
 
-## HID Crescendo Key V3: pierwszy kontakt (0080)
+## HID Crescendo Key V3: first contact (0080)
 
-Pomiar 13 października 2026 na `SZYMON-PC` (poza domeną), token **HID Global
-Crescendo Key V3** (USB, VID `09C3` PID `0028`), tylko odczyt —
-`CardLab inventory`, `CrescendoLab inventory` i `CrescendoCLI aca-props-get` /
-`piv-props-get` z SDK HID 2.1.0.
+Measured on 13 October 2026 on `SZYMON-PC` (outside the domain), an **HID
+Global Crescendo Key V3** token (USB, VID `09C3` PID `0028`), read-only —
+`CardLab inventory`, `CrescendoLab inventory` and `CrescendoCLI
+aca-props-get` / `piv-props-get` from HID SDK 2.1.0.
 
-| Co | Wynik |
+| What | Result |
 |---|---|
-| ATR | `3B D9 96 FF 81 91 FE 1F C3 43 34 30 30 30 2D 4B 45 59 BF` — historyczne bajty to ASCII `C4000-KEY` |
-| Interfejsy USB | CCID (czytnik `HID Global Crescendo Key V3 0`), HID FIDO i HID klawiatura (OTP) |
-| CUID | 10 bajtów (`4790D600…`) — zamiast numeru seryjnego; nie mieści się w `bigint` |
-| Aplet ACA | 4.0.0.295, AID `A0 00 00 00 79 10 00` — trzyma PIN, PUK i klucz admina (XAUTH) |
-| XAUTH | zainicjowany, 1 klucz, 24 bajty (3DES), challenge **dynamiczny** |
-| PIN | ustawiony, 6/6 prób, długość 4–8, nie tylko cyfry; osobny licznik bezstykowy 6/6 |
-| PUK | **niezainicjowany**; licznik odblokowań 8/8 |
-| Aplet PIV | „PIVExt” 4.0.0.297, forma `PIV_EP_ENTERPRISE`, etykieta „HID Applets v4.0” |
-| Obiekty PIV | tylko CHUID (`5FC102`), CCC (`5FC107`) i Cache Freshness (`5FC151`); **zero obiektów PKI** — sloty powstają przy generowaniu |
-| ACR personalizacji | `SecureChannelOrPINOrXAUTH1` — zapis wystarczy PIN-em **albo** XAUTH |
-| `certutil -scinfo` | Windows zna kartę jako „HID Global Crescendo Key V3”, kontenera brak (`NTE_BAD_KEYSET` — slotów nie ma, więc to oczekiwane) |
+| ATR | `3B D9 96 FF 81 91 FE 1F C3 43 34 30 30 30 2D 4B 45 59 BF` — the historical bytes are the ASCII `C4000-KEY` |
+| USB interfaces | CCID (reader "HID Global Crescendo Key V3 0"), HID FIDO and HID keyboard (OTP) |
+| CUID | 10 bytes (`4790D600…`) — in place of a serial number; it does not fit in a `bigint` |
+| ACA applet | 4.0.0.295, AID `A0 00 00 00 79 10 00` — it holds the PIN, the PUK and the admin key (XAUTH) |
+| XAUTH | initialised, 1 key, 24 bytes (3DES), **dynamic** challenge |
+| PIN | set, 6/6 retries, length 4–8, not digits only; a separate contactless counter, 6/6 |
+| PUK | **not initialised**; unblock counter 8/8 |
+| PIV applet | "PIVExt" 4.0.0.297, form `PIV_EP_ENTERPRISE`, label "HID Applets v4.0" |
+| PIV objects | only the CHUID (`5FC102`), the CCC (`5FC107`) and Cache Freshness (`5FC151`); **no PKI objects at all** — the slots come into being when a key is generated |
+| Personalisation ACR | `SecureChannelOrPINOrXAUTH1` — a write needs the PIN **or** XAUTH |
+| `certutil -scinfo` | Windows knows the card as "HID Global Crescendo Key V3", with no container (`NTE_BAD_KEYSET` — there are no slots, so that is expected) |
 
-Od właściciela, z HID Crescendo Manager (13 października 2026, ten sam token):
+From the owner, through HID Crescendo Manager (13 October 2026, the same
+token):
 
-- **Fabryczny klucz admina (XAUTH) to 24 bajty `00`, 3DES** — Crescendo
-  Manager podstawia go jako „default” przy zmianie management key. Odpowiada
-  to odczytowi z ACA (klucz zainicjowany, 24 bajty). Nie sprawdzone
-  uwierzytelnieniem: nie wiemy jeszcze, po ilu błędnych XAUTH aplet się
-  zamyka, więc pierwsza próba odbędzie się w 0082, na kluczu przeznaczonym do
-  zapisu.
-- **Klucz admina można zmienić też PIN-em** (opcja „Authentication Method:
-  PIN”) — ACR klucza admina na tym tokenie dopuszcza PIN.
-- **PUK: 8 cyfr albo 16 znaków hex.** Generator PUK-a na serwerze daje dziś
-  8 cyfr (`PinComplexityPolicy.FactoryPuk` ma 8 znaków), co pasuje do obu
-  rodzin bez zmian.
-- Nowy klucz admina: AES albo TDES — wybór algorytmu dla Crescendo jest
-  nasz, nie odczytywany z karty jak `GET METADATA 9B` w YubiKey.
-- Wersje apletów w Managerze: ACA, FIDO, OTP 4.0.0+295, PIV 4.0.0+297 — te
-  same, co z SDK; sloty 9A, 9C, 9D, 9E puste.
+- **The factory admin key (XAUTH) is 24 bytes of `00`, 3DES** — Crescendo
+  Manager offers it as the "default" when changing the management key. That
+  matches the ACA read (the key is initialised, 24 bytes). Not confirmed by
+  authenticating: we do not yet know after how many wrong XAUTH attempts the
+  applet closes, so the first attempt will happen in 0082, on a key meant to be
+  written to.
+- **The admin key can also be changed with the PIN** (the "Authentication
+  Method: PIN" option) — the admin key's ACR on this token allows a PIN.
+- **The PUK: 8 digits or 16 hex characters.** The server's PUK generator
+  currently produces 8 digits (`PinComplexityPolicy.FactoryPuk` is 8
+  characters), which fits both families unchanged.
+- A new admin key: AES or TDES — choosing the algorithm for a Crescendo is ours
+  to make, not read from the card the way `GET METADATA 9B` works on a YubiKey.
+- The applet versions in Manager: ACA, FIDO, OTP 4.0.0+295, PIV 4.0.0+297 — the
+  same as from the SDK; slots 9A, 9C, 9D, 9E empty.
 
-Z SDK, potwierdzone na tym tokenie (13 października, sterownik 0082):
+From the SDK, confirmed on this token (13 October, driver 0082):
 
-- `SDKCore.Dispose()` kończy transakcję zawsze, a bez otwartej rzuca
-  `Exception` „non-existent transaction” — sterownik to połyka przy
-  zwalnianiu, bo nic już wtedy nie zostaje do oddania.
-- Pusty slot certyfikatu SDK zgłasza jako błąd `DataNotFound` w swoim logu;
-  domyślnie loguje na konsolę, więc sterownik ustawia `SILENT`, dopóki
-  powłoka nie wskaże własnego logu.
-- Z pomocy CLI: `pin-change` przyjmuje uwierzytelnienie **XAUTH** zamiast
-  starego PIN-u — dlatego sterownik ustawia PIN po kluczu admina i nie musi
-  znać PIN-u, z jakim token przyszedł. PUK w SDK to **8 bajtów jako 16 cyfr
-  hex**; 8-cyfrowy PUK serwera idzie jako bajty ASCII (do potwierdzenia:
-  odblokowanie w Crescendo Manager PUK-iem w postaci dziesiętnej).
-- Keep-alive transakcji (`MaintainTransactionAsync`) sam wysyła komendy;
-  przykłady HID trzymają go tylko na czas czekania na człowieka i zatrzymują
-  przed następną komendą. Tak samo `IIssuanceToken.KeepAlive()` w 0082.
+- `SDKCore.Dispose()` always ends the transaction, and with none open it throws
+  an `Exception` saying "non-existent transaction" — the driver swallows that
+  while disposing, because by then there is nothing left to hand back.
+- The SDK reports an empty certificate slot as a `DataNotFound` error in its
+  log; by default it logs to the console, so the driver sets `SILENT` until the
+  shell names a log of its own.
+- From the CLI's help: `pin-change` accepts **XAUTH** authentication in place
+  of the old PIN — which is why the driver sets the PIN after the admin key and
+  needs not know the PIN the token arrived with. The PUK in the SDK is **8
+  bytes as 16 hex digits**; the server's 8-digit PUK goes in as ASCII bytes (to
+  be confirmed: unblocking in Crescendo Manager with the PUK in decimal form).
+- The transaction keep-alive (`MaintainTransactionAsync`) sends commands by
+  itself; HID's examples hold it only while waiting for a human and stop it
+  before the next command. `IIssuanceToken.KeepAlive()` in 0082 does the same.
 
-### 13 października 2026, 21:39: pierwsza personalizacja Key V3 (0082)
+### 13 October 2026, 21:39: the first personalisation of a Key V3 (0082)
 
-`CrescendoLab personalise --yes` na sterowniku produktu, trzy przebiegi. Dwa
-pierwsze zatrzymały się na błędach sterownika, trzeci przeszedł do końca.
-Kolejność komend z logu SDK (sekrety zredagowane przez SDK):
+`CrescendoLab personalise --yes` on the product's driver, three runs. The first
+two stopped on driver errors; the third went through to the end. The order of
+the commands from the SDK's log (the secrets redacted by the SDK):
 
-| Krok | Komenda | Wynik |
+| Step | Command | Result |
 |---|---|---|
-| XAUTH fabryczny | `80 84 00 01` (challenge), `00 82 00 01` (external auth) | 9000 — 24 × `00`, 3DES, challenge pobiera samo SDK |
-| nowy XAUTH | `80 D8 03 01` | 9000 |
+| factory XAUTH | `80 84 00 01` (challenge), `00 82 00 01` (external auth) | 9000 — 24 × `00`, 3DES, and the SDK fetches the challenge itself |
+| new XAUTH | `80 D8 03 01` | 9000 |
 | PUK | `80 24 80 81` | 9000 — `PUKInitialized: true` |
-| PIN | `80 2C 00 00` (RESET RETRY COUNTER PUK-iem), potem `00 20 00 00` | 9000 — PIN niezablokowany, a RESET RETRY COUNTER i tak przechodzi |
-| CHUID | `00 DB 3F FF` na `5FC102`, tylko tagi 34 i 35 | 9000; FASC-N HID-a zostaje |
-| klucz 9A | `00 47 00 9A`, RSA-2048, e = 65537 | 9000 po **8 s**; PIV properties: `GeneratedOnToken`, ACR użycia `Pin` |
-| podpis | `00 87 07 9A` (łańcuchowane) | SDK sam robi DigestInfo i dopełnienie PKCS#1 v1.5; CSR i certyfikat weryfikują się kluczem z tokenu |
-| certyfikat | `00 DB` na `5FC105` | 9000; odczytany ten sam |
+| PIN | `80 2C 00 00` (RESET RETRY COUNTER with the PUK), then `00 20 00 00` | 9000 — the PIN was not blocked, and RESET RETRY COUNTER goes through anyway |
+| CHUID | `00 DB 3F FF` on `5FC102`, tags 34 and 35 only | 9000; HID's FASC-N stays |
+| key 9A | `00 47 00 9A`, RSA-2048, e = 65537 | 9000 after **8 s**; PIV properties: `GeneratedOnToken`, usage ACR `Pin` |
+| signature | `00 87 07 9A` (chained) | the SDK builds the DigestInfo and the PKCS#1 v1.5 padding itself; the CSR and the certificate verify against the token's key |
+| certificate | `00 DB` on `5FC105` | 9000; read back the same |
 
-Rzeczy, które wyszły po drodze, i co zostało z nimi zrobione:
+Things that came out along the way, and what was done about them:
 
-- **`PutXAUTHKey` chce dokładnie jednego z trzech parametrów** (klucz, typ,
-  plik JSON) — z kluczem i typem odmawia (`InvalidInputData`), zanim cokolwiek
-  wyśle. Typ wynika z długości klucza, więc 24 bajty to zawsze 3DES; AES-192
-  sterownik odrzuca.
-- **`ChangePIN` chce starego PIN-u nawet po XAUTH** („Old PIN was not
-  provided”). PIN ustawia się więc PUK-iem z poprzedniego kroku (`ResetPINTries`)
-  — kolejność PUK → PIN jak w YubiKey, a PIN, z którym token przyszedł, nie
-  jest do niczego potrzebny.
-- **Zmiana XAUTH kasuje uwierzytelnienie admina**: aktualizacja Cache Freshness
-  (`5FC151`) zaraz po niej dostała 6982. Sterownik uwierzytelnia się nowym
-  kluczem od razu, więc następne zapisy przechodzą.
-- **Plik sekretów nie może być nadpisany.** Pierwszy przebieg zapisał XAUTH i
-  PUK, a zatrzymał się na PIN-ie; ponowne uruchomienie nadpisałoby jedyną kopię
-  klucza, który token już miał. `CrescendoLab` od tej chwili wznawia z
-  istniejącego pliku zamiast losować nowy.
-- **Log SDK „Already authenticated with PIN on ACA applet”** pojawia się także
-  wtedy, gdy PIN nie był podany — to komunikat SDK, nie stan karty.
-- **SDK zapisuje w `5FC105` więcej niż certyfikat**: przy generowaniu klucz
-  publiczny (tag `68`) i nazwę klucza (`72`), przy imporcie certyfikat
-  **skompresowany gzipem** (tag `70`, CertInfo `71 = 01`).
-- **Windows to czyta.** `certutil -scinfo` po personalizacji: kontener
-  „BlinkyLite 9A” (nazwa klucza z tagu `72`) w Microsoft Base Smart Card
-  Crypto Provider i w Smart Card KSP, certyfikat ten sam co zapisany; jedyny
-  błąd to niezaufany root, czyli self-signed. Którym sterownikiem kartę obsłużył
-  Windows i czy zaloguje nią do domeny — 0083.
+- **`PutXAUTHKey` wants exactly one of three parameters** (the key, the type, a
+  JSON file) — with both a key and a type it refuses (`InvalidInputData`)
+  before sending anything. The type follows from the key's length, so 24 bytes
+  is always 3DES; the driver rejects AES-192.
+- **`ChangePIN` wants the old PIN even after XAUTH** ("Old PIN was not
+  provided"). So the PIN is set with the PUK from the previous step
+  (`ResetPINTries`) — the PUK → PIN order as on a YubiKey, and the PIN the
+  token arrived with is needed for nothing.
+- **Changing XAUTH clears the admin authentication**: updating Cache Freshness
+  (`5FC151`) immediately afterwards got a 6982. The driver authenticates with
+  the new key straight away, so the following writes go through.
+- **The secrets file must not be overwritten.** The first run wrote the XAUTH
+  and the PUK and then stopped at the PIN; running it again would have
+  overwritten the only copy of the key the token already had. From that moment
+  `CrescendoLab` resumes from the existing file instead of drawing a new one.
+- **The SDK log line "Already authenticated with PIN on ACA applet"** also
+  appears when no PIN was supplied — it is an SDK message, not the card's
+  state.
+- **The SDK writes more than a certificate into `5FC105`**: on generation, the
+  public key (tag `68`) and the key's name (`72`); on import, the certificate
+  **gzip-compressed** (tag `70`, CertInfo `71 = 01`).
+- **Windows reads that.** `certutil -scinfo` after personalisation: a
+  "BlinkyLite 9A" container (the key name from tag `72`) in the Microsoft Base
+  Smart Card Crypto Provider and in the Smart Card KSP, with the same
+  certificate that was written; the only error is an untrusted root, i.e. it is
+  self-signed. Which driver Windows used for the card, and whether it will sign
+  in to the domain with it — 0083.
 
-### 13 października 2026, 21:45: karta Crescendo C4000 (0082)
+### 13 October 2026, 21:45: a Crescendo C4000 card (0082)
 
-Karta w czytniku stykowym OMNIKEY 3x21, ATR `3B D5 96 FF 81 91 FE 1F C3 43
-34 30 30 30 C9` (`C4000`), CUID `4790D600901438...`, te same wersje apletów i
-ten sam fabryczny XAUTH co Key V3. **Inaczej niż Key V3: karta nie ma żadnego
-obiektu danych** — ani CHUID, ani CCC, ani Cache Freshness (`5FC151`).
-HID wkłada je do tokenu, do karty nie.
+The card in an OMNIKEY 3x21 contact reader, ATR `3B D5 96 FF 81 91 FE 1F C3 43
+34 30 30 30 C9` (`C4000`), CUID `4790D600901438...`, the same applet versions
+and the same factory XAUTH as the Key V3. **Unlike the Key V3: the card has no
+data objects at all** — no CHUID, no CCC, no Cache Freshness (`5FC151`). HID
+puts them into the token, not into the card.
 
-| Przebieg | Co się stało | Co zmienione |
+| Run | What happened | What changed |
 |---|---|---|
-| 1 | nowy XAUTH zapisany (`80 D8`, 9000), ale SDK zgłosił błąd: zaraz potem sam zakłada `5FC151`, a sesja starego klucza już nie istnieje (6982) | sterownik po błędzie `PutXAUTHKey` sprawdza nowy klucz uwierzytelnieniem i przyjmuje zapis, jeśli przechodzi |
-| 2 (wznowienie z pliku) | XAUTH z pliku przyjęty, PUK, PIN, klucz RSA-2048 (2,5 s), CSR, certyfikat — wszystko przeszło | — |
-| 2 | CHUID zapisany tylko z tagami 34 i 35, CCC wcale: `PIVGetDataObjectContent` dla pustego obiektu oddaje JSON `{"Content": {}}`, a nie pusty tekst | sterownik czyta tagi z `Content` i pisze cały CHUID, gdy brakuje FASC-N, a CCC, gdy jest pusty |
-| `identity --yes` ×2 | pierwszy: CHUID w kolejności 34, 35, 30, 3E, FE (SDK dopisuje brakujące tagi na końcu); drugi: obiekt opróżniony (`PIVDeleteDataFromDataObject(..., "all")`) i zapisany od nowa, 30, 34, 35, 3E, FE; CCC 13 tagów | CHUID nie w kolejności SP 800-73 jest czyszczony przed zapisem |
+| 1 | the new XAUTH was written (`80 D8`, 9000), but the SDK reported an error: straight afterwards it creates `5FC151` itself, and the old key's session no longer exists (6982) | after a `PutXAUTHKey` error the driver checks the new key by authenticating with it, and accepts the write if that passes |
+| 2 (resumed from the file) | the XAUTH from the file accepted, the PUK, the PIN, an RSA-2048 key (2.5 s), the CSR, the certificate — all of it went through | — |
+| 2 | the CHUID was written with tags 34 and 35 only, and the CCC not at all: `PIVGetDataObjectContent` for an empty object returns the JSON `{"Content": {}}` rather than empty text | the driver reads the tags out of `Content` and writes the whole CHUID when the FASC-N is missing, and the CCC when it is empty |
+| `identity --yes` ×2 | the first: a CHUID in the order 34, 35, 30, 3E, FE (the SDK appends the missing tags at the end); the second: the object emptied (`PIVDeleteDataFromDataObject(..., "all")`) and written afresh, 30, 34, 35, 3E, FE; a CCC with 13 tags | a CHUID not in SP 800-73 order is cleared before writing |
 
-Obiekty rosną same: CHUID założony przy pierwszym zapisie ma bufor 30 B, a
-pełny (59 B) zmieścił się przy następnym; to samo z `5FC105` (319 → 1096 B).
+The objects grow by themselves: a CHUID created at the first write has a 30 B
+buffer, and the full one (59 B) fitted at the next; the same with `5FC105` (319
+→ 1096 B).
 
-`certutil -scinfo` po wszystkim: karta jako „HID Global Crescendo 4000”,
-kontener „BlinkyLite 9A” w Base CSP i KSP z certyfikatem `a00580c5...`, tym
-samym co zapisany.
+`certutil -scinfo` after all of it: the card as "HID Global Crescendo 4000",
+with a "BlinkyLite 9A" container in the Base CSP and the KSP holding
+certificate `a00580c5...`, the same one that was written.
 
-### 13 października 2026, 21:50: druga karta C4000, przez NFC, jednym przebiegiem (0082)
+### 13 October 2026, 21:50: a second C4000 card, over NFC, in one run (0082)
 
-Fabryczna C4000 (CUID `4790D600901431...`) na czytniku bezstykowym OMNIKEY
-5427 CK; Windows i SDK widzą ją jako „Crescendo 4000 CL”, ATR `3B 85 80 01 43
-34 30 30 30 43`, `CurrentMediaProtocolInformation` 129. **Cała personalizacja
-przeszła za pierwszym razem**, sterownikiem z poprawkami z obu poprzednich
-kart: zgłoszony przez SDK błąd przy `PutXAUTHKey` (ten sam 6982 na Cache
-Freshness) sterownik przyjął po uwierzytelnieniu nowym kluczem; CHUID
-zapisany cały, od razu w kolejności 30, 34, 35, 3E, FE; CCC 13 tagów; klucz
-RSA-2048 w 1,4 s; certyfikat zapisany i odczytany ten sam. Przez NFC nic nie
-odmówiło — firewall bezstykowy jest na tych kartach wyłączony, a ACR są te
-same dla obu interfejsów. `certutil -scinfo`: kontener „BlinkyLite 9A” z
-certyfikatem `46bf7ba7...`.
+A factory C4000 (CUID `4790D600901431...`) on an OMNIKEY 5427 CK contactless
+reader; Windows and the SDK see it as "Crescendo 4000 CL", ATR
+`3B 85 80 01 43 34 30 30 30 43`, `CurrentMediaProtocolInformation` 129. **The
+whole personalisation went through first time**, with the driver carrying the
+fixes from both earlier cards: the error the SDK reported on `PutXAUTHKey` (the
+same 6982 on Cache Freshness) was accepted by the driver after authenticating
+with the new key; the CHUID was written whole, straight away in the order 30,
+34, 35, 3E, FE; the CCC with 13 tags; an RSA-2048 key in 1.4 s; the certificate
+written and read back the same. Nothing refused over NFC — the contactless
+firewall is off on these cards, and the ACRs are the same for both interfaces.
+`certutil -scinfo`: a "BlinkyLite 9A" container with certificate `46bf7ba7...`.
 
-### 13 października 2026, 21:55: sprawdzenie w Crescendo Manager (właściciel)
+### 13 October 2026, 21:55: a check in Crescendo Manager (the owner)
 
-- **XAUTH nie jest fabryczny**: zmiana management key z kluczem „default”
-  (24 × `00`) kończy się `SCARD_W_WRONG_CHV` („Unexpected minidriver
-  error”). Ta próba prawdopodobnie zużyła jedno podejście XAUTH — licznika
-  nie znamy (Q-12), więc nie powtarzać.
-- **Odblokowanie PIN-u PUK-iem w postaci 8 cyfr** przeszło w Managerze — PUK,
-  który sterownik zapisuje jako bajty ASCII w hex (`PUKPut`), to ta sama
-  postać, którą Manager nazywa „8-digit decimal”.
-- We wszystkich trzech logach SDK z personalizacji APDU niosące sekret
-  (`00 82` XAUTH, `80 D8` nowy XAUTH, `80 24` PUK, `80 2C` RESET RETRY
-  COUNTER, `00 20` VERIFY) są `[REDACTED]`; od teraz `CrescendoLab personalise`
-  sam przeszukuje log SDK pod kątem PIN-u, PUK-u i XAUTH po przebiegu.
+- **The XAUTH is not the factory one**: changing the management key with the
+  "default" key (24 × `00`) ends in `SCARD_W_WRONG_CHV` ("Unexpected minidriver
+  error"). That attempt probably consumed one XAUTH try — we do not know the
+  counter (Q-12), so it is not to be repeated.
+- **Unblocking the PIN with the PUK in its 8-digit form** worked in Manager —
+  the PUK the driver writes as ASCII bytes in hex (`PUKPut`) is the same form
+  Manager calls "8-digit decimal".
+- In all three SDK logs from the personalisations, the APDUs that carry a
+  secret (`00 82` XAUTH, `80 D8` the new XAUTH, `80 24` the PUK, `80 2C` RESET
+  RETRY COUNTER, `00 20` VERIFY) are `[REDACTED]`; from now on `CrescendoLab
+  personalise` searches the SDK log for the PIN, the PUK and the XAUTH itself
+  after a run.
 
-### 13 października 2026: atestacja klucza na C4000 — nie ma (Q-11)
+### Key attestation on the C4000
 
-Sprawdzone na C4000 przez NFC, komendami tylko do odczytu, po
-personalizacji (klucz w 9A jest):
+There is none (Q-11). Checked on 13 October 2026 on a C4000 over NFC, with
+read-only commands, after personalisation (so the key in 9A is there):
 
-| Pytanie | Odpowiedź karty |
+| Question | The card's answer |
 |---|---|
-| `00 F9 9A 00` — atestacja w stylu Yubico | `6D00`: instrukcja nieznana |
-| `GET DATA 5FFF01` — certyfikat atestacji Yubico | `6A88`: brak obiektu |
-| `00 F7 00 9A` — metadane slotu Yubico | `6D00` |
+| `00 F9 9A 00` — a Yubico-style attestation | `6D00`: unknown instruction |
+| `GET DATA 5FFF01` — the Yubico attestation certificate | `6A88`: no such object |
+| `00 F7 00 9A` — Yubico slot metadata | `6D00` |
 | `GET DATA 7E`, `5FC10C` | `6A88` |
-| `80 56 00 00` — właściwości apletu HID | dla 9A: `48 01 9A`, `43 05 07 20 01 01 33` (RSA-2048, klucz prywatny i publiczny wygenerowane na karcie, cel „dowolny”), ACR; **żadnego klucza ani obiektu atestacji** |
+| `80 56 00 00` — the HID applet's properties | for 9A: `48 01 9A`, `43 05 07 20 01 01 33` (RSA-2048, private and public key generated on the card, purpose "any"), plus the ACRs; **no attestation key or object whatsoever** |
 
-SDK 2.1.0 nie ma żadnej metody atestacji PIV, a dokumentacja HID (SDK,
-Crescendo Manager) jej nie opisuje; atestacja istnieje tylko w aplecie FIDO,
-dla innych kluczy. Jedynym dowodem pochodzenia klucza w 9A jest więc flaga
-„GeneratedOnToken” z właściwości apletu — odczytana przez stację, niczym nie
-podpisana. To jest odpowiedź karty, nie wybór BlinkyLite; co z tym zrobić,
-rozstrzyga Q-11.
+SDK 2.1.0 has no PIV attestation method at all, and HID's documentation (the
+SDK, Crescendo Manager) does not describe one; attestation exists only in the
+FIDO applet, for different keys. So the only proof of the origin of the key in
+9A is the "GeneratedOnToken" flag from the applet's properties — read by the
+station and signed by nothing. That is the card's answer, not BlinkyLite's
+choice; what to do about it is settled by Q-11.
 
-Co z tego dla BlinkyLite:
+What this means for BlinkyLite:
 
-- **`BlinkyLite.Piv` czyta PIV, ale nie personalizuje.** `CardLab inventory`
-  wybiera aplet i liczy próby PIN-u, ale serial i firmware wychodzą puste
-  („brak (to nie YubiKey)”, „0.0.0”), a management key „? ustawiony”, bo
-  `GET SERIAL`, `GET VERSION` i `GET METADATA` to rozszerzenia Yubico. PUK i
-  klucz admina są w ACA, do którego nasza warstwa nie ma dostępu.
-- **Zablokowany PIN bez PUK-u odblokowuje tylko XAUTH.** Dopóki PUK nie jest
-  zainicjowany, nie zgadujemy PIN-u na tokenie: 6 nieudanych prób i zostaje
-  klucz admina.
+- **`BlinkyLite.Piv` reads PIV but does not personalise.** `CardLab inventory`
+  selects the applet and counts PIN retries, but the serial and the firmware
+  come out empty ("absent (not a YubiKey)", "0.0.0") and the management key as
+  "? set", because `GET SERIAL`, `GET VERSION` and `GET METADATA` are Yubico
+  extensions. The PUK and the admin key live in ACA, which our layer cannot
+  reach.
+- **With a blocked PIN and no PUK, only XAUTH unblocks anything.** As long as
+  the PUK is not initialised we do not guess a PIN on the token: 6 failed
+  attempts and all that is left is the admin key.
 
-### 14 października 2026, 00:01: wyczyszczona C4000 na WS-01 (0084)
+### 14 October 2026, 00:01: a wiped C4000 on WS-01 (0084)
 
-Karta NFC `…31596020`, wyczyszczona przez właściciela w Crescendo Manager,
-dalej odpowiada odkrywaniu SDK jako Crescendo (`TokenDiscovery` ją podaje),
-ale `ListPIVProperties` kończy się `6A86` (Incorrect P1/P2) i SDK rzuca gołe
-`System.Exception: Failed to get additional applet properties`. Klient 0.1.123.0
-pokazał wtedy `error.internal` — „coś poszło nie tak po stronie serwera”, choć
-serwer nie był pytany. Od 0.1.124.0 każdy odczyt właściwości apletu w
-sterowniku zamienia taki wyjątek na `TokenUnreadableException`
-(`error.card.unreadable`), a nierozpoznany wyjątek w kliencie i Unlocku ma
-własny tekst (`common.error.unexpected`), który serwera nie obwinia. Czy po
-czyszczeniu aplet PIV zniknął, czy tylko jego dane, jeszcze nie wiemy — Manager
-pokaże wersje apletów.
+The NFC card `…31596020`, wiped by the owner in Crescendo Manager, still
+answers the SDK's discovery as a Crescendo (`TokenDiscovery` lists it), but
+`ListPIVProperties` ends in `6A86` (Incorrect P1/P2) and the SDK throws a bare
+`System.Exception: Failed to get additional applet properties`. Client
+0.1.123.0 then showed `error.internal` — "something went wrong on the server's
+side" — although the server was never asked. Since 0.1.124.0 every read of an
+applet's properties in the driver turns such an exception into a
+`TokenUnreadableException` (`error.card.unreadable`), and an unrecognised
+exception in the client and in Unlock has a text of its own
+(`common.error.unexpected`) that does not blame the server. Whether the PIV
+applet disappeared after the wipe or only its data, we do not know yet —
+Manager will show the applet versions.
 
-Ta sama sesja: weryfikacja Key V3 `…212432024121` i C4000 `…31596020` (przed
-czyszczeniem) kończy się na `verify.known` — tych kluczy nie wydał BlinkyLite,
-tylko CrescendoLab — a „Wydaj klucz” odmawia od razu
-`error.card.family-not-issued`. Oba zgodnie z 0084.
+The same session: verifying the Key V3 `…212432024121` and the C4000
+`…31596020` (before the wipe) ends at `verify.known` — those keys were not
+issued by BlinkyLite but by CrescendoLab — and "Issue key" refuses straight
+away with `error.card.family-not-issued`. Both as 0084 intends.
 
-00:13 (0.1.124.0): przy „Odśwież” na C4000 przez NFC SDK raz odpowiedziało
-`6D00` (Unknown instruction) przy właściwościach PIV; minutę później ta sama
-karta czytała się dobrze, a wyczyszczona `…31596020` okazała się czytelna —
-bez certyfikatu w 9A (`DataNotFound` dla `5FC105`), więc aplet PIV został.
-Pojedynczy `6D00` na NFC to raczej karta zdjęta lub poruszona w trakcie
-odczytu. Klient nie łapał wtedy niczego poza `NoCardException` i okno się
-zamykało przez `DispatcherUnhandledException`; od 0.1.125.0 odczyt karty w
-kliencie i Unlocku łapie każdy wyjątek sterownika i pokazuje go w linii karty.
+00:13 (0.1.124.0): on "Refresh" with the C4000 over NFC the SDK once answered
+`6D00` (Unknown instruction) for the PIV properties; a minute later the same
+card read fine, and the wiped `…31596020` turned out to be readable — with no
+certificate in 9A (`DataNotFound` for `5FC105`), so the PIV applet is still
+there. A single `6D00` over NFC is more likely a card lifted or moved during
+the read. The client then caught nothing but `NoCardException` and the window
+closed through `DispatcherUnhandledException`; since 0.1.125.0 the card read in
+the client and in Unlock catches every driver exception and shows it on the
+card's line.
 
-### 14 października 2026, 00:46: pierwsze wydanie Crescendo z klienta (0083)
+### 14 October 2026, 00:46: the first Crescendo issuance from the client (0083)
 
-Ta sama C4000 `…31596020`, wyczyszczona w Crescendo Manager, wydana na
-WS-01 klientem 0.1.126.0 przez EOBO, bez CrescendoLab i bez ręcznych
-sekretów. XAUTH po wyczyszczeniu był znowu fabryczny (24 × `00`, 3DES) —
-silnik uwierzytelnił się nim, a z innym odmówiłby — potem PUK i PIN PUK-iem.
-Stanu PUK przed wydaniem nie zapisaliśmy.
-W bazie: `Issued`, `key_evidence = GeneratedOnCard`, request CA 242. Profil
-przepuścił kartę dopiero po włączeniu przełącznika D-43 w konsoli.
+The same C4000 `…31596020`, wiped in Crescendo Manager, issued on WS-01 with
+client 0.1.126.0 through EOBO, with no CrescendoLab and no hand-made secrets.
+The XAUTH was factory again after the wipe (24 × `00`, 3DES) — the engine
+authenticated with it, and would have refused with any other — then the PUK,
+and the PIN with the PUK. We did not record the PUK's state before the
+issuance. In the database: `Issued`, `key_evidence = GeneratedOnCard`, CA
+request 242. The profile let the card through only after the D-43 switch was
+turned on in the console.
 
-### 15 października 2026, 23:20: Recycle C4000 i ponowne wydanie (0092, 0083)
+### 15 October 2026, 23:20: a C4000 Recycle and a re-issuance (0092, 0083)
 
-C4000 `…31596020` (wydana 14.10 dla innego konta) wyczyszczona klientem
-0.1.133.0 na WS-01, czystej maszynie w domenie. `ResetToken()` z SDK HID
-po kluczu XAUTH z koperty: **XAUTH wraca do fabrycznego** (24 × `00`, 3DES) —
-sterownik przyjął fabryczny od razu i nie musiał go przywracać; po resecie PIN
-`Set` (domyślny HID), PUK nieustawiony (`Default`), 9A pusty, bez certyfikatu.
-Od zgłoszenia do wyniku 20 s. Wydanie `Recycled`, koperty `Retired`, żądanie
-unieważnienia starego certyfikatu w kolejce.
+The C4000 `…31596020` (issued on 14.10 to a different account) wiped with
+client 0.1.133.0 on WS-01, a clean machine in the domain. `ResetToken()` from
+the HID SDK, after the XAUTH from the envelope: **the XAUTH goes back to the
+factory one** (24 × `00`, 3DES) — the driver accepted the factory key straight
+away and did not have to restore it; after the reset the PIN was `Set` (HID's
+default), the PUK unset (`Default`), 9A empty, with no certificate. From the
+request to the result, 20 s. The issuance `Recycled`, the envelopes `Retired`,
+and a request to revoke the old certificate in the queue.
 
-Dwie minuty później ta sama karta wydana z klienta innemu kontu przez EOBO
-(`GeneratedOnCard`), a **logowanie do Windows tą kartą działa bez żadnego
-sterownika HID** na stacji — obsłużył ją sterownik wbudowany w Windows.
+Two minutes later the same card was issued from the client to another account
+through EOBO (`GeneratedOnCard`), and **signing in to Windows with that card
+works with no HID driver at all** on the station — the driver built into
+Windows handled it.
 
-### 16 października 2026, 01:30: pierwsze unieważnienie — stacja bez `ICertAdmin2` (0091)
+### 16 October 2026, 01:30: the first revocation — a station with no `ICertAdmin2` (0091)
 
-„Wykonaj unieważnienia” na WS-01 (czysty Windows w domenie): `CertificateAuthority.Admin: not registered on this
-machine`. `certadm.dll` przychodzi tylko z **RSAT: Active Directory Certificate Services Tools**; do wydawania wystarcza
-`CertificateAuthority.Request` (`certcli.dll`), które jest w każdym Windows — stąd nikt tego wcześniej nie zauważył. Żądanie
-zostało `RevocationFailed` (próba 1, do ponowienia). Od 0.1.136.0 klient sprawdza komponent przed pierwszą próbą
-(`error.ca.admin-tools-missing`) i niczego w kolejce nie rusza.
+"Carry out revocations" on WS-01 (a clean Windows in the domain):
+`CertificateAuthority.Admin: not registered on this machine`. `certadm.dll`
+comes only with **RSAT: Active Directory Certificate Services Tools**; issuing
+needs only `CertificateAuthority.Request` (`certcli.dll`), which is in every
+Windows — hence nobody had noticed before. The request became
+`RevocationFailed` (attempt 1, to be retried). Since 0.1.136.0 the client
+checks the component before the first attempt
+(`error.ca.admin-tools-missing`) and touches nothing in the queue.
 
-Po instalacji RSAT (16.10, 02:21) trzecia próba: certyfikat `30000000F2…F2` unieważniony w `DIGITALWORKSPACE-Sub-CA`, żądanie
-`Revoked`, a Recycle karty `…31596020` przeszedł w `Completed` — cały przebieg fazy 9 na jednej karcie: wyczyszczona,
-wydana ponownie, stary certyfikat unieważniony. Od 0.1.138.0 klient sam proponuje instalację RSAT (UAC) przy pierwszym
-„Wykonaj unieważnienia”.
+After installing RSAT (16.10, 02:21), the third attempt: certificate
+`30000000F2…F2` revoked in `DIGITALWORKSPACE-Sub-CA`, the request `Revoked`,
+and the Recycle of card `…31596020` moved to `Completed` — the whole of phase 9
+on one card: wiped, issued again, the old certificate revoked. Since 0.1.138.0
+the client offers to install RSAT itself (UAC) at the first "Carry out
+revocations".
 
+## Thales IDPrime MD
 
-## Thales IDPrime MD: pomiar i decyzja
+Measured on 16 October 2026 on `SZYMON-PC` (outside the domain), a **Thales
+IDPrime** card in an **HID Global OMNIKEY 3x21** contact reader, read-only:
+`certutil -scinfo`, `CardLab inventory --reader OMNIKEY` and a hand-written
+PC/SC probe with nothing but `SELECT` and `GET DATA`. Nothing was written to
+the card.
 
-Pomiar 16 października 2026 na `SZYMON-PC` (poza domeną), karta **Thales IDPrime** w czytniku kontaktowym
-**HID Global OMNIKEY 3x21**, tylko odczyt: `certutil -scinfo`, `CardLab inventory --reader OMNIKEY` i ręczna sonda PC/SC
-z samymi `SELECT` i `GET DATA`. Na kartę nic nie zostało zapisane.
-
-| Co | Wynik |
+| What | Result |
 |---|---|
-| ATR | `3B FF 96 00 00 81 31 FE 43 80 31 80 65 B0 85 59 56 FB 12 0F FC 82 90 00 02` — rodzina IDPrime 9x0 |
-| `certutil -scinfo` | typ karty nieznany Windows (`SCardGetCardTypeProviderName`: `ERROR_FILE_NOT_FOUND`) — na stacji nie ma minidrivera Thalesa |
-| `CardLab inventory` | „Zaden czytnik pasujacy do "OMNIKEY" nie ma karty PIV”, kod wyjścia 3 |
-| `SELECT` PIV (`A0 00 00 03 08`, krótki i pełny AID) | `6A 82` — **apletu PIV nie ma** |
-| `SELECT` aplet minidrivera IDPrime (`A0 00 00 00 18 80 00 00 00 06 62`) | `90 00` — jedyny aplet, który odpowiada |
-| `SELECT` ISD GlobalPlatform (`A0 00 00 01 51 00 00 00`, `A0 00 00 00 03 00 00 00`) | `6A 82` |
+| ATR | `3B FF 96 00 00 81 31 FE 43 80 31 80 65 B0 85 59 56 FB 12 0F FC 82 90 00 02` — the IDPrime 9x0 family |
+| `certutil -scinfo` | the card type is unknown to Windows (`SCardGetCardTypeProviderName`: `ERROR_FILE_NOT_FOUND`) — there is no Thales minidriver on the station |
+| `CardLab inventory` | "No reader matching "OMNIKEY" has a PIV card", exit code 3 |
+| `SELECT` PIV (`A0 00 00 03 08`, the short and the full AID) | `6A 82` — **there is no PIV applet** |
+| `SELECT` of the IDPrime minidriver applet (`A0 00 00 00 18 80 00 00 00 06 62`) | `90 00` — the only applet that answers |
+| `SELECT` of the GlobalPlatform ISD (`A0 00 00 01 51 00 00 00`, `A0 00 00 00 03 00 00 00`) | `6A 82` |
 | `SELECT` PKCS#15 (`A0 00 00 00 63 50 4B 43 53 2D 31 35`) | `6A 82` |
 | `GET DATA` Card Data (`66`) | GlobalPlatform 2.3, SCP03 |
-| `GET DATA` CPLC (`9F7F`) | odpowiada; producent układu `4090` (Infineon) |
+| `GET DATA` CPLC (`9F7F`) | answers; chip manufacturer `4090` (Infineon) |
 
-`CardLab dump` nie był uruchamiany — zaczyna od tego samego `SELECT PIV`.
+`CardLab dump` was not run — it starts with the same `SELECT PIV`.
 
-Wniosek: to IDPrime **MD**, karta minidrivera, nie PIV. Obecna warstwa (`BlinkyLite.Piv`, sterownik YubiKey) jej nie
-otworzy, a sterownik na wzór Crescendo (D-42) wymagałby SDK Thalesa, którego nie ma w otwartej postaci — jest SafeNet
-Minidriver (Base CSP / CNG KSP) z portalu wsparcia i komercyjne narzędzia SafeNet. PIN odblokowuje się tam kluczem
-admina w challenge-response (3DES), a nie PUK-iem. SDK z thalesdocs.com/idpv dotyczy IDPrime Virtual (karty wirtualne na serwerze Thalesa), nie kart w czytniku. **Decyzja właściciela D-45: odpada, ostatecznie** — wpis w „Poza zakresem” w
-[05](05-roadmap.md#poza-zakresem). IDPrime z apletem PIV to inna karta i ten pomiar jej nie dotyczy.
+The conclusion: this is an IDPrime **MD**, a minidriver card, not a PIV one.
+The present layer (`BlinkyLite.Piv`, the YubiKey driver) will not open it, and
+a driver along the lines of Crescendo's (D-42) would need a Thales SDK, which
+does not exist in open form — there is the SafeNet Minidriver (Base CSP / CNG
+KSP) from the support portal, and commercial SafeNet tools. The PIN there is
+unblocked with the admin key in a challenge-response (3DES) rather than with a
+PUK. The SDK on thalesdocs.com/idpv is for IDPrime Virtual (virtual cards on a
+Thales server), not for cards in a reader. **The owner's decision D-45: off,
+finally** — an entry under "Out of scope" in
+[05](05-roadmap.md#out-of-scope). An IDPrime with a PIV applet is a different
+card and this measurement does not apply to it.
 
-## 23 listopada 2026: MK za PIN-em a minidriver, pomiar na dwóch kartach
+## The management key behind the PIN, and the minidriver
 
-Pomiar na `SZYMON-PC`, dwa YubiKey 5 w dwóch czytnikach USB jednocześnie, tylko
-odczyt (`CardLab inventory` i `CardLab dump` — `GET DATA` bez PIN-u). Powód:
-dołożenie drugiego certyfikatu do karty wydanej z **HID CMS** każe wpisać
-management key, a do karty wydanej z **BlinkyLite** wystarczy PIN. Pytanie było,
-czym się te karty różnią i czy BlinkyLite może wydawać tak jak HID CMS, nie
-łamiąc D-06.
+Measured on 23 November 2026 on `SZYMON-PC`, two YubiKey 5s in two USB readers
+at once, read-only (`CardLab inventory` and `CardLab dump` — `GET DATA` without
+a PIN). The reason: adding a second certificate to a card issued by **HID CMS**
+asks for the management key, while a card issued by **BlinkyLite** needs only
+the PIN. The question was what differs between those cards, and whether
+BlinkyLite could issue the way HID CMS does without breaking D-06.
 
-| Co | BlinkyLite, serial `24031448` | HID CMS, serial `22222222` |
+| What | BlinkyLite, serial `24031448` | HID CMS, serial `22222222` |
 |---|---|---|
 | firmware | 5.4.3 | 5.8.0 |
-| algorytm MK (`GET METADATA 9B`) | TripleDes, ustawiony (nie fabryczny) | Aes256, ustawiony (nie fabryczny) |
-| ADMIN DATA `5FFF00` | `80 03 81 01 02` — bit `0x02`: „MK stoi za PIN-em” | **brak obiektu** (`6A 82`) |
-| PRINTED `5FC109` | `6982` — odmowa bez PIN-u; że kopia MK tam jest, mówi flaga w ADMIN DATA i zapis przy wydaniu | `6982` — ta sama odmowa, więc zawartości nie znamy; bez flagi nikt tam nie zagląda |
+| MK algorithm (`GET METADATA 9B`) | TripleDes, set (not factory) | Aes256, set (not factory) |
+| ADMIN DATA `5FFF00` | `80 03 81 01 02` — bit `0x02`: "the MK is behind the PIN" | **no such object** (`6A 82`) |
+| PRINTED `5FC109` | `6982` — refused without a PIN; that the MK copy is there is stated by the flag in ADMIN DATA and by the write at issuance | `6982` — the same refusal, so we do not know the contents; with no flag, nobody looks there |
 | PIN | Set, 3/3 | Set, 6/6 |
 | PUK | Set, **3/3** | Set, **15/15** |
-| slot 9A | klucz Rsa2048 + certyfikat | klucz Rsa2048 + certyfikat |
+| slot 9A | an Rsa2048 key + a certificate | an Rsa2048 key + a certificate |
 
-Dwa wnioski, oba potrzebne do 0024:
+Two conclusions, both needed for 0024:
 
-1. **Różnica jest dokładnie w tych dwóch obiektach.** Minidriver Yubico czyta
-   MK z PRINTED po weryfikacji PIN-u (flagę `0x02` sprawdza wcześniej) i dlatego
-   przy dokładaniu certyfikatu nie pyta już o nic. Karta bez flagi i bez kopii
-   zmusza go do zapytania o management key. Nic innego w zrzucie tych kart nie
-   różni się w sposób, który by to tłumaczył.
-2. **D-06 dotyczy kart z fabrycznym MK, nie każdej nierozpoznanej.** Karta z HID
-   CMS ma własny MK (Aes256), nie ma kopii za PIN-em i leży na stacji, na której
-   minidriver Yubico jest zainstalowany i obsługuje logowanie — a jej PUK jest
-   **nietknięty, 15/15**. Gdyby minidriver przejmował każdą kartę, której MK nie
-   zna, PUK byłby zablokowany (`AdminFlagPukBlocked`, tak przejmuje karty
-   fabryczne). Reguła z Blinky 08 nie jest błędna, jest węższa, niż brzmi.
+1. **The difference is exactly those two objects.** The Yubico minidriver reads
+   the MK from PRINTED after the PIN is verified (it checks the `0x02` flag
+   beforehand) and therefore asks for nothing when another certificate is
+   added. A card with neither the flag nor the copy forces it to ask for the
+   management key. Nothing else in those cards' dumps differs in a way that
+   would explain it.
+2. **D-06 concerns cards with a factory MK, not every unrecognised one.** The
+   card from HID CMS has an MK of its own (Aes256), has no copy behind the PIN,
+   and sits on a station where the Yubico minidriver is installed and handles
+   sign-in — and its PUK is **untouched, 15/15**. If the minidriver took over
+   every card whose MK it does not know, the PUK would be blocked
+   (`AdminFlagPukBlocked`, which is how it takes over factory cards). The rule
+   from Blinky's 08 is not wrong; it is narrower than it sounds.
 
-Czego ten pomiar **nie** mówi: czy stacja bez minidrivera Yubico (0026) zaloguje
-kartę bez ADMIN DATA — karta z HID CMS ma na tej stacji minidriver. Dlatego 0024
-daje przełącznik, a nie zmianę domyślnego zachowania.
+What this measurement does **not** say: whether a station without the Yubico
+minidriver (0026) will sign in a card with no ADMIN DATA — the HID CMS card has
+the minidriver on that station. That is why 0024 provides a switch rather than
+changing the default behaviour.
 
-## Atestacja FIDO2 YubiKeya: same korzenie nie wystarczą (0028, D-49)
+## FIDO2 attestation on a YubiKey
 
-**24 listopada 2026, 14:32, `WS-02`, YubiKey operatora.** Pierwsza próba
-zarejestrowania prawdziwego klucza w konsoli skończyła się komunikatem „To nie
-jest klucz Yubico", a w logu serwera:
+The roots alone are not enough (0028, D-49).
+
+**24 November 2026, 14:32, `WS-02`, the operator's YubiKey.** The first attempt
+to register a real key in the console ended with the message "This is not a
+Yubico key", and in the server's log:
 
 ```
 A key offered by <operator> is not a Yubico: the attestation does not chain
 to a Yubico root (unable to get local issuer certificate)
 ```
 
-Klucz był autentyczny. Brakowało **ścieżki**, nie zaufania.
+The key was genuine. What was missing was the **path**, not the trust.
 
-Od firmware **5.7.4** YubiKey atestuje FIDO pod nowym korzeniem, a jego
-certyfikat partii jest wystawiony **dwa poziomy pod** tym korzeniem — i klucz
-nie przysyła w `x5c` całej drogi do góry:
+From firmware **5.7.4** on, a YubiKey attests FIDO under a new root, and its
+batch certificate is issued **two levels below** that root — and the key does
+not send the whole way up in `x5c`:
 
 ```
 Yubico Attestation Root 1
   Yubico Attestation Intermediate A 1 / B 1
     Yubico FIDO Attestation A 1 / B 1 / B2 1
-      certyfikat partii na kluczu
+      the batch certificate on the key
 ```
 
-Serwer miał trzy korzenie i nic pomiędzy, więc nie było z czego zbudować
-ścieżki — a to, czego brakowało, musiał dołożyć on, nie klucz. OpenSSL w kontenerze nazywa to „unable to get local issuer
-certificate" — i wygląda to identycznie jak klucz obcego producenta, co jest
-najgorsza możliwa pomyłka dla bramy, której całym zadaniem jest ta różnica.
+The server had three roots and nothing in between, so there was nothing to
+build a path out of — and what was missing had to be supplied by the server,
+not by the key. OpenSSL in the container calls that "unable to get local issuer
+certificate" — and it looks exactly like a key from another manufacturer, which
+is the worst possible confusion for a gate whose entire job is that
+distinction.
 
-Wnioski, które stąd zostają:
+The conclusions that remain:
 
-1. **Korzeń nie jest kompletem.** Reguła „nowszy model przejdzie, bo i tak
-   podpisuje go Yubico" jest **za szeroka**: przejdzie tylko wtedy, gdy ścieżkę
-   da się domknąć. Pięć certyfikatów ścieżki FIDO leży w
-   `src/BlinkyLite.Server/Auth/yubico-fido-intermediates.pem`, w `ExtraStore`
-   łańcucha — jako podpowiedzi, nie zaufanie; zakotwiczenie zostaje wyłącznie
-   na korzeniach.
-2. **Starsze klucze idą inną drogą.** Klucz z firmware przed 5.7.4 chainuje się
-   wprost do `Yubico U2F Root CA Serial 457200631`, bez żadnego ogniwa
-   środkowego. Oba przypadki muszą działać i oba są w testach — nie da się
-   wybrać jednej hierarchii.
-3. **Odmowa musi mówić, co widziała.** Log bez podmiotu i wystawcy certyfikatu
-   nie pozwala odróżnić brakującego ogniwa od obcego klucza. Od tej pory
-   `Verdict.Detail` zawiera jedno i drugie (atestacja jest publiczna, nie ma tu
-   czego chronić).
-4. **Test bez sprzętu da się zrobić na prawdziwych certyfikatach.** Trzy CA
-   wystawiające FIDO, które Yubico publikuje, są w binarce i same chainują się
-   do korzenia, więc test podstawia je jako liść. Gdyby ścieżka znów się
-   urwała, build jest czerwony, zamiast operatora z kluczem, który „wszędzie
-   indziej działa".
+1. **A root is not a complete set.** The rule "a newer model will pass, because
+   Yubico signs it anyway" is **too broad**: it passes only when the path can
+   be closed. The five certificates of the FIDO path live in
+   `src/BlinkyLite.Server/Auth/yubico-fido-intermediates.pem`, in the chain's
+   `ExtraStore` — as hints, not as trust; the anchoring stays on the roots
+   alone.
+2. **Older keys take a different route.** A key with firmware before 5.7.4
+   chains straight to `Yubico U2F Root CA Serial 457200631`, with no
+   intermediate link at all. Both cases have to work and both are in the tests
+   — one hierarchy cannot be picked.
+3. **A refusal has to say what it saw.** A log without the certificate's
+   subject and issuer makes a missing link indistinguishable from a foreign
+   key. From now on `Verdict.Detail` contains both (an attestation is public;
+   there is nothing to protect here).
+4. **A test without hardware can be built on real certificates.** The three
+   FIDO-issuing CAs that Yubico publishes are in the binary and chain to the
+   root themselves, so the test substitutes them as the leaf. If the path ever
+   breaks again, the build goes red instead of an operator standing there with
+   a key that "works everywhere else".
 
-Czego ten pomiar **nie** mówi: wersji firmware klucza operatora (nie zapisano
-jej przed próbą) ani tego, czy w `x5c` był tylko liść — hipotezę o liściu
-potwierdza hierarchia i zniknięcie błędu po dołożeniu ogniw, nie zrzut `x5c`.
+What this measurement does **not** say: the firmware version of the operator's
+key (it was not recorded before the attempt), nor whether `x5c` held only the
+leaf — the leaf hypothesis is supported by the hierarchy and by the error
+disappearing once the links were added, not by a dump of `x5c`.

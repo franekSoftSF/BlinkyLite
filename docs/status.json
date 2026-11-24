@@ -8,7 +8,7 @@
     "outOfScope": "PUK change/rotation, PIN unblock, PIV reset, card lifecycle - handled by Blinky",
     "sibling": "../blinky",
     "license": "tbd",
-    "docsLanguage": "pl",
+    "docsLanguage": "en",
     "uiLanguages": [
       "en",
       "de",
@@ -34,14 +34,17 @@
       "schema": "numbered SQL scripts in db/migrations"
     },
     "installer": "MSIX",
-    "hardware": "YubiKey 5 series (PIV applet)"
+    "hardware": "YubiKey 5 series (PIV applet)",
+    "docsTranslations": [
+      "pl"
+    ]
   },
   "status": {
     "updated": "2026-11-24",
     "phase": 2,
     "phaseTitle": "Wydanie",
     "state": "open",
-    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na WS-01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. nginx na 443 z konsola web wdrozony (0055 partly-done). Drugi skladnik TOTP (0027) i logowanie biletem Kerberos ze stacji (0025) dzialaja w labie - done 16.10. Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031), wydanie z PowerShell (0040). Przegladarka web z lista, PUK, szczegolami i audytem oraz weryfikacja klucza w WPF/PowerShell (0030 done-unverified). Odblokowanie PIN przez telefon DZIALA W LABIE (0057, 29.09: kod ze stacji WS-01, zatwierdzenie w konsoli, nowy PIN ustawiony, PUK nigdy nie wypowiedziany; adres serwera z GPO). Serwer wydawany tylko jako obraz Dockera - usluga Windows w MSIX odpada (D-38, patch 0051 usuniety). Klucz, ktory wyszedl z uzycia, da sie wycofac: zapis przestaje twierdzic, ze zna PUK, ktory juz niczego nie otwiera (0058 done-unverified). Operator ma strone swojego konta: stan aplikacji z kodami, liczba kodow zapasowych i klucze bezpieczenstwa Yubico (FIDO2) jako drugi skladnik do wyboru obok kodu (0028, D-49) - dziala na sprzecie: 24.11.2026 o 16:22 operator zarejestrowal YubiKeya w konsoli i zalogowal sie nim, a Windows Hello zostalo przy rejestracji odrzucone. Od 0029 kod przestaje byc obowiazkowy - obowiazkowy jest drugi skladnik, a operator wybiera klucz albo kod, z tym ze na stacje wejdzie tylko z kodem (D-50). 756 testow jednostkowych, 198 bazodanowych.",
+    "summary": "Pierwsze certyfikaty wydane i dzialaja przy logowaniu do Windows - takze z WBUDOWANYM sterownikiem PIV, bez minidrivera Yubico (0026, 21.09 na WS-01). Fazy 0-1 zamkniete, z fazy 2 done: 0020, 0021, 0023, 0026. nginx na 443 z konsola web wdrozony (0055 partly-done). Drugi skladnik TOTP (0027) i logowanie biletem Kerberos ze stacji (0025) dzialaja w labie - done 16.10. Otwarte: ponowne wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031), wydanie z PowerShell (0040). Przegladarka web z lista, PUK, szczegolami i audytem oraz weryfikacja klucza w WPF/PowerShell (0030 done-unverified). Odblokowanie PIN przez telefon DZIALA W LABIE (0057, 29.09: kod ze stacji WS-01, zatwierdzenie w konsoli, nowy PIN ustawiony, PUK nigdy nie wypowiedziany; adres serwera z GPO). Serwer wydawany tylko jako obraz Dockera - usluga Windows w MSIX odpada (D-38, patch 0051 usuniety). Klucz, ktory wyszedl z uzycia, da sie wycofac: zapis przestaje twierdzic, ze zna PUK, ktory juz niczego nie otwiera (0058 done-unverified). Operator ma strone swojego konta: stan aplikacji z kodami, liczba kodow zapasowych i klucze bezpieczenstwa Yubico (FIDO2) jako drugi skladnik do wyboru obok kodu (0028, D-49) - dziala na sprzecie: 24.11.2026 o 16:22 operator zarejestrowal YubiKeya w konsoli i zalogowal sie nim, a Windows Hello zostalo przy rejestracji odrzucone. Od 0029 kod przestaje byc obowiazkowy - obowiazkowy jest drugi skladnik, a operator wybiera klucz albo kod, z tym ze na stacje wejdzie tylko z kodem (D-50). 756 testow jednostkowych, 198 bazodanowych. Dokumentacja jest po angielsku (docs/), a polskie tlumaczenie w docs/pl (0059, D-52); wydanie na tagu niesie paczki stacji (zipy self-contained), modul PowerShell i paczke wdrozeniowa serwera (compose, setup.sh/setup.ps1, docs), wiec serwer da sie wdrozyc bez dostepu do kodu.",
     "nothingIssuedYet": false
   },
   "stateLegend": {
@@ -545,10 +548,16 @@
     },
     {
       "id": "D-51",
-      "choice": "Kod nie jest udostepniany; publiczna jest dokumentacja. Dwa repozytoria: BlinkyLiteRepo (prywatne, caly kod - to stare BlinkyLite po zmianie nazwy) i BlinkyLite (publiczne, tylko docs/ i obrazy Dockera, nic wiecej). Publiczne nie jest kopia tej historii, bo ta zawiera kod - zaczyna sie od pustej. Zmiana wczesniejszej zasady, wedlug ktorej cale repozytorium bylo publiczne. Bez zmian zostaje: docs/ jest zanonimizowane, bo to ono wychodzi na zewnatrz; sekretow nie ma w gicie, bo prywatne repo to nie sejf; binaria obcych SDK zostaja poza gitem z powodu licencji, nie widocznosci. Konsola przestaje pokazywac odnosnik do kodu zrodlowego.",
+      "choice": "Kod nie jest udostepniany; publiczna jest dokumentacja. Dwa repozytoria: BlinkyLiteRepo (prywatne, caly kod - to stare BlinkyLite po zmianie nazwy) i BlinkyLite (publiczne, tylko docs/ i obrazy Dockera, nic wiecej). Publiczne nie jest kopia tej historii, bo ta zawiera kod - zaczyna sie od pustej. Zmiana wczesniejszej zasady, wedlug ktorej cale repozytorium bylo publiczne. Bez zmian zostaje: docs/ jest zanonimizowane, bo to ono wychodzi na zewnatrz; sekretow nie ma w gicie, bo prywatne repo to nie sejf; binaria obcych SDK zostaja poza gitem z powodu licencji, nie widocznosci. Konsola przestaje pokazywac odnosnik do kodu zrodlowego. Zrobione 24.11.2026: prywatne BlinkyLiteRepo (zmiana nazwy) i publiczne BlinkyLite z docs/ oraz README o pobraniu obrazow z ghcr, z wlasna historia od zera. Przy skladaniu okazalo sie, ze docs/ nie bylo zanonimizowane w 64 miejscach - poprawione w repo, nie w kopii. Publiczna kopia jest zrzutem: zmiana docs/ nie aktualizuje jej sama.",
       "state": "locked",
       "decidedOn": "2026-11-24",
       "by": "owner"
+    },
+    {
+      "id": "D-52",
+      "choice": "Angielski jest podstawowym jezykiem dokumentacji, a wydanie niesie paczki (0059). docs/ jest po angielsku, polskie tlumaczenie w docs/pl z odnosnikiem w kazdym pliku: dokumentacja jest tym, co ktos z zewnatrz czyta pierwsze, a czytelnik, ktory musi ja sobie tlumaczyc, przestaje czytac. Publiczne repozytorium przestaje byc zrzutem robionym recznie: publish-docs.yml wypycha docs/ na kazdym tagu vX.Y.Z, a release-packages.yml publikuje tam wydanie z paczkami stacji (self-contained, bez instalatora), modulem PowerShell i paczka wdrozeniowa (compose, setup.sh/setup.ps1, pliki startowe bazy, docs), zeby serwer dal sie wdrozyc bez dostepu do kodu. MSIX-ow w wydaniu nie ma: sa podpisane kluczem z jednej maszyny, a niepodpisanego MSIX Windows nie zainstaluje. Skrypty wdrozeniowe importuja certyfikat TLS z PFX, bo to jest to, co administrator dostaje z firmowego CA.",
+      "state": "locked",
+      "decidedOn": "2026-11-24"
     }
   ],
   "openQuestions": [
@@ -988,6 +997,15 @@
       "gap": "Nie sprawdzone w labie: przycisk \"Wycofaj ten klucz\" w konsoli web na prawdziwym wydaniu i to, ze po wycofaniu helpdesk nie widzi juz PUK. Paczka serwera z ta migracja nie jest jeszcze wdrozona."
     },
     {
+      "id": "0059",
+      "phase": 5,
+      "title": "Publiczne repozytorium po angielsku, z paczkami i paczka wdrozeniowa",
+      "state": "done-unverified",
+      "owner": "cloud-ai",
+      "proof": "2026-11-24: docs/ przetlumaczone na angielski jako jezyk podstawowy (14 dokumentow), polskie wersje przeniesione do docs/pl z odnosnikiem do angielskiej w kazdym pliku; 11-wymagania-i-wdrozenie.md -> 11-requirements-and-deployment.md, nowy docs/14-install-guide.md (przewodnik admina: AD i trzy grupy, base DN, Docker Desktop/WSL2, wolumeny, minimum i zalecane, PFX, co moze pojsc nie tak). tools/check-docs-public.sh dalej przechodzi. publish-docs.yml publikuje docs/ razem z docs/pl i angielskim README. release-packages.yml na tagu vX.Y.Z buduje i wrzuca do wydania w publicznym repozytorium: blinkylite-station-win-x64.zip i -win-arm64.zip (klient + Unlock + CardLab Station, self-contained, z kontrola naglowka PE), modul PowerShell oraz blinkylite-deploy-<wersja> w tar.gz i zip (docker-compose.yml, docker-compose.ghcr.yml, .env.example, db/init, docker/postgres, withdraw-second-factor.sh, setup.sh, setup.ps1, docs) plus SHA256SUMS.txt. Paczka wdrozeniowa jest skladana z prawdziwych plikow repozytorium, nie z drugiej kopii. deploy/setup.sh: odmawia przy docker compose < 2.24, importuje certyfikat z PFX (sprawdza, ze klucz pasuje do certyfikatu, sklada lisc + posrednie bez roota, odmawia, gdy nazwa serwera nie jest w certyfikacie - bo to 502 na kazdym /api), zostawia istniejacy KEK, nadaje sekretom 999:1654 i 1654:1654, sprawdza SID-y trzech grup i pisze .env razem z COMPOSE_FILE. deploy/setup.ps1 to samo na Docker Desktop: wymaga pwsh 7+, odmawia w trybie kontenerow Windows, dzieli PFX przez .NET (bez openssl), prostuje CRLF w skryptach startowych bazy i sprawdza zarezerwowane zakresy portow Hyper-V/WSL.",
+      "gap": "Zadnego ze skryptow nie uruchomiono na czystym hoscie - PFX, wlasciciele sekretow i sprawdzenie /health sa napisane i przeczytane, nie wykonane. Wydanie z paczkami nie zostalo jeszcze opublikowane z taga, a MSIX-y nie wchodza do wydania (podpis self-signed na jednej maszynie, a niepodpisanego MSIX nie da sie zainstalowac) - trzeba je dolaczyc recznie."
+    },
+    {
       "id": "0070",
       "phase": 7,
       "title": "Agent DEB: odblokowanie PIN na Linuksie",
@@ -1091,6 +1109,11 @@
     }
   ],
   "notVerified": [
+    {
+      "what": "0059: paczka wdrozeniowa i skrypty setup",
+      "why": "workflow je buduje i wydanie je niesie, ale ani setup.sh, ani setup.ps1 nie zostaly uruchomione na czystym hoscie; zaden inzynier z zewnatrz nie wdrozyl jeszcze serwera z wydania",
+      "when": "nastepny serwer w labie albo wdrozenie u jednego z inzynierow, do ktorych idzie repozytorium"
+    },
     {
       "what": "0029: wybor skladnika i wycofanie MFA",
       "why": "sprawdzone testami, ale zaden operator nie przeszedl pierwszego logowania z wyborem, nikomu nie wycofano skladnika i nie uruchomiono --withdraw-second-factor na serwerze",

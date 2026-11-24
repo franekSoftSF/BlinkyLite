@@ -1,41 +1,40 @@
-# 01 — Architektura
+# 01 — Architecture
 
-## Po co i czego tu nie ma
+## What it is for, and what is not here
 
-BlinkyLite istnieje, bo pełny CMS (Blinky) jest za duży dla zespołu, który
-chce tylko **wydać klucz PIV z ADCS i nie zgubić PUK**. Wszystko, co nie służy
-temu jednemu celowi, jest poza zakresem:
+BlinkyLite exists because the full CMS (Blinky) is too big for a team that only
+wants to **issue a PIV key from ADCS and not lose the PUK**. Everything that
+does not serve that one purpose is out of scope:
 
-| Poza zakresem | Dlaczego |
+| Out of scope | Why |
 |---|---|
-| Wbudowane CA, Samba4, CES/CEP | Tylko ADCS, tylko przez mechanizm Windows |
-| Agent w tle, kolejka zadań, SignalR | Wydanie jest interaktywne i synchroniczne na stacji |
-| Odnowienia, CRL/OCSP | ADCS / Blinky. BlinkyLite po 1.0 tylko **powiadamia** przez bota Teams, że certyfikat wygaśnie (0060, [09](09-expiry-notification.md)) |
-| Konsola webowa | Przeglądarka wydań jest w WPF |
-| Zmiana / rotacja PUK, odblokowanie PIN, dalsze życie karty | To robi **Blinky** |
-| Reset PIV, `SET PIN RETRIES` | `ykman` albo Blinky |
-| Edycja profili i mapowania ról w UI | `appsettings.json` serwera |
+| Built-in CA, Samba4, CES/CEP | ADCS only, and only through the Windows mechanism |
+| Background agent, job queue, SignalR | Issuance is interactive and synchronous, at the station |
+| Renewals, CRL/OCSP | ADCS / Blinky. After 1.0 BlinkyLite only **notifies**, through a Teams bot, that a certificate is about to expire (0060, [09](09-expiry-notification.md)) |
+| Profile and role-mapping editors in the UI | The server's `appsettings.json` |
+| PUK change / rotation, card lifecycle beyond issuance | That is **Blinky**'s job |
+| PIV reset outside Recycle, `SET PIN RETRIES` | `ykman` or Blinky |
 
-Po wydaniu BlinkyLite dotyka karty już tylko w trybie **weryfikacji**:
-odczyt serialu, certyfikatu i atestacji z 9A i porównanie z tym, co zapisano
-przy wydaniu. Nic nie pisze.
+After issuance BlinkyLite touches a card in **verification** mode only: it
+reads the serial, the certificate and the attestation from 9A and compares them
+with what was recorded at issuance. It writes nothing.
 
-## Komponenty
+## Components
 
 ```mermaid
 flowchart LR
-    subgraph WS["Stacja administratora — Windows x64 / ARM64"]
+    subgraph WS["Operator station — Windows x64 / ARM64"]
         direction TB
         WPF["BlinkyLite.Client<br/>WPF"]
         PS["BlinkyLite.PowerShell<br/>pwsh 7.6+"]
-        ENG["BlinkyLite.Issuance<br/>silnik wydania"]
+        ENG["BlinkyLite.Issuance<br/>issuance engine"]
         TOK["BlinkyLite.Tokens<br/>IIssuanceToken (0080)"]
         PIV["BlinkyLite.Piv<br/>PC/SC + APDU"]
-        CRS["BlinkyLite.Crescendo<br/>SDK HID (0082)"]
+        CRS["BlinkyLite.Crescendo<br/>HID SDK (0082)"]
         CE["CertEnroll COM<br/>IX509CertificateRequestCmc"]
         CR["CertCli COM<br/>ICertRequest3"]
-        EA[("Certyfikat EA<br/>CurrentUser\\My")]
-        YK[["YubiKey 5<br/>aplet PIV"]]
+        EA[("EA certificate<br/>CurrentUser\\My")]
+        YK[["YubiKey 5<br/>PIV applet"]]
         HC[["HID Crescendo<br/>C4000 / Key V3<br/>ACA + PIV"]]
         WPF --> ENG
         PS --> ENG
@@ -43,182 +42,190 @@ flowchart LR
         TOK --> PIV --> YK
         TOK --> CRS --> HC
         ENG --> CE
-        CE -. podpis CMC .-> EA
+        CE -. CMC signature .-> EA
         ENG --> CR
     end
 
-    subgraph SRV["Serwer — Docker"]
+    subgraph SRV["Server — Docker"]
         API["BlinkyLite.Server<br/>Kestrel, REST"]
         DB[("PostgreSQL")]
         API --> DB
     end
 
     AD[("Active Directory")]
-    CA["Microsoft ADCS<br/>szablon EOBO"]
+    CA["Microsoft ADCS<br/>EOBO template"]
 
     ENG -- "HTTPS + JWT" --> API
-    API -- "LDAPS: bind, grupy,<br/>wyszukiwanie" --> AD
-    CR -- "DCOM, tożsamość<br/>domenowa operatora" --> CA
-    CA -. "podmiot, UPN, SID<br/>z obiektu requestername" .-> AD
+    API -- "LDAPS: bind, groups,<br/>lookup" --> AD
+    CR -- "DCOM, the operator's<br/>domain identity" --> CA
+    CA -. "subject, UPN, SID<br/>from the requestername object" .-> AD
 ```
 
-**Jeden silnik, dwie powłoki.** Cała logika wydania — personalizacja karty,
-atestacja, budowa CMC, wysyłka do CA, rozmowa z serwerem — siedzi w
-`BlinkyLite.Issuance`. WPF i moduł PowerShell tylko zbierają dane wejściowe
-(użytkownik docelowy, szablon, PIN) i pokazują postęp. Dzięki temu oba
-warianty wydają identycznie i mają te same testy. Silnik raportuje postęp
-przez `IProgress<IssuanceStep>` i prosi o PIN przez interfejs
-`IPinPrompt` — WPF implementuje go oknem, PowerShell przez
+**One engine, two shells.** All of the issuance logic — card personalisation,
+attestation, building the CMC, submitting it to the CA, talking to the server —
+lives in `BlinkyLite.Issuance`. The WPF client and the PowerShell module only
+collect input (target user, template, PIN) and show progress. That is what
+makes both of them issue identically, and what lets them share tests. The
+engine reports progress through `IProgress<IssuanceStep>` and asks for a PIN
+through `IPinPrompt` — WPF implements it with a window, PowerShell with
 `Read-Host -AsSecureString` / `PSHostUserInterface`.
 
-**Silnik nie wie, jaki to klucz (0080, D-42).** Silnik rozmawia z tokenem
-przez `IIssuanceToken` z `BlinkyLite.Tokens` — osobnego projektu, bo aplikacja
-do odblokowania potrzebuje tokenu (`IToken`, bez połowy, która zapisuje), a
-silnika wydania widzieć nie może (D-36). Token otwiera `TokenAccess.Open`; pod nim YubiKey jedzie na `BlinkyLite.Piv`, a HID
-Crescendo na SDK HID w `BlinkyLite.Crescendo` — jedynym projekcie, który
-widzi `CrescendoDLL`. Różnice rodzin (klucz admina w PIV czy w ACA, serial
-czy CUID, atestacja Yubico czy jej brak) kończą się na sterowniku; jeśli w
-silniku albo powłoce pojawia się `if` o rodzinie klucza, jest w złym miejscu.
+**The engine does not know what kind of token it is holding (0080, D-42).** It
+talks to the token through `IIssuanceToken` from `BlinkyLite.Tokens`, a project
+of its own because the unblock application needs a token (`IToken`, without
+the half that writes) and must not be able to see the issuance engine (D-36).
+A token is opened with `TokenAccess.Open`; underneath, a YubiKey goes through
+`BlinkyLite.Piv` and an HID Crescendo through the HID SDK in
+`BlinkyLite.Crescendo`, the only project that sees `CrescendoDLL`. Family
+differences (admin key in PIV or in ACA, serial or CUID, Yubico attestation or
+none) stop at the driver; if an `if` about the token family appears in the
+engine or in a shell, it is in the wrong place.
 
-**Serwer nie rozmawia z CA ani z kartą.** Jego zadania: uwierzytelnić
-operatora w AD i wystawić JWT, wyszukać użytkownika docelowego w AD,
-wygenerować i przechować zaszyfrowane sekrety karty, zweryfikować atestację
-i certyfikat po swojej stronie, prowadzić audyt, udostępnić przeglądarkę.
-Dzięki temu serwer może być kontenerem Linux bez DCOM i bez członkostwa w
-domenie.
+**The server talks to neither the CA nor the card.** Its jobs: authenticate the
+operator against AD and issue a JWT, look the target user up in AD, generate
+and keep the card's encrypted secrets, verify the attestation and the
+certificate on its own side, keep the audit trail, and serve the browser
+console. That is what lets the server be a Linux container with no DCOM and no
+domain membership.
 
-**Wydanie certyfikatu robi Windows.** Stacja buduje żądanie CMC przez
-CertEnroll (`IX509CertificateRequestCmc`, `SignerCertificate` = EA,
-`RequesterName` = `DOMENA\użytkownik`) i wysyła je przez `ICertRequest3`
-jako zalogowany operator. Szablon, podmiot, UPN i rozszerzenie SID ustala
-ADCS na podstawie AD. Działający w labie ręczny builder CMC z Blinky
-(`CmcRequest.cs`) jest planem awaryjnym — patrz D-04.
+**Windows issues the certificate.** The station builds the CMC request with
+CertEnroll (`IX509CertificateRequestCmc`, `SignerCertificate` = the EA
+certificate, `RequesterName` = `DOMAIN\user`) and submits it through
+`ICertRequest3` as the signed-in operator. The template, the subject, the UPN
+and the SID extension are decided by ADCS from AD. The hand-written CMC builder
+from Blinky (`CmcRequest.cs`), which works in the lab, is the fallback — see
+D-04.
 
-## Warianty wdrożenia serwera
+## How the server is deployed
 
 | | Docker |
 |---|---|
 | Host | Linux, `docker compose` |
-| Obraz | `mcr.microsoft.com/dotnet/aspnet:10.0` + `libldap`; wydany na `ghcr.io/franeksoftsf/blinkylite-server` i `-web` (D-39) |
-| PostgreSQL | kontener w compose albo zewnętrzny |
-| TLS | Kestrel, certyfikat z wolumenu |
-| KEK | zmienna albo Docker secret |
-| Konfiguracja | `appsettings.json` z wolumenu + env |
-| Logowanie AD | LDAPS bind |
+| Image | `mcr.microsoft.com/dotnet/aspnet:10.0` + `libldap`; published as `ghcr.io/franeksoftsf/blinkylite-server` and `-web` (D-39) |
+| PostgreSQL | a container in the compose file, or an external server |
+| TLS | Kestrel, certificate from a volume |
+| KEK | environment variable or Docker secret |
+| Configuration | `appsettings.json` from a volume + environment |
+| AD sign-in | LDAPS bind |
 
-**Jeden sposób, nie dwa (D-38).** Serwer był kiedyś planowany również jako
-usługa Windows w paczce MSIX; to odpada. Dwa sposoby instalacji to dwa
-zestawy ścieżek, praw do plików i źródeł sekretów, z których jeden jest
-sprawdzany rzadko — a serwer i tak jest czystym `net10.0` i nic w nim nie
-potrzebuje Windows. Windows zostaje po stronie stacji: klient, moduł
-PowerShell i odblokowanie PIN.
+**One way, not two (D-38).** The server was once also planned as a Windows
+service in an MSIX package; that is off. Two installation methods are two sets
+of paths, file permissions and secret sources, one of which gets tested rarely
+— and the server is plain `net10.0` with nothing in it that needs Windows.
+Windows stays on the station side: the client, the PowerShell module and the
+PIN unblock application.
 
-Migracje bazy uruchamia
-serwer z `--migrate` na osobnym koncie właściciela schematu — patrz
-[07 — Baza danych](07-database.md#migracje). Profile wydania (szablon ADCS,
-CA, algorytm, polityka PIN/touch) i mapowanie grup AD na role są sekcjami
-`Profiles` i `Roles` w `appsettings.json`.
+Database migrations are run by the server with `--migrate`, under a separate
+schema-owner account — see [07 — Database](07-database.md#migrations). Issuance
+profiles (ADCS template, CA, algorithm, PIN/touch policy) and the mapping of AD
+groups to roles are the `Profiles` and `Roles` sections of `appsettings.json`.
 
-## Instalacja MSIX
+## MSIX installation
 
-| Paczka | Zawartość | Uwagi |
+| Package | Contents | Notes |
 |---|---|---|
-| `BlinkyLite-Unlock-<wersja>-x64.msix` | okno „Odblokuj PIN" dla posiadacza klucza (0056) | osobna paczka, bo inna publiczność: link jest **na stronie logowania** konsoli web, przed zalogowaniem. Bez aliasu, bez modułu, bez silnika wydania |
-| `BlinkyLite-Client-<wersja>-x64.msix` | WPF + silnik, CardLab w wydaniu **stacji** i moduł PowerShell (D-35) | skrót na pulpicie (`desktop7:Shortcut`); aliasy `blinkylite` i `blinkylite-cardlab` w cmd — MSIX nie zmienia `PATH`, alias jest jego sposobem, żeby w nim być; na razie tylko `win-x64`, ARM64 dojdzie jako bundle. Pobierany ze strony **Narzędzia** w konsoli web. Buduje `packaging/client/Build-Msix.ps1` |
-| moduł PowerShell | **w MSIX klienta**, w `Modules\BlinkyLite` | pliki paczki leżą w `WindowsApps`, poza `PSModulePath`, a MSIX nie ma kroku instalacji — więc aplikacja kopiuje moduł przy starcie do `Dokumenty\PowerShell\Modules\BlinkyLite\<wersja>` użytkownika (`ModuleInstaller`). Odwołuje `.nupkg` z D-11 (D-35) |
+| `BlinkyLite-Unlock-<version>-<x64 \| arm64>.msix` | the "Unblock PIN" window for the card holder (0056) | a separate package, because it has a different audience: the link is on the web console's **sign-in page**, before anybody signs in. No alias, no module, no issuance engine |
+| `BlinkyLite-Client-<version>-<x64 \| arm64>.msix` | WPF + engine, CardLab in its **station** edition and the PowerShell module (D-35) | a desktop shortcut (`desktop7:Shortcut`); the aliases `blinkylite` and `blinkylite-cardlab` for cmd — MSIX does not change `PATH`, and an alias is its way of being on it; **x64 and ARM64 are two packages, not a bundle** — MSIX names the architecture in its manifest and Windows installs only the matching one, and two runs of the same script cost less than one bundle that needs a separate tool to assemble and two signatures. The console offers the package for the reader's processor, and the **Tools** page lists both, with the architecture next to the version. Built by `packaging/client/Build-Msix.ps1` |
+| the PowerShell module | **inside the client MSIX**, in `Modules\BlinkyLite` | a package's files live in `WindowsApps`, outside `PSModulePath`, and MSIX has no install step — so the application copies the module at start into the user's `Documents\PowerShell\Modules\BlinkyLite\<version>` (`ModuleInstaller`). This reverses the `.nupkg` of D-11 (D-35) |
 
-Wszystkie paczki podpisane certyfikatem code signing z firmowego ADCS;
-stacje i serwer muszą mu ufać (GPO). Niepodpisanego MSIX Windows nie
-zainstaluje. Szablon, certyfikat i podpis krok po kroku:
+Every package is signed with a code-signing certificate from the corporate
+ADCS; stations and the server have to trust it (GPO). Windows will not install
+an unsigned MSIX. The template, the certificate and the signing step by step:
 [packaging/INSTRUKCJA-PODPIS.md](../packaging/INSTRUKCJA-PODPIS.md).
 
-## Role i granice zaufania
+The same programs are also published as plain zips in each release, so an
+engineer can unpack and run them without an installer or a signature — see
+[14 — Install guide](14-install-guide.md).
+
+## Roles and trust boundaries
 
 ```mermaid
 flowchart TB
-    subgraph T1["Trzyma sekrety karty, nigdy nie widzi PIN"]
-        S["Serwer: KEK w pamięci,<br/>koperty AES-256-GCM w bazie"]
+    subgraph T1["Keeps the card's secrets, never sees a PIN"]
+        S["Server: KEK in memory,<br/>AES-256-GCM envelopes in the database"]
     end
-    subgraph T2["Zaufana na czas wydania"]
-        W["Stacja: PUK i MK w pamięci<br/>tylko do końca wydania"]
+    subgraph T2["Trusted for the length of one issuance"]
+        W["Station: PUK and MK in memory<br/>only until the issuance ends"]
     end
-    U["Użytkownik: jedyny, który zna PIN"] -->|wpisuje PIN na stacji| W
-    W -->|"HTTPS + JWT (rola SO/Admin)"| S
-    H["Helpdesk: PUK po podaniu powodu"] -->|"HTTPS + JWT"| S
+    U["User: the only one who knows the PIN"] -->|types the PIN at the station| W
+    W -->|"HTTPS + JWT (role SO/Admin)"| S
+    H["Helpdesk: a PUK, after giving a reason"] -->|"HTTPS + JWT"| S
 ```
 
-| Rola (grupa AD → claim `role`) | Może |
+| Role (AD group → the `role` claim) | May |
 |---|---|
-| `Admin` | wszystko: wydanie, przeglądanie, PUK, management key, audyt |
-| `SecurityOfficer` | wydanie, przeglądanie, PUK |
-| `Helpdesk` | lista użytkownik — klucz — data; PUK dopiero po wybraniu wpisu (WPF) albo wskazaniu użytkownika/serialu (PowerShell). Bez szczegółów certyfikatu i atestacji, bez weryfikacji karty |
+| `Admin` | everything: issue, browse, PUK, management key, audit log |
+| `SecurityOfficer` | issue, browse, PUK |
+| `Helpdesk` | the list of user — token — date; a PUK only after picking one entry (WPF) or naming the user/serial (PowerShell). No certificate or attestation details, no card verification |
 
-Operator z wieloma grupami dostaje sumę uprawnień. Użytkownik bez żadnej
-z grup nie dostaje tokenu (403 `error.auth.no-role` — hasło było poprawne,
-więc to nie jest nieudane logowanie).
+An operator in several groups gets the union of the privileges. A user in none
+of them gets no token (403 `error.auth.no-role` — the password was correct, so
+this is not a failed sign-in).
 
-Grupy `Admin` i `SecurityOfficer` są jednocześnie grupami Enrollment Agenta na
-CA (D-17): jeśli ktoś może wydać kartę w BlinkyLite, to znaczy, że CA też mu
-na to pozwala.
+The `Admin` and `SecurityOfficer` groups are also the Enrollment Agent groups
+on the CA (D-17): if somebody can issue a card in BlinkyLite, it is because the
+CA allows them to.
 
-Dwie tożsamości w jednym wydaniu: **JWT** mówi serwerowi, kim jest operator
-w BlinkyLite; **Windows** mówi CA, kto wysyła żądanie EOBO i czyj jest
-certyfikat EA. Mogą się różnić (np. konto `adm-` do Windows i zwykłe do
-BlinkyLite). Audyt zapisuje obie.
+Two identities take part in one issuance: the **JWT** tells the server who the
+operator is in BlinkyLite; **Windows** tells the CA who is submitting the EOBO
+request and whose EA certificate it is. They may differ (an `adm-` account for
+Windows and an ordinary one for BlinkyLite, say). The audit trail records both.
 
-## Stan wydania
+## Issuance state
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Reserved: POST /issuances<br/>(serwer generuje PUK + MK)
-    Reserved --> Customised: karta ma nowy MK, PUK, PIN
-    Customised --> Attested: atestacja OK na stacji i serwerze
+    [*] --> Reserved: POST /issuances<br/>(the server generates PUK + MK)
+    Reserved --> Customised: the card has a new MK, PUK, PIN
+    Customised --> Attested: attestation accepted at the station and at the server
     Attested --> PendingCa: CA: UnderSubmission
-    Attested --> Issued: CA: Issued + zapis na kartę
+    Attested --> Issued: CA: Issued + written to the card
     PendingCa --> Issued: RetrievePending
     Reserved --> Failed
     Customised --> Failed
     Attested --> Failed
     PendingCa --> Failed: Denied
-    Issued --> Superseded: nowe wydanie na tę samą kartę
+    Issued --> Superseded: a new issuance for the same card
     Failed --> [*]
     Superseded --> [*]
 ```
 
-`Failed` po `Reserved` **nie** usuwa sekretów: jeśli karta zdążyła dostać nowy
-management key, koperta w bazie jest jego jedyną kopią. Szczegóły w
-[02 — Wydanie klucza](02-issuance.md#odzyskiwanie).
+`Failed` after `Reserved` does **not** delete the secrets: if the card did get a
+new management key, the envelope in the database is its only copy. Details in
+[02 — Issuing a key](02-issuance.md#recovery).
 
-## Decyzje
+## Decisions
 
-| ID | Decyzja | Dlaczego |
+| ID | Decision | Why |
 |---|---|---|
-| D-01 | .NET 10 wszędzie; klient `net10.0-windows`, RID `win-x64` i `win-arm64` | jedna platforma, CertEnroll i WinSCard są natywne na ARM64 |
-| D-02 | Warstwa PIV przeniesiona z `Blinky.Piv`, nie Yubico SDK | kod sprawdzony na 5.4.3, 5.7.1, 5.8.0 i Bio; reguły z pomiarów już w nim są |
-| D-03 | Serwer generuje PUK i MK **przed** dotknięciem karty | sekret istnieje w bazie, zanim karta go dostanie — awaria stacji nie gubi klucza |
-| D-04 | CMC przez CertEnroll; ręczny builder z Blinky jako rezerwa | wymóg „proces wbudowany w Windows”; builder z Blinky jest sprawdzony w labie |
-| D-05 | Management key losowy i przechowywany (nie wyprowadzany jak w Blinky) | wymóg: MK ma trafić do bazy i być odczytywalny przez Admina |
-| D-06 | MK zapisany też w PRINTED za PIN-em + flaga ADMIN DATA — **domyślnie, ale od D-48 przełącznik profilu** | inaczej minidriver Yubico nadpisze MK losowym i zablokuje PUK (Blinky, 08). Pomiar z 23.11.2026 zawęża tę regułę do kart z **fabrycznym** MK: karta wydana z HID CMS, z własnym MK i bez kopii w PRINTED, ma na stacji z minidriverem nietknięty PUK (15/15) — [12](12-hardware-notes.md#23-listopada-2026-mk-za-pin-em-a-minidriver-pomiar-na-dwóch-kartach) |
-| D-07 | NHibernate + FluentNHibernate do odczytu, encje tylko do odczytu | framework znany właścicielowi projektu; Fluent prostszy niż mapping-by-code z Blinky |
-| D-07a | Zapis wyłącznie przez funkcje PL/pgSQL `bl_*`; rola aplikacji bez `INSERT/UPDATE/DELETE` | reguły stanów + audyt atomowo w bazie, nie do ominięcia — [07](07-database.md) |
-| D-07b | Schemat w numerowanych skryptach SQL, nie generowany z mapowań | przy procedurach SQL jest źródłem prawdy; mapowania sprawdza `SchemaValidator` |
-| D-08 | JWT HS256, 30 min, bez refresh tokenu | jeden wystawca i jeden odbiorca; ponowne logowanie jest tanie |
-| D-09 | Logowanie przez LDAPS bind z poświadczeniami operatora | działa z kontenera Linux bez członkostwa w domenie |
-| D-10 | Moduł PowerShell binarny, na tym samym silniku | brak rozjazdu zachowania WPF ↔ PowerShell |
-| D-11 | MSIX jako instalator (klient bundle x64+ARM64, serwer Windows); moduł PS jako `.nupkg` | decyzja właściciela; moduł nie może żyć w MSIX (poza `PSModulePath`) |
-| D-12 | Języki EN, DE, SV, PL; jeden katalog `.resx`; serwer zwraca kody, klient tłumaczy | decyzja właściciela — [08](08-localization.md) |
-| D-13 | Profile i mapowanie ról w `appsettings.json`, bez edycji w UI | mniej kodu; edycja w UI poza zakresem |
-| D-14 | Helpdesk widzi listę użytkownik — serial — data; PUK tylko po wybraniu jednego wpisu / wskazaniu w PowerShell | decyzja właściciela; osobny DTO listy, brak endpointu z wieloma PUK |
-| D-15 | Tłumaczenia pisze AI razem z kodem, prostym językiem | decyzja właściciela; słowniczek pilnuje spójności terminów |
-| D-16 | Po 1.0: powiadomienie o wygaśnięciu certyfikatu przez jednokierunkowego bota Teams (0060) | decyzja właściciela; jedyny kod działający bez operatora, tylko informuje; bez SDK bota i bez endpointu przychodzącego |
-| D-17 | Grupy AD mapowane na `Admin` i `SecurityOfficer` to te same grupy, które mają uprawnienia Enrollment Agenta na CA | decyzja właściciela; jedna lista zamiast dwóch, które można rozjechać — serwer odmawia startu, gdy obie są puste |
-| D-18 | Sekrety serwera tylko z pliku sekretu (Docker secret / DPAPI maszyny) albo zmiennej; w `appsettings.json` zatrzymują start | decyzja właściciela; „tymczasowo” wpisane hasło zostaje na zawsze — [04](04-security.md#sekrety-na-serwerze) |
-| D-19 | Dane dają się wyeksportować do Blinky; sekrety w paczce zaszyfrowane do certyfikatu Blinky | decyzja właściciela; bez tego przejście na pełny CMS to ponowne wydanie każdej karty — [10](10-blinky-export.md) |
-| D-20 | Akcent klienta `#1DB954` (zieleń bloga), oba motywy wg ustawienia Windows | decyzja właściciela; role koloru rozdzielone, bo ta zieleń daje 8,1:1 z czernią i tylko 2,6:1 z bielą — [02](02-issuance.md#kolory-d-20) |
-| D-22 | ~~Reset PIV (kasowanie karty) **tylko w `tools/BlinkyLite.CardLab`**, nigdy w kliencie ani w module~~ **Częściowo zastąpione przez D-44 (15.10.2026):** reset w produkcie istnieje, ale wyłącznie jako krok Recycle autoryzowany przez serwer; poza nim dalej tylko CardLab Lab | token testowy musi wracać do stanu fabrycznego między przebiegami, a odsyłanie po to do innego narzędzia kończy się kartą w połowie sprowizjonowaną; produkt dalej tylko wydaje i weryfikuje, a `RESET` wymaga zablokowania PIN-u i PUK-u, więc nie da się go wykonać przez przypadek |
-| D-21 | **Profile na serwerze**, konfigurowane odgórnie przez admina; klient pobiera je przez `GET /api/profiles` i wysyła nazwę profilu, nigdy nazwę szablonu | jedna zmiana zamiast obchodu po stacjach; do wiersza wydania szablon wpisuje serwer ze swojej konfiguracji, więc zapis jest prawdziwy nawet przy podmienionej stacji — tego, co stacja wyśle do CA, pilnuje CA |
-| D-45 | **Karty Thales/SafeNet IDPrime MD nie są obsługiwane — ostatecznie.** Nie ma do nich drugiej drogi ani powrotu do tematu przy kolejnym SDK Thalesa | decyzja właściciela (16.10.2026); karta testowa nie ma apletu PIV (`SELECT PIV` → `6A 82`), tylko aplet minidrivera; Thales nie ma otwartego SDK do kart fizycznych (SDK z thalesdocs.com/idpv dotyczy IDPrime Virtual), a PIN odblokowuje tam klucz admina w challenge-response, nie PUK — [12](12-hardware-notes.md#thales-idprime-md-pomiar-i-decyzja), [05, Poza zakresem](05-roadmap.md#poza-zakresem) |
-| D-44 | **Recycle tokena i unieważnianie certyfikatów w produkcie.** Klient WPF czyści token (reset PIV) i unieważnia certyfikaty w ADCS przez `ICertAdmin2` pod tożsamością domenową operatora; serwer (Linux, D-38) nie rozmawia z CA, tylko trzyma trwałą kolejkę żądań i stany. Recycle i żądanie unieważnienia: wszystkie trzy role, także Helpdesk; wykonanie unieważnienia: Admin i SecurityOfficer — i tylko wtedy, gdy CA na to pozwala (rola w BlinkyLite nie nadaje nic na CA; certyfikat EOBO nie zastępuje „Issue and Manage Certificates”). Żądania unieważnienia wszystkich certyfikatów tokena zapisane w tej samej transakcji co Recycle, **przed** resetem; reset tylko po autoryzacji serwera (ponowny kod TOTP, jednorazowy nonce związany z serialem/CUID). Reset nie czeka na CA: po resecie klucza prywatnego nie ma, więc token może wrócić do wydania, a unieważnienia zostają w kolejce. Listy (ewidencja, kolejka, historia) w konsoli web (D-25), akcje na karcie i na CA w WPF. Zastępuje D-22 w części o resecie w produkcie; CardLab Station dalej bez `reset` (D-35) | decyzja właściciela (15.10.2026); do tej pory wyczyszczenie karty i unieważnienie jej certyfikatu działy się poza BlinkyLite (Crescendo Manager, `ykman`, konsola CA), więc baza mówiła o karcie rzeczy nieprawdziwe, a certyfikaty z wyczyszczonych kart zostawały ważne w CA — [05, faza 9](05-roadmap.md#faza-9--recycle-tokena-i-unieważnianie) |
-| D-48 | **MK za PIN-em to przełącznik profilu, domyślnie włączony.** Profil ma pole „trzymaj management key na tokenie, za PIN-em” (kolumna `protect_management_key`, migracja 0016), zmieniane przez Admina w ustawieniach konsoli web z powodem w audycie. Włączone = jak dotąd: minidriver Yubico czyta MK z PRINTED i **dokłada na kartę kolejny certyfikat po samym PIN-ie**. Wyłączone = na karcie nie ma ani kopii, ani flagi, więc każdy zapis po wydaniu wymaga management key. BlinkyLite nie traci przez to nic: MK jest w kopercie na serwerze i stamtąd bierze go odzyskiwanie (0022), Recycle (D-44) i odsłonięcie dla Admina. Samokontrola po wydaniu sprawdza to, o co prosił profil, a nie stałą — karta bez kopii, na której kopia jest, nie przechodzi | pytanie właściciela (23.11.2026): karta z HID CMS pyta o management key przy dokładaniu certyfikatu, a karta z BlinkyLite nie, bo sama go oddaje za PIN-em. Jedno urządzenie, jeden certyfikat — to, że posiadacz PIN-u może dopisać sobie drugi, nie było decyzją, tylko skutkiem ubocznym D-06. Domyślnie włączone, bo D-06 ma realną przyczynę i stacje bez minidrivera (0026) są jeszcze niezmierzone — [05, 0024](05-roadmap.md#faza-2--wydanie) |
-| D-43 | **Klucz bez atestacji producenta tylko z profilu, który na to pozwala.** C4000 nie ma atestacji PIV (Q-11), więc dowodem pochodzenia klucza Crescendo jest niepodpisana flaga „wygenerowany na karcie”, odczytana przez stację. Profil ma przełącznik „pozwól na klucze bez atestacji producenta”, domyślnie wyłączony; **trzymany w bazie**, zmieniany przez Admina w ustawieniach konsoli web przez funkcję `bl_*` z audytem — nie w `.env` ani w `appsettings.json`. Wydanie zapisuje, jakim dowodem przeszło. Wymaga profili w bazie (0031) przed 0083 | decyzja właściciela (13.10.2026); słabszy dowód ma być świadomą decyzją administratora, widoczną w ustawieniach i w audycie, a nie skutkiem tego, że karta czegoś nie umie — [12](12-hardware-notes.md#13-października-2026-atestacja-klucza-na-c4000--nie-ma-q-11) |
-| D-42 | **Klucze HID Crescendo** (C4000, Key V3) obok YubiKey: jedna abstrakcja tokenu w silniku, Crescendo przez **SDK HID**, nie własną implementację ACA; SDK poza git | decyzja właściciela (13.10.2026); protokół ACA nie jest opisany publicznie, a licencja SDK zabrania dochodzenia do niego przez SDK; repozytorium jest publiczne, a licencja pozwala dołączać SDK do aplikacji, nie udostępniać go — [05, faza 8](05-roadmap.md#faza-8--klucze-hid-crescendo) |
+| D-01 | .NET 10 everywhere; the client is `net10.0-windows`, RIDs `win-x64` and `win-arm64` | one platform, and CertEnroll and WinSCard are native on ARM64 |
+| D-02 | The PIV layer comes from `Blinky.Piv`, not the Yubico SDK | code measured against 5.4.3, 5.7.1, 5.8.0 and Bio; the rules from those measurements are already in it |
+| D-03 | The server generates the PUK and MK **before** anything touches the card | the secret exists in the database before the card has it — a station crash cannot lose a key |
+| D-04 | CMC through CertEnroll; the hand-written builder from Blinky as a fallback | the requirement is "the process built into Windows"; the Blinky builder is proven in the lab |
+| D-05 | The management key is random and stored (not derived as in Blinky) | the requirement: the MK goes into the database and an Admin can read it |
+| D-06 | The MK is also written to PRINTED behind the PIN, with the ADMIN DATA flag — **on by default, but a profile switch since D-48** | otherwise the Yubico minidriver overwrites the MK with a random one and blocks the PUK (Blinky, 08). A measurement on 23 November 2026 narrows this rule to cards with a **factory** MK: a card issued by HID CMS, with its own MK and no copy in PRINTED, keeps its PUK untouched on a station with the minidriver (15/15) — [12](12-hardware-notes.md#the-management-key-behind-the-pin-and-the-minidriver) |
+| D-07 | NHibernate + FluentNHibernate for reading, read-only entities | a framework the project's owner knows; Fluent is simpler than the mapping-by-code from Blinky |
+| D-07a | Writes go exclusively through the `bl_*` PL/pgSQL functions; the application role has no `INSERT/UPDATE/DELETE` | state rules and the audit entry, atomically, in the database, where they cannot be bypassed — [07](07-database.md) |
+| D-07b | The schema is numbered SQL scripts, not generated from the mappings | with stored procedures, SQL is the source of truth; the mappings are checked against it by `SchemaValidator` |
+| D-08 | JWT HS256, 30 minutes, no refresh token | one issuer and one audience; signing in again is cheap |
+| D-09 | Sign-in is an LDAPS bind with the operator's own credentials | works from a Linux container with no domain membership |
+| D-10 | The PowerShell module is binary, on the same engine | no drift between what WPF does and what PowerShell does |
+| D-11 | MSIX as the installer (client bundle x64+ARM64, Windows server); the PS module as a `.nupkg` | the owner's decision; the module cannot live inside the MSIX (outside `PSModulePath`) |
+| D-12 | Languages EN, DE, SV, PL; one `.resx` directory; the server returns codes and the client translates | the owner's decision — [08](08-localization.md) |
+| D-13 | Profiles and role mapping in `appsettings.json`, with no editor in the UI | less code; editing in the UI is out of scope |
+| D-14 | Helpdesk sees a list of user — serial — date; a PUK only after picking one entry, or naming it in PowerShell | the owner's decision; a separate list DTO, and no endpoint that returns several PUKs |
+| D-15 | Translations are written by the AI together with the code, in plain language | the owner's decision; a glossary keeps the terms consistent |
+| D-16 | After 1.0: an expiry notice from a one-way Teams bot (0060) | the owner's decision; the only code that runs without an operator, and it only informs — no bot SDK and no inbound endpoint |
+| D-17 | The AD groups mapped to `Admin` and `SecurityOfficer` are the same groups that hold Enrollment Agent rights on the CA | the owner's decision; one list instead of two that can drift apart — the server refuses to start when both are empty |
+| D-18 | The server's secrets come only from a secret file (Docker secret / machine DPAPI) or an environment variable; in `appsettings.json` they stop the start | the owner's decision; a password typed in "temporarily" stays forever — [04](04-security.md#secrets-on-the-server) |
+| D-19 | The data can be exported to Blinky; the secrets in that package are encrypted to Blinky's certificate | the owner's decision; without it, moving to a full CMS means re-issuing every card — [10](10-blinky-export.md) |
+| D-20 | The client's accent is `#1DB954` (the blog's green), both themes following the Windows setting | the owner's decision; the colour roles are kept apart, because that green gives 8.1:1 against black and only 2.6:1 against white — [02](02-issuance.md#colours-d-20) |
+| D-22 | ~~PIV reset (wiping a card) **only in `tools/BlinkyLite.CardLab`**, never in the client or the module~~ **Partly superseded by D-44 (15 October 2026):** a reset exists in the product, but only as a Recycle step the server has authorised; outside that, still only CardLab's Lab edition | a test token has to return to its factory state between runs, and sending somebody to another tool for that ends in a half-provisioned card; the product still only issues and verifies, and `RESET` requires both PIN and PUK to be blocked, so it cannot happen by accident |
+| D-21 | **Profiles live on the server** and are configured centrally by an admin; the client fetches them with `GET /api/profiles` and sends a profile name, never a template name | one change instead of a tour of the stations; the server writes the template into the issuance row from its own configuration, so the record is true even if a station was tampered with — what the station sends to the CA is the CA's business to police |
+| D-45 | **Thales/SafeNet IDPrime MD cards are not supported — finally.** There is no second route to them and no revisiting it with the next Thales SDK | the owner's decision (16 October 2026); the test card has no PIV applet (`SELECT PIV` → `6A 82`), only the minidriver applet; Thales has no open SDK for physical cards (the SDK on thalesdocs.com/idpv is for IDPrime Virtual), and there the PIN unlocks the admin key in a challenge-response, not a PUK — [12](12-hardware-notes.md#thales-idprime-md), [05, Out of scope](05-roadmap.md#out-of-scope) |
+| D-44 | **Token recycle and certificate revocation in the product.** The WPF client wipes the token (PIV reset) and revokes the certificates in ADCS through `ICertAdmin2` under the operator's domain identity; the server (Linux, D-38) talks to no CA and only keeps a durable queue of requests and their states. Recycle and asking for revocation: all three roles, Helpdesk included; carrying out a revocation: Admin and SecurityOfficer — and only where the CA allows it (a role in BlinkyLite grants nothing on the CA; an EOBO certificate is not a substitute for "Issue and Manage Certificates"). The revocation requests for every certificate of the token are written in the same transaction as the Recycle, **before** the reset; the reset happens only with the server's authorisation (a fresh TOTP code, a one-time nonce bound to the serial/CUID). The reset does not wait for the CA: after it the private key is gone, so the token can go back into use while the revocations stay queued. The lists (inventory, queue, history) are in the web console (D-25), the actions on the card and on the CA in WPF. Supersedes the part of D-22 about a reset in the product; CardLab Station still has no `reset` (D-35) | the owner's decision (15 October 2026); until then, wiping a card and revoking its certificate happened outside BlinkyLite (Crescendo Manager, `ykman`, the CA console), so the database said untrue things about the card and certificates from wiped cards stayed valid at the CA — [05, phase 9](05-roadmap.md#phase-9--token-recycle-and-revocation) |
+| D-48 | **The MK behind the PIN is a profile switch, on by default.** A profile has a "keep the management key on the token, behind the PIN" field (column `protect_management_key`, migration 0016), changed by an Admin in the web console's settings, with a reason in the audit trail. On = as before: the Yubico minidriver reads the MK from PRINTED and **adds another certificate to the card on the PIN alone**. Off = neither the copy nor the flag is on the card, so every write after issuance needs the management key. BlinkyLite loses nothing by it: the MK is in an envelope on the server, and that is where recovery (0022), Recycle (D-44) and an Admin's reveal take it from. The self-check after issuance verifies what the profile asked for, not a constant — a card with no copy that turns out to have one does not pass | the owner's question (23 November 2026): a card from HID CMS asks for the management key when another certificate is added, and a BlinkyLite card does not, because it hands it over for the PIN. One device, one certificate — that the holder of the PIN can add a second one was not a decision, it was a side effect of D-06. On by default, because D-06 has a real cause and stations without the minidriver (0026) are not measured yet — [05, 0024](05-roadmap.md#phase-2--issuance) |
+| D-43 | **A key with no manufacturer attestation only from a profile that allows it.** The C4000 has no PIV attestation (Q-11), so the proof of a Crescendo key's origin is an unsigned "generated on card" flag read by the station. A profile has an "allow keys without manufacturer attestation" switch, off by default; it is **kept in the database** and changed by an Admin in the web console's settings through a `bl_*` function, with an audit entry — not in `.env` and not in `appsettings.json`. The issuance records which proof it passed on. Requires profiles in the database (0031) before 0083 | the owner's decision (13 October 2026); a weaker proof has to be an administrator's conscious decision, visible in the settings and in the audit trail, not a consequence of what a card cannot do — [12](12-hardware-notes.md#key-attestation-on-the-c4000) |
+| D-42 | **HID Crescendo tokens** (C4000, Key V3) alongside YubiKey: one token abstraction in the engine, Crescendo through the **HID SDK** rather than a home-grown ACA implementation; the SDK outside git | the owner's decision (13 October 2026); the ACA protocol is not publicly documented, and the SDK licence forbids reverse-engineering it through the SDK; the documentation repository is public, and the licence allows shipping the SDK inside an application, not redistributing it — [05, phase 8](05-roadmap.md#phase-8--hid-crescendo-tokens) |
+| D-51 | Two repositories: the code is private, and a public one carries only `docs/` and the images | the owner's decision (24 November 2026); the history of this repository contains code, so the public one starts from an empty history and gets only what it is meant to show |
+| D-52 | **English is the primary language of the documentation**, with the Polish translation in `docs/pl/`; a release carries the station packages and a server bundle that needs no source code | the owner's decision (24 November 2026); the documentation is what somebody outside reads first, and a reader who has to translate it is a reader who stops. The bundle exists for the same reason: "clone the private repository" is not an instruction an outside engineer can follow — [14](14-install-guide.md) |

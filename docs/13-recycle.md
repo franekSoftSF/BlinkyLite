@@ -1,123 +1,128 @@
-# 13 — Recycle tokena i unieważnianie certyfikatów (faza 9, D-44)
+# 13 — Recycling a token and revoking its certificates (phase 9, D-44)
 
-Token oddany, zgubiony albo przekazany innej osobie trzeba **wyczyścić**, a
-jego certyfikaty **unieważnić** w CA. BlinkyLite robi to w jednej kolejności,
-w której każdy krok jest zapisany w bazie, zanim nastąpi następny:
+A token handed back, lost or passed on to somebody else has to be **wiped**,
+and its certificates **revoked** at the CA. BlinkyLite does that in one order,
+where every step is recorded in the database before the next one happens:
 
-1. **Zapis** — Recycle i żądanie unieważnienia *każdego* ważnego certyfikatu
-   tokena, także starszych (`Superseded`, `Withdrawn`), w jednej transakcji.
-2. **Autoryzacja resetu** — operator wpisuje nowy kod TOTP, stacja podaje
-   serial/CUID z czytnika, serwer wydaje jednorazowy nonce na 10 minut.
-3. **Reset** tokena na stacji.
-4. **Unieważnienie** w CA — przez Admina albo SecurityOfficera z prawami na
-   CA, z kolejki, kiedy będzie mógł.
+1. **Record** — the Recycle and a revocation request for *every* valid
+   certificate of the token, older ones included (`Superseded`, `Withdrawn`),
+   in one transaction.
+2. **Authorise the reset** — the operator types a fresh TOTP code, the station
+   supplies the serial/CUID from the reader, and the server issues a one-time
+   nonce valid for 10 minutes.
+3. **Reset** the token at the station.
+4. **Revoke** at the CA — by an Admin or a SecurityOfficer with rights on the
+   CA, from the queue, when they can.
 
-Reset nie czeka na CA: po resecie klucza prywatnego nie ma, więc certyfikat
-z tego tokena nie zaloguje już nikogo, a token można od razu wydać ponownie.
-Unieważnienie w CA zamyka sprawę formalnie (CRL, audyt) i może przyjść
-później.
+The reset does not wait for the CA: afterwards the private key is gone, so a
+certificate from that token will sign nobody in, and the token can be issued
+again straight away. Revoking at the CA closes the matter formally (the CRL,
+the audit trail) and may come later.
 
-## Kto co może
+## Who may do what
 
-| Operacja | Admin | SecurityOfficer | Helpdesk |
+| Operation | Admin | SecurityOfficer | Helpdesk |
 |---|---|---|---|
-| Wyczyść token (Recycle) w WPF | tak | tak | tak |
-| Zgłoś unieważnienie certyfikatu (web) | tak | tak | tak |
-| Podgląd kolejki i historii (web, *Unieważnienia*) | tak | tak | tak |
-| Wykonaj unieważnienia w CA (WPF) | tak, **jeśli CA pozwala** | tak, **jeśli CA pozwala** | nie |
+| Wipe a token (Recycle) in WPF | yes | yes | yes |
+| Request a certificate's revocation (web) | yes | yes | yes |
+| View the queue and the history (web, *Revocations*) | yes | yes | yes |
+| Carry out revocations at the CA (WPF) | yes, **if the CA allows it** | yes, **if the CA allows it** | no |
 
-Rola w BlinkyLite niczego na CA nie nadaje. Unieważnia stacja przez
-`ICertAdmin2`, pod tożsamością domenową zalogowanego operatora, a CA sprawdza,
-czy ma on **Issue and Manage Certificates** (Certificate Manager). Rolę
-`Admin` mapuje się na grupę, która zarządza CA ([04](04-security.md)).
-Certyfikat Enrollment Agenta do tego nie służy.
+A role in BlinkyLite grants nothing on the CA. The station revokes through
+`ICertAdmin2`, under the signed-in operator's domain identity, and the CA
+checks whether they hold **Issue and Manage Certificates** (Certificate
+Manager). The `Admin` role is mapped to the group that manages the CA
+([04](04-security.md)). An Enrollment Agent certificate is not for this.
 
-Pilnują tego trzy warstwy: polityki API (`CanRecycle`, `CanRevoke`), funkcje
-w bazie (`bl_revocation_begin` i `_result` odrzucają Helpdesk sam, `BL004`) i
-na końcu CA.
+Three layers police it: the API's policies (`CanRecycle`, `CanRevoke`), the
+database's functions (`bl_revocation_begin` and `_result` reject Helpdesk by
+themselves, `BL004`), and the CA at the end.
 
-## Helpdesk: wyczyść token
+## Helpdesk: wipe a token
 
-1. Zaloguj się w kliencie BlinkyLite (Helpdesk widzi tylko kartę w czytniku i
-   „Wyczyść token”).
-2. Włóż token. **Odśwież**, sprawdź serial/CUID w linii karty.
-3. **Wyczyść token** → wpisz powód (np. numer zgłoszenia) → **OK**. W tym
-   momencie BlinkyLite zapisuje żądania unieważnienia; nic jeszcze nie dzieje
-   się na tokenie.
-4. Okno pokazuje listę certyfikatów, które trafiły do kolejki. Wpisz **nowy**
-   kod z aplikacji uwierzytelniającej (nie ten z logowania), zaznacz
-   „Rozumiem…”, **Wyczyść token**.
-5. Wynik:
-   - *Token wyczyszczony…* — gotowe; token można wydać ponownie.
-   - *Tokena nie wyczyszczono i nic na nim nie zmieniono* — np. brak karty,
-     zły klucz XAUTH; żądania unieważnienia zostają w kolejce.
-   - *Czyszczenie przerwane* — karta wyjęta w trakcie albo nie odczytuje się
-     jako fabryczna. Włóż ją z powrotem i kliknij **Wyczyść token** jeszcze
-     raz: BlinkyLite wznowi ten sam Recycle (nie zakłada drugiego) i poprosi
-     tylko o nowy kod.
+1. Sign in to the BlinkyLite client (Helpdesk sees only the card in the reader
+   and "Wipe token").
+2. Insert the token. **Refresh**, and check the serial/CUID on the card's line.
+3. **Wipe token** → type a reason (a ticket number, say) → **OK**. At that
+   moment BlinkyLite records the revocation requests; nothing has happened to
+   the token yet.
+4. The window shows the list of certificates that went into the queue. Type a
+   **fresh** code from the authenticator app (not the one used to sign in),
+   tick "I understand…", **Wipe token**.
+5. The result:
+   - *The token has been wiped…* — done; the token can be issued again.
+   - *The token was not wiped and nothing on it was changed* — no card, say, or
+     a wrong XAUTH key; the revocation requests stay in the queue.
+   - *The wipe was interrupted* — the card was removed mid-operation, or it
+     does not read back as factory. Put it back and click **Wipe token** again:
+     BlinkyLite resumes the same Recycle (it does not start a second one) and
+     asks only for a fresh code.
 
-Zamknięcie okna po kroku 3 nie gubi niczego: kolejka jest zapisana, a
-następne **Wyczyść token** na tej karcie wznawia Recycle od autoryzacji.
+Closing the window after step 3 loses nothing: the queue is recorded, and the
+next **Wipe token** on that card resumes the Recycle from the authorisation.
 
-## Security Officer / Admin: wykonaj unieważnienia
+## Security Officer / Admin: carry out the revocations
 
-1. Zaloguj się w kliencie BlinkyLite na stacji w domenie, jako konto z
-   **Issue and Manage Certificates** na CA. Stacja musi mieć **RSAT: Active
-   Directory Certificate Services Tools** — bez nich Windows nie ma
-   `ICertAdmin2`. Klient sprawdza to przed pierwszą próbą i proponuje
-   instalację (Windows pyta o uprawnienia administratora; instalacja z Windows
-   Update trwa kilka minut, czasem potrzebny jest restart). Niczego w kolejce
-   przy tym nie rusza. Sprawdzone na czystej WS-01, 16.10: po instalacji
-   RSAT unieważnienie przeszło.
-2. **Wykonaj unieważnienia** → potwierdź liczbę certyfikatów.
-3. Dla każdego żądania stacja: pyta CA o stan certyfikatu → unieważnia z
-   powodem z kolejki → pyta CA ponownie. Linia postępu mówi, co wyszło:
-   - **Unieważniony** — także gdy CA miał go już unieważnionego (np.
-     poprzednia próba przeszła, a stacja padła przed raportem).
-   - **Nie unieważniony, spróbuj później** — CA odmówił (`E_ACCESSDENIED`:
-     brak praw na CA) albo był nieosiągalny (`RPC_S_SERVER_UNAVAILABLE`).
-     Zostaje w kolejce jako `RevocationFailed`; następne **Wykonaj
-     unieważnienia** spróbuje znowu.
-   - **Do sprawdzenia ręcznie** — CA nie zna certyfikatu o tym numerze (inny
-     CA?) albo po unieważnieniu dalej pokazuje go jako ważny. Sprawdź w
-     konsoli CA (`certutil -view -restrict "SerialNumber=…"`).
+1. Sign in to the BlinkyLite client on a station in the domain, as an account
+   with **Issue and Manage Certificates** on the CA. The station has to have
+   **RSAT: Active Directory Certificate Services Tools** — without them Windows
+   has no `ICertAdmin2`. The client checks that before the first attempt and
+   offers to install it (Windows asks for administrator rights; the install
+   from Windows Update takes a few minutes and sometimes needs a restart). It
+   touches nothing in the queue while doing so. Checked on a clean WS-01 on
+   16.10: after RSAT was installed, the revocation went through.
+2. **Carry out revocations** → confirm the number of certificates.
+3. For each request the station: asks the CA for the certificate's state →
+   revokes it with the reason from the queue → asks the CA again. The progress
+   line says how it went:
+   - **Revoked** — including when the CA already had it revoked (a previous
+     attempt went through and the station died before reporting, say).
+   - **Not revoked, try later** — the CA refused (`E_ACCESSDENIED`: no rights
+     on the CA) or was unreachable (`RPC_S_SERVER_UNAVAILABLE`). It stays in
+     the queue as `RevocationFailed`; the next **Carry out revocations** will
+     try again.
+   - **To be checked by hand** — the CA does not know a certificate with that
+     serial number (a different CA?), or it still reports it as valid after the
+     revocation. Check in the CA's console
+     (`certutil -view -restrict "SerialNumber=…"`).
 
-Co i gdzie unieważnić, stacja bierze **wyłącznie z bazy** (CA, numer seryjny
-skopiowane z wydania przy zgłoszeniu) — nie da się wskazać innego
-certyfikatu.
+What to revoke and where, the station takes **exclusively from the database**
+(the CA and the serial number were copied from the issuance when the request
+was made) — another certificate cannot be named.
 
-## Zgłoszenie bez czyszczenia
+## A request with no wipe
 
-Token zgubiony nie da się wyczyścić. W konsoli web, przy wydaniu, sekcja
-**Zgłoś unieważnienie certyfikatu**: powód w CA (dla zgubionego/skradzionego
-— *Klucz naruszony*) i opis. Żądanie trafia do tej samej kolejki. Drugie
-zgłoszenie tego samego certyfikatu to to samo żądanie.
+A lost token cannot be wiped. In the web console, on an issuance, there is a
+**Request certificate revocation** section: the CA's reason (for a lost or
+stolen one — *Key compromise*) and a description. The request goes into the
+same queue. A second request for the same certificate is the same request.
 
-## Stany
+## The states
 
-Token (`recycle_operations`):
+The token (`recycle_operations`):
 
-| Stan | Znaczy | Co dalej |
+| State | Means | What next |
 |---|---|---|
-| `RevocationQueued` | żądania zapisane, token nietknięty | autoryzacja resetu |
-| `ResetAuthorized` | nonce wydany | stacja resetuje; ponowna autoryzacja możliwa |
-| `ResetInProgress` | stacja zaczęła | wynik; stacja, która padła, może dostać nową autoryzację |
-| `ResetCompleted` / `RevocationPending` | token czysty, unieważnienia czekają | kolejka |
-| `Completed` | token czysty, wszystko unieważnione | — |
-| `Failed` | nic nie zapisano na tokenie | nowy Recycle przejmie otwarte żądania |
-| `ManualActionRequired` | reset przerwany, stan tokena nieznany | autoryzuj i zresetuj ponownie |
+| `RevocationQueued` | the requests are recorded, the token untouched | authorise the reset |
+| `ResetAuthorized` | a nonce has been issued | the station resets; authorising again is possible |
+| `ResetInProgress` | the station has started | the result; a station that died can be given a new authorisation |
+| `ResetCompleted` / `RevocationPending` | the token is clean, the revocations are waiting | the queue |
+| `Completed` | the token is clean and everything is revoked | — |
+| `Failed` | nothing was written to the token | a new Recycle takes over the open requests |
+| `ManualActionRequired` | the reset was interrupted, the token's state is unknown | authorise and reset again |
 
-Certyfikat (`revocation_requests`): `RevocationRequested` → `RevocationPending`
-(próba w toku) → `Revoked` albo `RevocationFailed` (ponów) /
-`ManualActionRequired`. `Revoked` pojawia się **tylko** z raportu stacji, że
-CA tak mówi.
+The certificate (`revocation_requests`): `RevocationRequested` →
+`RevocationPending` (an attempt in progress) → `Revoked` or
+`RevocationFailed` (retry) / `ManualActionRequired`. `Revoked` appears **only**
+from the station's report that the CA says so.
 
-## Czego nie ma
+## What there is not
 
-- Unieważniania przez serwer: serwer jest w Dockerze na Linuksie i nie ma jak
-  wołać DCOM CA (D-38). Tożsamość serwisowa z prawami na CA byłaby drugim
-  miejscem, w którym trzeba pilnować uprawnień — nie robimy jej.
-- Zawieszenia certyfikatu (*certificate hold*): da się je cofnąć, więc
-  `Revoked` w BlinkyLite byłby nieprawdą.
-- Resetu poza Recycle: CardLab **Lab** zostaje narzędziem warsztatowym
-  (D-22), wydanie **Station** nie ma `reset` (D-35).
+- Revocation by the server: the server runs in Docker on Linux and has no way
+  to call the CA's DCOM (D-38). A service identity with rights on the CA would
+  be a second place where permissions have to be watched — we are not making
+  one.
+- Putting a certificate on hold (*certificate hold*): it can be undone, so
+  `Revoked` in BlinkyLite would be untrue.
+- A reset outside a Recycle: CardLab's **Lab** edition remains the bench tool
+  (D-22), and the **Station** edition has no `reset` (D-35).

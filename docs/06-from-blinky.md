@@ -1,112 +1,120 @@
-# 06 — Co przychodzi z Blinky
+# 06 — What comes from Blinky
 
-Blinky (`../blinky`) wydał certyfikat przez ADCS na YubiKey, którym zalogowano
-się do Windows AD. Ten kod i te pomiary są powodem, dla którego BlinkyLite nie
-zaczyna od zera. Ścieżki niżej są względem repozytorium Blinky.
+Blinky (`../blinky`) issued a certificate through ADCS onto a YubiKey, and that
+YubiKey signed somebody in to Windows AD. That code and those measurements are
+the reason BlinkyLite does not start from zero. The paths below are relative to
+the Blinky repository.
 
-## Kod do przeniesienia
+## Code to carry over
 
-| Źródło w Blinky | Cel w BlinkyLite | Uwagi |
+| Source in Blinky | Destination in BlinkyLite | Notes |
 |---|---|---|
-| `src/Blinky.Piv/**` | `src/BlinkyLite.Piv` — **przeniesione w 0010** | PC/SC, APDU, `ManagementKey` (3DES z trzech DES — .NET odrzuca fabryczny klucz jako słaby), `PivCardObjects` (CHUID, CCC, PRINTED, ADMIN DATA), `PivConnection` (odzyskiwanie po `SCARD_W_RESET_CARD`), `PivSignatureGenerator` |
-| `src/Blinky.Piv/Attestation/**` + trzy pliki PEM | `src/BlinkyLite.Piv/Attestation` | dwa przypięte rooty Yubico (PIV Root CA 263751 i Attestation Root 1) + przypięte pośrednie dla Root 1 |
-| `src/Blinky.Piv/ApduRedaction.cs` | to samo | **`FF` dodane** do listy redagowanych INS (0010) — w Blinky go brakuje, a `SET MANAGEMENT KEY` niesie klucz jawnie |
-| `src/Blinky.Contracts/PinRules.cs` | `src/BlinkyLite.Contracts` | reguły PIN bez zmian |
-| `src/Blinky.Api/Secrets/PukEscrow.cs` (część kryptograficzna) | `src/BlinkyLite.Server/Secrets` | koperta AES-256-GCM, klucz per koperta z HKDF, AAD; bez checkout/commit — w Lite robi to stan wydania |
-| `src/Blinky.Agent.Service/.../CardEnrolment.cs` | wzorzec dla `BlinkyLite.Issuance` | kolejność kroków, ponowne pytanie o PIN przy `6982`, obsługa czytnika, który padł |
-| `src/Blinky.Pki/Adcs/CmcRequest.cs`, `AdcsConnector/EnrolmentAgentSigner.cs`, `CertificateServices.cs` | rezerwa dla D-04 | ręczny CMC działa w labie; CertEnroll jest ścieżką główną do potwierdzenia |
-| `src/Blinky.Agent.Ui/Theme.cs`, `Strings.cs`, `Themes/*.xaml`, `PinDialog.*` | `src/BlinkyLite.Client` | motyw, lokalizacja PL/EN, okno PIN |
-| `tests/.../*` dotyczące PIV (24 pliki) + `Fixtures/` | `tests/BlinkyLite.UnitTests/Piv` — **przeniesione w 0010** | dwa zapisy rozmów z prawdziwymi kluczami (5.4.3, 5.7.1, 5.7.2 Bio, wirtualny czytnik) są w Blinky commitowane i przyszły razem z testami; nowe zapisy z własnego sprzętu już nie |
-| `src/Blinky.Infrastructure/SchemaValidator.cs` | `src/BlinkyLite.Server/Data` | porównanie mapowań z bazą przy starcie; loguje i działa dalej zamiast pętli restartów |
-| `src/Blinky.Infrastructure` — konfiguracja NHibernate + Npgsql (dialekt, `timestamptz`, `bytea`) | `src/BlinkyLite.Server/Data` | sama konfiguracja sesji; mapowania piszemy od nowa we FluentNHibernate |
+| `src/Blinky.Piv/**` | `src/BlinkyLite.Piv` — **carried over in 0010** | PC/SC, APDU, `ManagementKey` (3DES out of three DES keys — .NET rejects the factory key as weak), `PivCardObjects` (CHUID, CCC, PRINTED, ADMIN DATA), `PivConnection` (recovery after `SCARD_W_RESET_CARD`), `PivSignatureGenerator` |
+| `src/Blinky.Piv/Attestation/**` + three PEM files | `src/BlinkyLite.Piv/Attestation` | two pinned Yubico roots (PIV Root CA 263751 and Attestation Root 1) plus pinned intermediates for Root 1 |
+| `src/Blinky.Piv/ApduRedaction.cs` | the same | **`FF` added** to the list of redacted INS values (0010) — it is missing in Blinky, and `SET MANAGEMENT KEY` carries the key in the clear |
+| `src/Blinky.Contracts/PinRules.cs` | `src/BlinkyLite.Contracts` | the PIN rules unchanged |
+| `src/Blinky.Api/Secrets/PukEscrow.cs` (the cryptographic part) | `src/BlinkyLite.Server/Secrets` | the AES-256-GCM envelope, a key per envelope from HKDF, the AAD; without checkout/commit — in Lite that is what the issuance state does |
+| `src/Blinky.Agent.Service/.../CardEnrolment.cs` | the pattern for `BlinkyLite.Issuance` | the order of the steps, the second PIN prompt on `6982`, handling a reader that died |
+| `src/Blinky.Pki/Adcs/CmcRequest.cs`, `AdcsConnector/EnrolmentAgentSigner.cs`, `CertificateServices.cs` | the fallback for D-04 | the hand-written CMC works in the lab; CertEnroll is the main path, still to be confirmed |
+| `src/Blinky.Agent.Ui/Theme.cs`, `Strings.cs`, `Themes/*.xaml`, `PinDialog.*` | `src/BlinkyLite.Client` | the theme, PL/EN localisation, the PIN window |
+| `tests/.../*` concerning PIV (24 files) + `Fixtures/` | `tests/BlinkyLite.UnitTests/Piv` — **carried over in 0010** | two recorded conversations with real keys (5.4.3, 5.7.1, 5.7.2 Bio, a virtual reader) are committed in Blinky and came along with the tests; new recordings from our own hardware do not |
+| `src/Blinky.Infrastructure/SchemaValidator.cs` | `src/BlinkyLite.Server/Data` | compares the mappings with the database at start; logs and carries on instead of a restart loop |
+| `src/Blinky.Infrastructure` — the NHibernate + Npgsql configuration (dialect, `timestamptz`, `bytea`) | `src/BlinkyLite.Server/Data` | the session configuration only; the mappings are written afresh in FluentNHibernate |
 
-### Co dokładnie przyszło w 0010
+### What exactly arrived in 0010
 
-34 pliki warstwy PIV i 24 pliki testów, skopiowane skryptem i przemianowane
-(`Blinky.Piv` → `BlinkyLite.Piv`) — żadnego przepisywania ręką, bo tam ginie
-zmiana, której nikt potem nie zauważy. 180 testów przechodzi bez sprzętu.
+34 files of the PIV layer and 24 test files, copied by a script and renamed
+(`Blinky.Piv` → `BlinkyLite.Piv`) — nothing retyped by hand, because that is
+where a change nobody later notices gets lost. 180 tests pass without hardware.
 
-Nie przyszedł jeden test (`KeyAlgorithmChoiceTests`): ciągnie `Blinky.Agent.Service`
-i `Blinky.Contracts`, więc należy do silnika wydania (0011), nie do warstwy PIV.
+One test did not come (`KeyAlgorithmChoiceTests`): it pulls in
+`Blinky.Agent.Service` and `Blinky.Contracts`, so it belongs to the issuance
+engine (0011), not to the PIV layer.
 
-Jedyna zmiana w treści kodu: **`FF` w `ApduRedaction`**. W Blinky komentarz
-przy `DB` przypisuje sobie ochronę management key, ale `DB` zapisuje tylko
-kopię do PRINTED; nieudana transmisja `SET MANAGEMENT KEY` wypisałaby klucz
-karty w hex. Pochodzenie kodu jest odnotowane w `NOTICE`.
+The only change to the code's substance: **`FF` in `ApduRedaction`**. In Blinky
+the comment next to `DB` claims to protect the management key, but `DB` writes
+only the copy into PRINTED; a failed `SET MANAGEMENT KEY` transmission would
+have printed the card's key in hex. The code's origin is recorded in `NOTICE`.
 
-Czego **nie** przenosimy: `SchemaTool` (w BlinkyLite schemat to ręczne
-skrypty SQL, a mapowania się do nich dopasowują — odwrotnie niż w Blinky),
-mapping-by-code (zastąpiony przez Fluent), zapis przez `ISession.Save`
-(zastąpiony funkcjami `bl_*`), SignalR, protokół agenta, kolejka zadań,
-wbudowane CA, `Blinky.Secrets` z PKCS#11, wyprowadzanie MK z mastera (D-05),
-frontend Angular. `Strings.cs` przechodzi, ale czyta z `.resx` w czterech
-językach zamiast ze słownika PL/EN w kodzie.
+What we do **not** carry over: `SchemaTool` (in BlinkyLite the schema is
+hand-written SQL and the mappings follow it — the reverse of Blinky),
+mapping-by-code (replaced by Fluent), writing through `ISession.Save` (replaced
+by the `bl_*` functions), SignalR, the agent protocol, the job queue, the
+built-in CA, `Blinky.Secrets` with PKCS#11, deriving the MK from a master key
+(D-05), and the Angular front end. `Strings.cs` does come over, but reads from
+`.resx` files in four languages instead of a PL/EN dictionary in the code.
 
-## Reguły z pomiarów (skrót `docs/08-hardware-notes.md` Blinky)
+## Rules from measurements (a digest of Blinky's `docs/08-hardware-notes.md`)
 
-1. **Algorytm MK czytany z karty** (`GET METADATA 9B`, tag `01`), nigdy z
-   wersji: 3DES poniżej 5.7, AES-192 od 5.7. Bajty fabryczne te same:
+1. **The MK algorithm is read from the card** (`GET METADATA 9B`, tag `01`),
+   never from the version: 3DES below 5.7, AES-192 from 5.7 on. The factory
+   bytes are the same either way:
    `010203040506070801020304050607080102030405060708`.
-2. **Bio Multi-protocol nie ma PUK** z założenia (metadata `81`: 0 prób) —
-   `NotApplicable`. Karta nie-Bio bez PUK jest `Disabled` i odrzucana.
-3. Metadata tag `06`: dwa bajty (razem, pozostało) dla PIN/PUK, jeden dla
-   slotu `96`.
-4. **Pośredni atestacji jest inny na każdym urządzeniu** — przypinamy tylko
-   root. Łuk rozszerzeń to `1.3.6.1.4.1.41482.3`, nie `.13`.
-   `.3.3` firmware, `.3.7` serial, `.3.8` polityka (PIN, touch), `.3.9` form
-   factor.
-5. Firmware 5.7.4+ podpisuje atestację pod **Yubico Attestation Root 1**
-   (nie PIV Root CA 263751) i potrzebuje pośrednich, których karta nie nosi.
-6. `6D00` znaczy „brak instrukcji”, nie „błąd” — ATTEST na obcej karcie.
-7. Form factor istnieje tylko w atestacji.
-8. Obca karta PIV nie ma numeru seryjnego — raportować jako nieobsługiwaną.
-   YubiKey rozpoznajemy po tym, że `GET SERIAL` się udaje.
-9. Zablokowany PIN (`6983`) to nie to samo co 0 prób i nie to samo co brak PUK.
-10. **Minidriver Yubico** przejmuje kartę z nieznanym MK: ustawia losowy
-    klucz w PRINTED i blokuje PUK. Ochrona: PRINTED + flaga `0x02` w ADMIN DATA.
-11. Polling w tle + wydanie = `0x8010000B SCARD_E_SHARING_VIOLATION`. Jedna
-    transakcja na całą operację.
-12. Padnięty czytnik (`0x80100066`) zabił wydanie na **innym** czytniku —
-    wyjątki łapane per czytnik.
-13. Łańcuchowanie CLA `0x10` działa (certyfikat 1019 B). Wirtualny czytnik
-    Windows Hello odpowiada na SELECT `6A82` — pomijać.
-14. Windows resetuje kartę w trakcie (`SCARD_W_RESET_CARD 0x80100068`):
-    reconnect z `SCARD_LEAVE_CARD`, SELECT, ponowna autoryzacja MK, jedna
-    ponowna próba. **PIN nigdy nie jest odtwarzany.** Po zmianie MK
-    rejestrujemy nowy do odtworzenia.
-15. 5.4.3 odpowiada `6D00` na DELETE KEY — nadpisuje się generując nowy klucz.
-16. YubiKey 5.8.0: PIN zweryfikowany wcześniej w sesji nie wystarcza do
-    podpisu nowym kluczem (`6982`) — jedno ponowne pytanie o PIN.
-17. Touch `Always`/`Cached` blokuje APDU podpisu do ~15 s — to nie zawieszenie.
-18. **RSA-2048 domyślnie:** dostawca poświadczeń Windows ignoruje certyfikaty
-    ECC bez `EnumerateECCCerts` w
+2. **Bio Multi-protocol has no PUK** by design (metadata `81`: 0 retries) —
+   `NotApplicable`. A non-Bio card with no PUK is `Disabled` and refused.
+3. Metadata tag `06`: two bytes (total, remaining) for the PIN/PUK, one for
+   slot `96`.
+4. **The attestation intermediate differs on every device** — only the root is
+   pinned. The extension arc is `1.3.6.1.4.1.41482.3`, not `.13`. `.3.3`
+   firmware, `.3.7` serial, `.3.8` policy (PIN, touch), `.3.9` form factor.
+5. Firmware 5.7.4+ signs attestations under **Yubico Attestation Root 1** (not
+   PIV Root CA 263751) and needs intermediates the card does not carry.
+6. `6D00` means "no such instruction", not "error" — ATTEST on a foreign card.
+7. The form factor exists only in the attestation.
+8. A foreign PIV card has no serial number — report it as unsupported. We
+   recognise a YubiKey by `GET SERIAL` succeeding.
+9. A blocked PIN (`6983`) is not the same as 0 retries, and not the same as no
+   PUK.
+10. **The Yubico minidriver** takes over a card whose MK it does not know: it
+    sets a random key, puts it in PRINTED and blocks the PUK. The protection is
+    PRINTED plus flag `0x02` in ADMIN DATA.
+11. Background polling + an issuance = `0x8010000B SCARD_E_SHARING_VIOLATION`.
+    One transaction around the whole operation.
+12. A reader that died (`0x80100066`) killed an issuance on a **different**
+    reader — exceptions are caught per reader.
+13. CLA `0x10` chaining works (a 1019 B certificate). The Windows Hello virtual
+    reader answers SELECT with `6A82` — skip it.
+14. Windows resets the card mid-operation
+    (`SCARD_W_RESET_CARD 0x80100068`): reconnect with `SCARD_LEAVE_CARD`,
+    SELECT, re-authenticate with the MK, one retry. **The PIN is never
+    replayed.** After an MK change, the new one is registered for the replay.
+15. 5.4.3 answers `6D00` to DELETE KEY — a key is overwritten by generating a
+    new one.
+16. YubiKey 5.8.0: a PIN verified earlier in the session is not enough to sign
+    with a newly generated key (`6982`) — one more PIN prompt.
+17. Touch `Always`/`Cached` blocks the signing APDU for up to ~15 s — that is
+    not a hang.
+18. **RSA-2048 by default:** the Windows credential provider ignores ECC
+    certificates without `EnumerateECCCerts` in
     `HKLM\SOFTWARE\Policies\Microsoft\Windows\SmartCardCredentialProvider`.
-19. **CHUID `5FC102` i CCC `5FC107` muszą istnieć**, inaczej
-    `NTE_BAD_KEYSET 0x80090016`. ~~Pisane tylko, gdy ich brak.~~
-    **Druga połowa podważona 21 września 2026** ([12](12-hardware-notes.md)):
-    „tylko gdy brak" zostawiło na karcie 11111111 CHUID zapisany przez cudze
-    oprogramowanie (ważność `20300101`, GUID nie-RFC 4122) przez trzy kolejne
-    wydania z różnymi kluczami. Windows rozpoznaje kartę po tym GUID; stary
-    GUID z nowym kluczem to karta, którą Windows uważa za znaną. BlinkyLite
-    pisze teraz CHUID i CCC **od nowa przy każdym wydaniu**. Czy to była
-    przyczyna `NTE_BAD_KEYSET` w Blinky — jeszcze niezmierzone.
-20. **`SET PIN RETRIES` (`FA`) resetuje PIN i PUK** do fabrycznych — tylko
-    przed ich zmianą. `RESET` (`FB`) działa tylko przy zablokowanym PIN i PUK.
-    Żadnej z tych instrukcji Blinky nie wysyła i BlinkyLite też nie — to
-    poza zakresem narzędzia.
-21. WPF: `InvariantGlobalization=true` wywraca aplikację przy fokusie na polu
-    PIN; okno pokazane z `OnStartup` nie dostaje uchwytu — odroczyć przez
-    `Dispatcher.InvokeAsync(…, ApplicationIdle)`.
-22. ADCS nie egzekwuje `msPKI-Asymmetric-Algorithm`, ale egzekwuje
-    `msPKI-Minimal-Key-Size` jako długość w bitach niezależnie od algorytmu.
-23. DCOM do CA wymaga tożsamości domenowej (`0x800706ba` z konta lokalnego).
+19. **CHUID `5FC102` and CCC `5FC107` have to exist**, or else
+    `NTE_BAD_KEYSET 0x80090016`. ~~Written only when absent.~~ **The second
+    half was called into question on 21 September 2026**
+    ([12](12-hardware-notes.md)): "only when absent" left card 11111111 with a
+    CHUID written by somebody else's software (expiry `20300101`, a GUID that
+    is not RFC 4122) across three consecutive issuances with different keys.
+    Windows identifies a card by that GUID; an old GUID with a new key is a
+    card Windows believes it already knows. BlinkyLite now writes the CHUID and
+    the CCC **afresh at every issuance**. Whether that was the cause of
+    `NTE_BAD_KEYSET` in Blinky has not been measured.
+20. **`SET PIN RETRIES` (`FA`) resets the PIN and the PUK** to factory values —
+    only before they have been changed. `RESET` (`FB`) works only with the PIN
+    and PUK both blocked. Blinky sends neither instruction, and BlinkyLite does
+    not either — that is outside the tool's scope.
+21. WPF: `InvariantGlobalization=true` brings the application down when the PIN
+    field takes focus; a window shown from `OnStartup` gets no handle — defer
+    it with `Dispatcher.InvokeAsync(…, ApplicationIdle)`.
+22. ADCS does not enforce `msPKI-Asymmetric-Algorithm`, but it does enforce
+    `msPKI-Minimal-Key-Size` as a length in bits regardless of the algorithm.
+23. DCOM to the CA requires a domain identity (`0x800706ba` from a local
+    account).
 
-## Czego Blinky nie sprawdził, a BlinkyLite potrzebuje
+## What Blinky never checked, and BlinkyLite needs
 
-| Rzecz | Dlaczego ryzyko |
+| Thing | Why it is a risk |
 |---|---|
-| CertEnroll `IX509CertificateRequestCmc` z PKCS#10 podpisanym na karcie | Blinky budował CMC ręcznie; trzeba potwierdzić, że `InitializeFromInnerRequest` na zdekodowanym PKCS#10 nie wymaga klucza prywatnego |
-| Build i działanie na **Windows ARM64** | Blinky budował tylko `win-x64`; WinSCard i CertEnroll są natywne, ale nikt tego nie uruchomił |
-| ~~Usługa Windows w paczce MSIX~~ | **Odpada (D-38).** Blinky instalował się z MSI; `desktop6:Service` na Windows Server nikt tu nie sprawdził i już nie sprawdzi — serwer jest tylko obrazem Dockera |
-| Losowy, przechowywany MK zamiast wyprowadzanego | inna ścieżka niż w Blinky; PRINTED + ADMIN DATA ta sama |
-| Moduł PowerShell na pwsh 7.6 / .NET 10 | nowy komponent |
+| CertEnroll's `IX509CertificateRequestCmc` with a PKCS#10 signed on the card | Blinky built the CMC by hand; it has to be confirmed that `InitializeFromInnerRequest` on a decoded PKCS#10 does not require the private key |
+| Building and running on **Windows ARM64** | Blinky only built `win-x64`; WinSCard and CertEnroll are native, but nobody has run it |
+| ~~A Windows service in an MSIX package~~ | **Off (D-38).** Blinky installed from an MSI; nobody here has checked `desktop6:Service` on Windows Server, and nobody will — the server is only a Docker image |
+| A random, stored MK instead of a derived one | a different path from Blinky's; PRINTED + ADMIN DATA are the same |
+| The PowerShell module on pwsh 7.6 / .NET 10 | a new component |

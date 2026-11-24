@@ -1,117 +1,121 @@
-# 08 — Języki: angielski, niemiecki, szwedzki, polski
+# 08 — Languages: English, German, Swedish, Polish
 
-Każdy tekst, który widzi człowiek — okna WPF, komunikaty i błędy cmdletów
-PowerShell, komunikaty błędów z serwera, nazwy zdarzeń w dzienniku audytu —
-istnieje w czterech językach:
+Every text a person sees — the WPF windows, the messages and errors from the
+PowerShell cmdlets, the error messages from the server, the event names in the
+audit log — exists in four languages:
 
-| Kod | Język | Rola |
+| Code | Language | Role |
 |---|---|---|
-| `en` | English | język bazowy i awaryjny |
+| `en` | English | the base language and the fallback |
 | `de` | Deutsch | |
 | `sv` | Svenska | |
 | `pl` | Polski | |
 
-## Jeden katalog komunikatów
+## One message catalogue
 
-Wszystkie teksty żyją w `BlinkyLite.Contracts/Resources/Messages.resx`
-(angielski) oraz `Messages.de.resx`, `Messages.sv.resx`, `Messages.pl.resx`.
-WPF, moduł PowerShell i silnik wydania korzystają z tego samego katalogu —
-nie ma drugiej kopii tłumaczeń w żadnej powłoce.
+Every text lives in `BlinkyLite.Contracts/Resources/Messages.resx` (English)
+plus `Messages.de.resx`, `Messages.sv.resx` and `Messages.pl.resx`. The WPF
+client, the PowerShell module and the issuance engine all use that same
+catalogue — there is no second copy of the translations in any shell.
 
-Dostęp daje klasa `Strings` (patch 0004): indeksator `Strings.Current["klucz"]`
-z `INotifyPropertyChanged`, `Format(klucz, parametry…)` i `Audit(kod)`.
-Nieznany klucz zwraca sam siebie — pudło widać, zamiast pustego miejsca.
-Ustawienie `Culture` na język spoza czwórki cofa się do angielskiego.
+Access goes through the `Strings` class (patch 0004): the indexer
+`Strings.Current["key"]` with `INotifyPropertyChanged`,
+`Format(key, parameters…)` and `Audit(code)`. An unknown key returns itself —
+a miss is visible, instead of an empty space. Setting `Culture` to a language
+outside the four falls back to English.
 
-**Serwer zostaje w trybie niezmiennej kultury** (`InvariantGlobalization`), bo
-nie tłumaczy; w tym trybie .NET nie utworzy kultury `de-AT`, więc `Strings`
-jest używane tylko przez klienta, moduł PowerShell i testy (te mają tryb
-niezmienny wyłączony, tak jak WPF).
+**The server stays in invariant culture mode** (`InvariantGlobalization`),
+because it does not translate; in that mode .NET will not create a `de-AT`
+culture, so `Strings` is used only by the client, the PowerShell module and the
+tests (which have invariant mode switched off, as WPF does).
 
-Klucze są kropkowane i stabilne: `issuance.step.generate-key`,
+The keys are dotted and stable: `issuance.step.generate-key`,
 `error.issuance.invalid-state`, `audit.puk.disclosed`, `pin.rule.too-short`.
-Parametry numerowane `{0}`, `{1}`, bez sklejania zdań z kawałków (szyk zdania
-w niemieckim i szwedzkim jest inny niż w polskim).
+Parameters are numbered `{0}`, `{1}`, and sentences are never assembled from
+pieces (word order in German and Swedish differs from Polish).
 
-## Serwer mówi kodami, klient tłumaczy
+## The server speaks in codes, the client translates
 
-Serwer **nie tłumaczy**. Błąd API to `ProblemDetails` z polem `code` (klucz
-komunikatu, np. `error.issuance.invalid-state`) i `args` (parametry), plus
-angielski `detail` dla logów i `curl`. Klient zamienia `code` na tekst w
-swoim języku. Dzięki temu:
+The server does **not** translate. An API error is a `ProblemDetails` with a
+`code` field (the message key, e.g. `error.issuance.invalid-state`) and `args`
+(the parameters), plus an English `detail` for logs and `curl`. The client
+turns the `code` into text in its own language. Which means:
 
-- serwer może zostać w `InvariantGlobalization=true` (kontener Linux),
-- jeden serwer obsługuje operatorów w czterech językach naraz,
-- błędy z procedur SQL (`BL001…`, [07](07-database.md#błędy)) przechodzą do
-  klienta bez tłumaczenia po drodze.
+- the server can stay on `InvariantGlobalization=true` (a Linux container),
+- one server serves operators in four languages at once,
+- errors from the SQL procedures (`BL001…`,
+  [07](07-database.md#errors)) reach the client without being translated on
+  the way.
 
-Dziennik audytu przechowuje kod akcji (`puk.disclosed`), a przeglądarka
-wyświetla `audit.puk.disclosed` w języku operatora.
+The audit log stores the action's code (`puk.disclosed`), and the browser shows
+`audit.puk.disclosed` in the operator's language.
 
-**Jeden wyjątek, po 1.0:** wiadomość bota Teams o wygaśnięciu certyfikatu
-(0060, [09](09-expiry-notification.md)) serwer musi napisać sam, bo nie ma
-przy nim klienta. Język bierze z `preferredLanguage` użytkownika w Entra. Wtedy serwer czyta ten sam
-katalog `Messages` i przechodzi na `InvariantGlobalization=false` — w trybie
-niezmiennym .NET nie utworzy kultur `de`, `sv`, `pl`. Obraz
-`mcr.microsoft.com/dotnet/aspnet` (Debian) ma ICU, więc kontener tego nie
-blokuje.
+**One exception, after 1.0:** the Teams bot's certificate expiry message (0060,
+[09](09-expiry-notification.md)) has to be written by the server itself,
+because there is no client next to it. It takes the language from the user's
+`preferredLanguage` in Entra. The server then reads the same `Messages`
+catalogue and switches to `InvariantGlobalization=false` — in invariant mode
+.NET will not create the `de`, `sv` or `pl` cultures. The
+`mcr.microsoft.com/dotnet/aspnet` image (Debian) has ICU, so the container does
+not stand in the way.
 
-## Wybór języka
+## Choosing a language
 
-| Gdzie | Domyślnie | Zmiana |
+| Where | By default | Changing it |
 |---|---|---|
-| WPF | język interfejsu Windows (`CurrentUICulture`), jeśli jest jednym z czterech, inaczej `en` | przełącznik w oknie, zapamiętany w ustawieniach użytkownika |
-| **Okno PIN** | język operatora | **osobny przełącznik w samym oknie** — użytkownik, który wpisuje PIN, może mówić innym językiem niż operator |
+| WPF | the Windows interface language (`CurrentUICulture`) if it is one of the four, otherwise `en` | a switch in the window, remembered in the user's settings |
+| **The PIN window** | the operator's language | **a separate switch in that window** — the user typing the PIN may speak a different language from the operator |
 | PowerShell | `$PSUICulture` | `Connect-BlinkyLite -Language de` |
 
-Przełączanie w WPF działa na żywo, bez restartu: `Strings` z
-`Blinky.Agent.Ui` (indeksator z `INotifyPropertyChanged`, powiadomienie
-`Binding.IndexerName`) zostaje, ale czyta z `ResourceManager` zamiast ze
-słownika w kodzie. XAML:
+Switching in WPF works live, with no restart: `Strings` from
+`Blinky.Agent.Ui` (an indexer with `INotifyPropertyChanged` and a
+`Binding.IndexerName` notification) stays, but reads from a `ResourceManager`
+instead of a dictionary in the code. In XAML:
 `{Binding Path=[issuance.step.generate-key], Source={x:Static local:Strings.Current}}`.
 
-Daty i liczby formatowane według wybranej kultury (`sv-SE`, `de-DE`, `pl-PL`,
-`en-GB`). Stąd `InvariantGlobalization=false` w WPF i module PowerShell —
-w trybie niezmiennym .NET nie utworzy tych kultur.
+Dates and numbers are formatted according to the chosen culture (`sv-SE`,
+`de-DE`, `pl-PL`, `en-GB`). Hence `InvariantGlobalization=false` in WPF and in
+the PowerShell module — in invariant mode .NET will not create those cultures.
 
-## Testy kompletności
+## Completeness tests
 
-Testy (`MessageCatalogueTests`, `NoHardCodedTextTests`) przechodzą po
-`Messages.resx` i po źródłach, i wymagają, żeby:
+The tests (`MessageCatalogueTests`, `NoHardCodedTextTests`) walk
+`Messages.resx` and the sources, and require that:
 
-1. każdy klucz istniał we wszystkich czterech plikach i nie był pusty,
-2. liczba i numery parametrów `{n}` były takie same w każdym języku,
-3. każdy kod błędu z `ErrorCodes` miał swój klucz,
-4. **każda akcja audytu wyczytana z migracji** (`_bl_write_audit('…')`, plus
-   dwie dynamiczne i lista `bl_audit`) miała klucz `audit.<kod>` — lista
-   trzymana ręcznie rozjechałaby się przy pierwszej nowej funkcji,
-5. w XAML nie było tekstu dla człowieka (`Text=`, `Content=`, `Header=`,
-   `Title=`, `ToolTip=`) poza nazwą produktu,
-6. satelity językowe naprawdę się zbudowały — inaczej każdy język po cichu
-   zwracałby angielski,
-7. zmiana `Culture` wywoływała `PropertyChanged` dla `Item[]`, czyli okno
-   przemalowywało się bez przebudowy.
+1. every key exists in all four files and is not empty,
+2. the number and the indices of the `{n}` parameters are the same in every
+   language,
+3. every error code in `ErrorCodes` has its key,
+4. **every audit action read out of the migrations**
+   (`_bl_write_audit('…')`, plus the two dynamic ones and the `bl_audit` list)
+   has an `audit.<code>` key — a hand-maintained list would drift apart with
+   the first new function,
+5. there is no human-facing text in the XAML (`Text=`, `Content=`, `Header=`,
+   `Title=`, `ToolTip=`) beyond the product's name,
+6. the language satellites really were built — otherwise every language would
+   quietly return English,
+7. changing `Culture` raises `PropertyChanged` for `Item[]`, i.e. the window
+   repaints without being rebuilt.
 
-Brakujące tłumaczenie to czerwony build, a nie angielski tekst w niemieckim
-oknie.
+A missing translation is a red build, not English text in a German window.
 
-## Tłumaczenia
+## Translations
 
-Wszystkie cztery wersje pisze automatycznie autor kodu (AI) razem z kluczem
-komunikatu, w tym samym commicie — decyzja właściciela z 2026-09-19 (Q-05).
-Zasady, żeby tłumaczenie maszynowe było bezpieczne:
+All four versions are written by the code's author (the AI) together with the
+message key, in the same commit — the owner's decision of 2026-09-19 (Q-05).
+The rules that make a machine translation safe:
 
-- **Prosty język.** Krótkie zdania, tryb rozkazujący w instrukcjach
-  („Włóż klucz”, „Stecken Sie den Schlüssel ein”, „Sätt i nyckeln”), bez
-  żargonu, gdzie się da. Terminy techniczne zostają nieprzetłumaczone i
-  jednakowe we wszystkich językach: PIN, PUK, YubiKey, PIV, management key.
-- **Jedno znaczenie na klucz.** Klucz opisuje sytuację
-  (`pin.rule.too-short`), nie zdanie — łatwiej przetłumaczyć sens niż
-  przepisać cudzą frazę.
-- **Słowniczek** w `src/BlinkyLite.Contracts/Resources/GLOSSARY.md`: tabela
-  terminów w czterech językach (karta/Karte/kort, wydanie/Ausstellung/
-  utfärdande, …), której tłumaczenia się trzymają.
-- Formy grzecznościowe: DE — „Sie”, SV — „du”, PL — bezosobowo lub
-  „Wpisz…”, EN — imperatyw.
+- **Plain language.** Short sentences, the imperative in instructions ("Insert
+  the key", "Stecken Sie den Schlüssel ein", "Sätt i nyckeln"), and no jargon
+  where it can be avoided. Technical terms stay untranslated and identical in
+  every language: PIN, PUK, YubiKey, PIV, management key.
+- **One meaning per key.** A key describes a situation
+  (`pin.rule.too-short`), not a sentence — it is easier to translate a meaning
+  than to re-write somebody else's phrase.
+- **A glossary** in `src/BlinkyLite.Contracts/Resources/GLOSSARY.md`: a table
+  of terms in four languages (card/Karte/kort, issuance/Ausstellung/utfärdande,
+  …) that the translations keep to.
+- Forms of address: DE — "Sie", SV — "du", PL — impersonal or "Wpisz…", EN —
+  the imperative.
 
-Poprawki od użytkowników są mile widziane, ale nie są warunkiem wydania.
+Corrections from users are welcome, but they are not a release condition.

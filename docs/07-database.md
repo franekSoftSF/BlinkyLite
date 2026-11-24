@@ -1,266 +1,273 @@
-# 07 — Baza danych: NHibernate do odczytu, procedury do zapisu
+# 07 — Database: NHibernate to read, procedures to write
 
-To najważniejsza część serwera, więc zasady są tu ostre i sprawdzane przez
-samą bazę, a nie tylko przez dyscyplinę w kodzie.
+This is the most important part of the server, so the rules here are strict and
+enforced by the database itself rather than by discipline in the code.
 
-## Zasada
+## The principle
 
-| Operacja | Czym | Dlaczego |
+| Operation | By what | Why |
 |---|---|---|
-| **Odczyt** | NHibernate + FluentNHibernate, encje tylko do odczytu, LINQ | wygodne zapytania dla przeglądarki, jedna definicja mapowania |
-| **Zapis** | wyłącznie funkcje PL/pgSQL w schemacie `blinkylite` | reguły stanów, audyt i blokady w jednym miejscu, w jednej transakcji, nie do ominięcia |
-| **Schemat** | ręcznie pisane, numerowane skrypty SQL | SQL jest źródłem prawdy; mapowania są z nim porównywane przy starcie |
+| **Read** | NHibernate + FluentNHibernate, read-only entities, LINQ | convenient queries for the browser, one mapping definition |
+| **Write** | PL/pgSQL functions in the `blinkylite` schema, and nothing else | state rules, the audit trail and locking in one place, in one transaction, impossible to bypass |
+| **Schema** | hand-written, numbered SQL scripts | SQL is the source of truth; the mappings are compared against it at start-up |
 
-„Procedura” w tym dokumencie to PostgreSQL `FUNCTION`, nie `PROCEDURE`.
-Funkcja zwraca wartość (nowe `id`, kopertę sekretu) i wykonuje się w
-transakcji wywołującego — `PROCEDURE` nie zwraca zbioru wyników i komplikuje
-zwrot identyfikatora przez NHibernate. Wszystkie nazywają się `bl_*`.
+"Procedure" in this document means a PostgreSQL `FUNCTION`, not a `PROCEDURE`.
+A function returns a value (a new `id`, a secret envelope) and runs inside the
+caller's transaction — a `PROCEDURE` returns no result set and complicates
+getting an identifier back through NHibernate. They are all named `bl_*`.
 
-## Trzy role w bazie
+## Three roles in the database
 
-| Rola | Prawa | Kto jej używa |
+| Role | Privileges | Who uses it |
 |---|---|---|
-| `blinkylite_owner` | właściciel schematu, tabel i funkcji | tylko migrator (`--migrate`), osobny connection string `Owner` |
-| `blinkylite_app` | `USAGE` na schemacie, `SELECT` na tabelach, `EXECUTE` na funkcjach `bl_*`. **Brak `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`**. Na `card_secrets` `SELECT` tylko na wymienionych kolumnach — **bez `puk_envelope` i `mgmt_key_envelope`** | serwer w normalnej pracy, connection string `App` |
-| `blinkylite_readonly` | `SELECT` jak wyżej, bez kopert | raporty, diagnostyka |
+| `blinkylite_owner` | owner of the schema, the tables and the functions | the migrator only (`--migrate`), with its own `Owner` connection string |
+| `blinkylite_app` | `USAGE` on the schema, `SELECT` on the tables, `EXECUTE` on the `bl_*` functions. **No `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`**. On `card_secrets`, `SELECT` only on the listed columns — **not on `puk_envelope` or `mgmt_key_envelope`** | the server in normal operation, the `App` connection string |
+| `blinkylite_readonly` | `SELECT` as above, without the envelopes | reports, diagnostics |
 
-Role tworzy [`db/init/00_roles.sql`](../db/init/00_roles.sql) — raz, jako
-superużytkownik, bez haseł (hasła `ALTER ROLE … PASSWORD` osobno, żeby plik
-mógł leżeć w git). Ten sam skrypt odbiera `PUBLIC` wszystkie prawa do bazy,
-łącznie z `TEMP`.
+The roles are created by [`db/init/00_roles.sql`](../db/init/00_roles.sql) —
+once, as a superuser, without passwords (the passwords come separately through
+`ALTER ROLE … PASSWORD`, so the file can live in git). The same script revokes
+every privilege on the database from `PUBLIC`, `TEMP` included.
 
-Funkcje są `SECURITY DEFINER` (wykonują się z prawami właściciela) i mają
-`SET search_path = blinkylite, pg_temp` — bez tego `SECURITY DEFINER` da się
-oszukać własnym obiektem w `search_path`. `EXECUTE` odebrane `PUBLIC` (także
-globalnymi domyślnymi uprawnieniami właściciela — wariant „per schemat” nie
-umie odebrać, tylko dodać), nadane `blinkylite_app` na liście funkcji `bl_*`.
-Pomocnicze `_bl_*` nie są nadane nikomu.
+The functions are `SECURITY DEFINER` (they run with the owner's privileges) and
+carry `SET search_path = blinkylite, pg_temp` — without that, a
+`SECURITY DEFINER` function can be fooled with an object of one's own placed in
+the `search_path`. `EXECUTE` is revoked from `PUBLIC` (including through the
+owner's global default privileges — the "per schema" variant can only grant,
+not revoke) and granted to `blinkylite_app` on the list of `bl_*` functions.
+The helper `_bl_*` ones are granted to nobody.
 
-**Kody odblokowania też poza zasięgiem `SELECT`** (0057): na
-`unlock_requests` żadna z dwóch ról nie ma `SELECT`, bo jedno zapytanie
-oddałoby wszystkie kody, które są w tej chwili aktualne. Jedyna droga to
-`bl_unlock_waiting`, która nie zwraca ani sekretu, ani koperty.
+**The unblock codes are out of `SELECT`'s reach as well** (0057): neither of
+the two roles has `SELECT` on `unlock_requests`, because one query would hand
+over every code that is currently live. The only way in is `bl_unlock_waiting`,
+which returns neither the secret nor the envelope.
 
-**Koperty poza zasięgiem `SELECT`.** Gdyby rola aplikacji miała zwykły
-`SELECT` na `card_secrets`, jedno zapytanie LINQ przeczytałoby każdy PUK w
-bazie bez śladu w audycie. Uprawnienie kolumnowe zamyka tę drogę: jedynym
-dostępem do koperty jest `bl_secret_disclose` / `bl_mgmt_key_candidates`,
-które zapisują audyt w tej samej transakcji.
+**The envelopes are out of `SELECT`'s reach.** If the application role had an
+ordinary `SELECT` on `card_secrets`, one LINQ query would read every PUK in the
+database with no trace in the audit trail. A column privilege closes that
+route: the only access to an envelope is `bl_secret_disclose` /
+`bl_mgmt_key_candidates`, which write the audit entry in the same transaction.
 
-Efekt: nawet błąd w serwerze (albo ktoś z connection stringiem aplikacji)
-nie jest w stanie zapisać wiersza z pominięciem reguł, skasować audytu ani
-przeczytać PUK bez śladu. Testy łączą się jako `blinkylite_app` i
-`blinkylite_readonly` i wymagają odmowy (`42501`) dla każdej tabeli.
+The effect: even a bug in the server (or somebody holding the application's
+connection string) cannot write a row around the rules, erase the audit trail,
+or read a PUK without leaving a trace. The tests connect as `blinkylite_app`
+and `blinkylite_readonly` and require a refusal (`42501`) for every table.
 
-## Funkcje zapisu
+## The write functions
 
-Każda funkcja: blokuje wiersz (`SELECT … FOR UPDATE`), sprawdza stan
-wyjściowy, zmienia dane, **dopisuje zdarzenie audytu** i zwraca wynik — w
-jednej transakcji. Jeśli cokolwiek się nie uda, nie ma ani zmiany, ani
-audytu.
+Every function: locks the row (`SELECT … FOR UPDATE`), checks the starting
+state, changes the data, **appends an audit event** and returns a result — in
+one transaction. If anything fails, there is neither the change nor the audit
+entry.
 
-Każda przyjmuje aktora: `p_actor_upn`, `p_actor_sid`, `p_actor_roles text[]`,
-`p_source_ip inet`.
+Each one takes the actor: `p_actor_upn`, `p_actor_sid`,
+`p_actor_roles text[]`, `p_source_ip inet`.
 
-| Funkcja | Zwraca | Stan przed → po | Audyt |
+| Function | Returns | State before → after | Audit |
 |---|---|---|---|
-| `bl_issuance_reserve(id, serial, family, firmware, has_puk, cel…, profil…, windows_identity, workstation, puk_env, mk_env, mk_alg, kek_version, aktor)` — `id` nadaje serwer (migracja 0005), bo AAD kopert je zawiera, a koperty powstają przed rezerwacją | `uuid` wydania | — → `Reserved`; upsert `cards`; koperty `Reserved` | `issuance.reserved` |
-| `bl_issuance_customised(id, aktor)` | — | `Reserved` → `Customised`; koperty → `Active`, poprzednie `Active` karty → `Retired` | `issuance.customised` |
-| `bl_issuance_attested(id, attestation, intermediate, csr, key_alg, pin_policy, touch_policy, form_factor, key_evidence, aktor)` *(0012: `key_evidence`)* | — | `Customised`/`Attested` → `Attested` (wznowienie generuje klucz od nowa i musi zapisać nowy dowód). `YubicoAttestation` wymaga atestacji i pośredniego; `GeneratedOnCard` (Crescendo, D-43) nie dla YubiKey (`22023`) i tylko gdy profil wydania ma teraz w bazie `allow_unattested_keys` (inaczej `BL009`) | `issuance.attested` z `key_evidence` |
-| `bl_issuance_submitted(id, ca_request_id, ea_thumbprint, aktor)` | — | `Attested` → `Attested` (zapis `ca_request_id`) | `issuance.submitted` |
-| `bl_issuance_pending(id, aktor)` | — | `Attested` → `PendingCa` | `issuance.pending` |
-| `bl_issuance_issued(id, cert_der, cert_serial, thumbprint, not_before, not_after, aktor)` | — | `Attested`/`PendingCa` → `Issued`; poprzednie `Issued` karty → `Superseded`; `cards.current_issuance_id` | `issuance.issued` |
-| `bl_issuance_failed(id, error, aktor)` | — | każdy niekońcowy → `Failed`; **koperty zostają** | `issuance.failed` |
-| `bl_profile_save(name, template, ca, key_algorithm, pin_policy, touch_policy, protect_management_key, enabled, reason, aktor)` *(0031, 0024)* | — | upsert profilu; tylko Admin (`BL004`), powód ≥ 5 znaków (`BL005`) | `profile.created` / `profile.changed` z `before`, `after` i powodem |
-| `bl_profile_seed(profiles jsonb, aktor)` *(0031)* | liczba wstawionych | tylko do **pustej** tabeli, raz — przy każdym starcie serwera, bez skutku po pierwszym; profil z pliku bez `protect_management_key` zasiewa się z `true`, bo tak wydawał serwer, który tego pola nie znał (0024); aktor to serwer (`blinkylite-server`, SID `S-1-0-0`) | `profile.seeded` z nazwami |
-| `bl_keytab_put(id, envelope, kek_version, sha256, principals, reason, aktor)` *(0031)* | — | tylko Admin (`BL004`), powód (`BL005`); poprzedni `Active` → `Retired`, nowy `Active` | `keytab.replaced` z odciskiem nowym i poprzednim, principalami i powodem |
-| `bl_keytab_current(aktor)` *(0031)* | `(id, envelope, kek_version)` aktywnego keytaba albo nic | — ; woła go serwer przy starcie, żeby włożyć keytab do tmpfs. Bez audytu: nikt go nie widzi, a API nie ma jak go oddać | — |
-| `bl_recycle_start(id, serial, reason, workstation, aktor)` *(0090)* | `id` | karta istnieje, bez wydania w toku (`BL001 error.recycle.issuance-in-flight`), bez innego Recycle w fazie tokena (`BL010`); to samo `id` drugi raz = ten sam Recycle. **W tej samej transakcji** żądanie unieważnienia każdego ważnego certyfikatu tokena (`Issued`, `Superseded`, `Withdrawn`, `Recycled`), także historycznego, a otwarte żądania tej karty przechodzą pod nowy Recycle → `RevocationQueued` | `recycle.requested` z listą żądań, `revocation.requested` na każdy certyfikat |
-| `bl_recycle_authorize(id, serial, totp_step, nonce_hash, expires_at, aktor)` *(0090)* | `(card_family, issuance_id, mgmt_key_envelope, mgmt_key_algorithm, kek_version)` — koperta tylko dla Crescendo | `RevocationQueued`/`ResetAuthorized`/`ManualActionRequired` → `ResetAuthorized`; serial == karta Recycle (`BL012`); krok TOTP aktora nowszy niż ostatni użyty, także przy logowaniu (`BL006`) i od razu zużyty; nonce trzymany tylko jako SHA-256 | `recycle.authorized` z `admin_key_released` |
-| `bl_recycle_reset_started(id, serial, nonce_hash, aktor)` *(0090)* | — | `ResetAuthorized`/`ResetInProgress` → `ResetInProgress`; serial (`BL012`), nonce i jego ważność (`BL011`) | `recycle.reset-started` z numerem próby |
-| `bl_recycle_reset_result(id, serial, nonce_hash, outcome, detail, aktor)` *(0090)* | nowy stan | nonce zużyty; `Reset` (tylko po `started`) → wydania `Issued` → `Recycled`, koperty → `Retired`, `current_issuance_id` → `NULL`, zgłoszenia odblokowania → `Expired`, Recycle → `RevocationPending` albo `Completed`; `NotStarted` → `Failed` (żądania unieważnienia zostają); `Interrupted` → `ManualActionRequired` | `recycle.reset-completed` / `recycle.failed` / `recycle.manual-action` |
-| `bl_revocation_request(id, issuance_id, reason_code, reason, aktor)` *(0090)* | `id` żądania, istniejącego, jeśli certyfikat już je ma | wydanie z certyfikatem (`BL001 error.revocation.no-certificate`); powód CRL `0, 1, 3, 4, 5`; CA, numer i odcisk **kopiowane z wydania** | `revocation.requested` |
-| `bl_revocation_begin(id, aktor)` *(0090)* | `(ca_config, cert_serial, cert_thumbprint, reason_code, attempt)` | każdy stan poza `Revoked` (`BL001 error.revocation.already-revoked`) → `RevocationPending`, próba +1 | `revocation.attempted` |
-| `bl_revocation_result(id, outcome, detail, revoked_at, aktor)` *(0090)* | nowy stan | tylko z `RevocationPending` (`BL001 error.revocation.invalid-state`); `Revoked`/`AlreadyRevoked` → `Revoked` z datą i operatorem, `Failed` → `RevocationFailed`, `ManualActionRequired`; ostatnie unieważnienie Recycle po resecie → Recycle `Completed` | `revocation.revoked` / `.failed` / `.manual-action`, `recycle.completed` |
-| `bl_card_withdraw(serial, reason, aktor)` *(0058)* | — | bieżące wydanie `Issued` → `Withdrawn` (z `withdrawn_at`, `_by`, `_reason`), koperta `Active` → `Retired`, `cards.current_issuance_id` → `NULL`, zgłoszenia odblokowania w toku → `Expired`; nic do wycofania → `BL001` | `card.withdrawn` z powodem |
-| `bl_secret_disclose(serial, kind, reason, aktor)` | `(issuance_id uuid, envelope bytea, kek_version smallint)` — `issuance_id`, bo jest częścią AAD koperty | koperta `Active` karty; licznik odsłonięć PUK +1 | `puk.disclosed` / `mgmt-key.disclosed` z powodem |
-| `bl_mgmt_key_candidates(serial, aktor)` | zbiór `(secret_id, issuance_id, secret_state, envelope, mgmt_key_algorithm, kek_version)`: `Active`, potem nowsze `Reserved`, od najnowszej | — | `mgmt-key.used` z listą `secret_ids` |
-| `bl_audit(action, data jsonb, aktor)` | — | — | **tylko** `auth.login` i `auth.denied`; inna akcja → `22023` (otwarta funkcja pozwoliłaby serwerowi podrobić `puk.disclosed`) |
-| `bl_totp_state(operator_sid, aktor)` *(0027)* | `(secret_envelope, kek_version, confirmed)` albo nic | — ; tylko własny: `operator_sid` ≠ SID aktora → `BL004` | — (czytane przy każdym logowaniu; logowanie ma własne zdarzenie) |
-| `bl_totp_begin(envelope, kek_version, aktor)` | — | brak albo niepotwierdzony → nowy niepotwierdzony; potwierdzony → `BL007` | `totp.setup-started` |
-| `bl_totp_confirm(step, backup_hashes bytea[], aktor)` | — | niepotwierdzony → potwierdzony, `last_step`, kody zapasowe zastąpione | `totp.enrolled` + `auth.login` |
-| `bl_totp_accept(step, aktor)` | — | `step` > `last_step` → zapis; inaczej `BL006`; bez potwierdzonego `BL008` | `auth.login` |
-| `bl_totp_backup_use(code_hash, aktor)` | `integer` — ile zostało | nieużyty kod → `used_at`; inaczej `BL006` | `auth.login` z `backup_codes_left` |
-| `bl_totp_reset(operator_sid, reason, aktor)` | — | usuwa składnik i kody; nie własny (`BL004`), powód ≥ 5 znaków (`BL005`) | `totp.reset` z powodem |
-| `bl_factors_reset(operator_sid, reason, aktor)` *(0029)* | — | wycofuje **cały** drugi składnik: usuwa kod i kody zapasowe, a każdy czynny klucz oznacza jako wycofany z tym samym powodem. Operator z samym kluczem albo z samym kodem też się resetuje; brak jednego i drugiego to `BL002`, żeby reset w zły SID nie udał się po cichu. Nie własny (`BL004`), powód ≥ 5 znaków (`BL005`) | `factors.reset` z powodem, liczbą wycofanych kluczy i tym, czy był kod |
-| `bl_webauthn_challenge_put(purpose, challenge, minutes, aktor)` *(0028)* | — | upsert wyzwania dla pary (aktor, `purpose` ∈ `register`, `assert`); nowe porzuca poprzednie | — (ceremonia zaczęta to jeszcze nie zdarzenie) |
-| `bl_webauthn_challenge_take(purpose, aktor)` *(0028)* | `bytea` wyzwania | zwraca i **usuwa** w jednym zapytaniu; brak albo przeterminowane → `BL013`. Bez sprzątania przeterminowanych na tej ścieżce: `RAISE` cofnąłby `DELETE`, który go poprzedza — decyduje `expires_at`, a następna ceremonia nadpisuje wiersz | — |
-| `bl_webauthn_register(credential_id, public_key, aaguid, sign_count, label, aktor)` *(0028)* | — | nowy klucz operatora; atestację sprawdził serwer przed wywołaniem (D-49); `label` wymagany (`BL005`), `credential_id` unikalny w tabeli | `webauthn.registered` z AAGUID i nazwą |
-| `bl_webauthn_accept(credential_id, sign_count, aktor)` *(0028)* | — | klucz musi być aktywny i **tego** operatora (`BL014`); licznik musi iść w przód, chyba że jest zerowy po obu stronach (`BL015`); zapis `sign_count` i `last_used_at` | `auth.login` z `factor: webauthn` |
-| `bl_webauthn_retire(id, reason, aktor)` *(0028)* | — | tylko własny i tylko aktywny (`BL014`), powód ≥ 5 znaków (`BL005`); wiersz zostaje z `retired_at`, `_by`, `_reason` | `webauthn.retired` z nazwą i powodem |
-| `bl_operator_factors(aktor)` *(0028)* | `(totp_confirmed_at, backup_codes_left)` albo nic | — ; **nie ma parametru operatora** — odpowiada o tym, kto woła, więc nie ma czego wskazać na kogoś innego. Koperty sekretu nie oddaje | — (okno konta nie jest odsłonięciem) |
-| `bl_unlock_request(id, serial, code, secret_hash, workstation, minutes, aktor)` *(0057)* | — | karta z `Active` kopertą PUK → nowe `Pending`; poprzednie `Pending`/`Approved` tej karty → `Expired` (jeden aktualny kod na klucz); karta bez PUK-a → `BL002` | `unlock.requested` |
-| `bl_unlock_waiting(aktor)` *(0057)* | zbiór `(id, code, card_serial, workstation, source_ip, created_at, expires_at, target_display_name, target_sam)` — **bez koperty** | — | — (lista nie jest odsłonięciem) |
-| `bl_unlock_decide(id, approve, reason, aktor)` *(0057)* | — | `Pending` → `Approved` albo `Refused`, z UPN-em i powodem; inny stan → `BL001`; powód < 5 znaków → `BL005` | `unlock.approved` / `unlock.refused` z powodem |
-| `bl_unlock_collect(id, secret_hash, aktor)` *(0057)* | `(state, card_serial, issuance_id, envelope, kek_version)` — koperta tylko raz, przy `Approved` | `Approved` → `Delivered`, licznik odsłonięć PUK +1; zły `secret_hash` → `BL002` jak nieznane zgłoszenie | `puk.disclosed` z `remote: true`, powodem i UPN-em zatwierdzającego |
-| `bl_unlock_finish(id, secret_hash, ok, error, aktor)` *(0057)* | — | `Delivered` → `Completed` albo `Failed`; inny stan → `BL001` | `unlock.completed` / `unlock.failed` |
-| `bl_expiry_notified(issuance_id, threshold_days, outcome, entra_user_id, error)` *(0060, po 1.0)* | `boolean` — `false`, jeśli ten próg już zapisano | wiersz w `expiry_notifications` (unikalne `issuance_id` + `threshold_days`); `outcome` ∈ `sent`, `skipped`, `failed` | `cert.expiry-notified` / `cert.expiry-notify-failed` |
+| `bl_issuance_reserve(id, serial, family, firmware, has_puk, target…, profile…, windows_identity, workstation, puk_env, mk_env, mk_alg, kek_version, actor)` — the `id` is assigned by the server (migration 0005), because the envelopes' AAD contains it and the envelopes are created before the reservation | the issuance's `uuid` | — → `Reserved`; upsert into `cards`; the envelopes `Reserved` | `issuance.reserved` |
+| `bl_issuance_customised(id, actor)` | — | `Reserved` → `Customised`; the envelopes → `Active`, the card's previous `Active` ones → `Retired` | `issuance.customised` |
+| `bl_issuance_attested(id, attestation, intermediate, csr, key_alg, pin_policy, touch_policy, form_factor, key_evidence, actor)` *(0012: `key_evidence`)* | — | `Customised`/`Attested` → `Attested` (a resumption generates the key afresh and has to record new evidence). `YubicoAttestation` requires the attestation and the intermediate; `GeneratedOnCard` (Crescendo, D-43) is not allowed for a YubiKey (`22023`) and only when the issuance's profile has `allow_unattested_keys` in the database right now (otherwise `BL009`) | `issuance.attested` with `key_evidence` |
+| `bl_issuance_submitted(id, ca_request_id, ea_thumbprint, actor)` | — | `Attested` → `Attested` (records `ca_request_id`) | `issuance.submitted` |
+| `bl_issuance_pending(id, actor)` | — | `Attested` → `PendingCa` | `issuance.pending` |
+| `bl_issuance_issued(id, cert_der, cert_serial, thumbprint, not_before, not_after, actor)` | — | `Attested`/`PendingCa` → `Issued`; the card's previous `Issued` → `Superseded`; `cards.current_issuance_id` | `issuance.issued` |
+| `bl_issuance_failed(id, error, actor)` | — | any non-final state → `Failed`; **the envelopes stay** | `issuance.failed` |
+| `bl_profile_save(name, template, ca, key_algorithm, pin_policy, touch_policy, protect_management_key, enabled, reason, actor)` *(0031, 0024)* | — | upsert of the profile; Admin only (`BL004`), reason ≥ 5 characters (`BL005`) | `profile.created` / `profile.changed` with `before`, `after` and the reason |
+| `bl_profile_seed(profiles jsonb, actor)` *(0031)* | the number inserted | only into an **empty** table, once — attempted at every server start and without effect after the first; a profile from a file with no `protect_management_key` is seeded with `true`, because that is how a server that did not know the field used to issue (0024); the actor is the server (`blinkylite-server`, SID `S-1-0-0`) | `profile.seeded` with the names |
+| `bl_keytab_put(id, envelope, kek_version, sha256, principals, reason, actor)` *(0031)* | — | Admin only (`BL004`), a reason (`BL005`); the previous `Active` → `Retired`, the new one `Active` | `keytab.replaced` with the new and previous fingerprints, the principals and the reason |
+| `bl_keytab_current(actor)` *(0031)* | `(id, envelope, kek_version)` of the active keytab, or nothing | — ; called by the server at start to put the keytab into tmpfs. No audit entry: nobody sees it and the API has no way to hand it out | — |
+| `bl_recycle_start(id, serial, reason, workstation, actor)` *(0090)* | `id` | the card exists, with no issuance in flight (`BL001 error.recycle.issuance-in-flight`) and no other Recycle in the token phase (`BL010`); the same `id` twice = the same Recycle. **In the same transaction**, a revocation request for every valid certificate of the token (`Issued`, `Superseded`, `Withdrawn`, `Recycled`), historical ones included, while open requests for this card move under the new Recycle → `RevocationQueued` | `recycle.requested` with the list of requests, `revocation.requested` for each certificate |
+| `bl_recycle_authorize(id, serial, totp_step, nonce_hash, expires_at, actor)` *(0090)* | `(card_family, issuance_id, mgmt_key_envelope, mgmt_key_algorithm, kek_version)` — the envelope only for a Crescendo | `RevocationQueued`/`ResetAuthorized`/`ManualActionRequired` → `ResetAuthorized`; the serial == the Recycle's card (`BL012`); the actor's TOTP step newer than the last one used, the sign-in included (`BL006`), and consumed immediately; the nonce is kept only as a SHA-256 | `recycle.authorized` with `admin_key_released` |
+| `bl_recycle_reset_started(id, serial, nonce_hash, actor)` *(0090)* | — | `ResetAuthorized`/`ResetInProgress` → `ResetInProgress`; the serial (`BL012`), the nonce and its validity (`BL011`) | `recycle.reset-started` with the attempt number |
+| `bl_recycle_reset_result(id, serial, nonce_hash, outcome, detail, actor)` *(0090)* | the new state | the nonce is consumed; `Reset` (only after `started`) → the card's `Issued` issuances → `Recycled`, the envelopes → `Retired`, `current_issuance_id` → `NULL`, unblock requests → `Expired`, the Recycle → `RevocationPending` or `Completed`; `NotStarted` → `Failed` (the revocation requests stay); `Interrupted` → `ManualActionRequired` | `recycle.reset-completed` / `recycle.failed` / `recycle.manual-action` |
+| `bl_revocation_request(id, issuance_id, reason_code, reason, actor)` *(0090)* | the request's `id`, or the existing one if the certificate already has one | an issuance with a certificate (`BL001 error.revocation.no-certificate`); CRL reason `0, 1, 3, 4, 5`; the CA, the serial and the thumbprint **copied from the issuance** | `revocation.requested` |
+| `bl_revocation_begin(id, actor)` *(0090)* | `(ca_config, cert_serial, cert_thumbprint, reason_code, attempt)` | any state but `Revoked` (`BL001 error.revocation.already-revoked`) → `RevocationPending`, attempt +1 | `revocation.attempted` |
+| `bl_revocation_result(id, outcome, detail, revoked_at, actor)` *(0090)* | the new state | only from `RevocationPending` (`BL001 error.revocation.invalid-state`); `Revoked`/`AlreadyRevoked` → `Revoked` with the date and the operator, `Failed` → `RevocationFailed`, `ManualActionRequired`; the Recycle's last revocation after the reset → the Recycle `Completed` | `revocation.revoked` / `.failed` / `.manual-action`, `recycle.completed` |
+| `bl_card_withdraw(serial, reason, actor)` *(0058)* | — | the current `Issued` issuance → `Withdrawn` (with `withdrawn_at`, `_by`, `_reason`), the `Active` envelope → `Retired`, `cards.current_issuance_id` → `NULL`, unblock requests in flight → `Expired`; nothing to withdraw → `BL001` | `card.withdrawn` with the reason |
+| `bl_secret_disclose(serial, kind, reason, actor)` | `(issuance_id uuid, envelope bytea, kek_version smallint)` — `issuance_id` because it is part of the envelope's AAD | the card's `Active` envelope; the PUK disclosure counter +1 | `puk.disclosed` / `mgmt-key.disclosed` with the reason |
+| `bl_mgmt_key_candidates(serial, actor)` | a set of `(secret_id, issuance_id, secret_state, envelope, mgmt_key_algorithm, kek_version)`: the `Active` one, then newer `Reserved` ones, newest first | — | `mgmt-key.used` with the list of `secret_ids` |
+| `bl_audit(action, data jsonb, actor)` | — | — | **only** `auth.login` and `auth.denied`; any other action → `22023` (an open function would let the server forge a `puk.disclosed`) |
+| `bl_totp_state(operator_sid, actor)` *(0027)* | `(secret_envelope, kek_version, confirmed)` or nothing | — ; only one's own: `operator_sid` ≠ the actor's SID → `BL004` | — (read at every sign-in; the sign-in has its own event) |
+| `bl_totp_begin(envelope, kek_version, actor)` | — | absent or unconfirmed → a new unconfirmed one; confirmed → `BL007` | `totp.setup-started` |
+| `bl_totp_confirm(step, backup_hashes bytea[], actor)` | — | unconfirmed → confirmed, `last_step`, the backup codes replaced | `totp.enrolled` + `auth.login` |
+| `bl_totp_accept(step, actor)` | — | `step` > `last_step` → recorded; otherwise `BL006`; with nothing confirmed, `BL008` | `auth.login` |
+| `bl_totp_backup_use(code_hash, actor)` | `integer` — how many are left | an unused code → `used_at`; otherwise `BL006` | `auth.login` with `backup_codes_left` |
+| `bl_totp_reset(operator_sid, reason, actor)` | — | deletes the factor and the codes; not one's own (`BL004`), reason ≥ 5 characters (`BL005`) | `totp.reset` with the reason |
+| `bl_factors_reset(operator_sid, reason, actor)` *(0029)* | — | withdraws the **whole** second factor: deletes the code and the backup codes, and marks every key in service as withdrawn with the same reason. An operator with only a key, or only a code, is reset too; having neither is `BL002`, so that a reset aimed at the wrong SID does not quietly succeed. Not one's own (`BL004`), reason ≥ 5 characters (`BL005`) | `factors.reset` with the reason, the number of keys withdrawn and whether there was a code |
+| `bl_webauthn_challenge_put(purpose, challenge, minutes, actor)` *(0028)* | — | upsert of the challenge for the (actor, `purpose` ∈ `register`, `assert`) pair; a new one abandons the previous | — (a ceremony begun is not yet an event) |
+| `bl_webauthn_challenge_take(purpose, actor)` *(0028)* | the challenge, `bytea` | returns it and **deletes** it in one query; absent or expired → `BL013`. No clean-up of expired rows on this path: a `RAISE` would roll back the `DELETE` that precedes it — `expires_at` decides, and the next ceremony overwrites the row | — |
+| `bl_webauthn_register(credential_id, public_key, aaguid, sign_count, label, actor)` *(0028)* | — | a new key for the operator; the attestation was checked by the server before the call (D-49); `label` is required (`BL005`), `credential_id` unique in the table | `webauthn.registered` with the AAGUID and the label |
+| `bl_webauthn_accept(credential_id, sign_count, actor)` *(0028)* | — | the key has to be active and **this** operator's (`BL014`); the counter has to move forward unless it is zero on both sides (`BL015`); records `sign_count` and `last_used_at` | `auth.login` with `factor: webauthn` |
+| `bl_webauthn_retire(id, reason, actor)` *(0028)* | — | only one's own and only an active one (`BL014`), reason ≥ 5 characters (`BL005`); the row stays, with `retired_at`, `_by`, `_reason` | `webauthn.retired` with the label and the reason |
+| `bl_operator_factors(actor)` *(0028)* | `(totp_confirmed_at, backup_codes_left)` or nothing | — ; it has **no operator parameter** — it answers about whoever is calling, so there is nobody else to point it at. It hands out no secret envelope | — (the account window is not a disclosure) |
+| `bl_unlock_request(id, serial, code, secret_hash, workstation, minutes, actor)` *(0057)* | — | a card with an `Active` PUK envelope → a new `Pending`; that card's previous `Pending`/`Approved` → `Expired` (one live code per key); a card with no PUK → `BL002` | `unlock.requested` |
+| `bl_unlock_waiting(actor)` *(0057)* | a set of `(id, code, card_serial, workstation, source_ip, created_at, expires_at, target_display_name, target_sam)` — **no envelope** | — | — (a list is not a disclosure) |
+| `bl_unlock_decide(id, approve, reason, actor)` *(0057)* | — | `Pending` → `Approved` or `Refused`, with the UPN and the reason; any other state → `BL001`; a reason under 5 characters → `BL005` | `unlock.approved` / `unlock.refused` with the reason |
+| `bl_unlock_collect(id, secret_hash, actor)` *(0057)* | `(state, card_serial, issuance_id, envelope, kek_version)` — the envelope once only, when `Approved` | `Approved` → `Delivered`, the PUK disclosure counter +1; a wrong `secret_hash` → `BL002`, as for an unknown request | `puk.disclosed` with `remote: true`, the reason and the approving operator's UPN |
+| `bl_unlock_finish(id, secret_hash, ok, error, actor)` *(0057)* | — | `Delivered` → `Completed` or `Failed`; any other state → `BL001` | `unlock.completed` / `unlock.failed` |
+| `bl_expiry_notified(issuance_id, threshold_days, outcome, entra_user_id, error)` *(0060, after 1.0)* | `boolean` — `false` if that threshold is already recorded | a row in `expiry_notifications` (unique on `issuance_id` + `threshold_days`); `outcome` ∈ `sent`, `skipped`, `failed` | `cert.expiry-notified` / `cert.expiry-notify-failed` |
 
-Aktor `bl_expiry_notified` to stały aktor systemowy `system:expiry-notifier`
-— powiadomienie nie ma operatora, a audyt nie może mieć pustego pola. Tak samo
-`bl_unlock_request`, `bl_unlock_collect` i `bl_unlock_finish`: woła je stacja,
-na której nikt nie jest zalogowany, więc aktorem jest `system:unlock` (SID
-`S-1-0-0`). Kto to zatwierdził, stoi na zdarzeniu zatwierdzenia i w `data`
-zdarzeń, które stacja spowodowała.
+The actor for `bl_expiry_notified` is the fixed system actor
+`system:expiry-notifier` — a notice has no operator, and an audit entry cannot
+have an empty field. The same goes for `bl_unlock_request`,
+`bl_unlock_collect` and `bl_unlock_finish`: they are called by a station with
+nobody signed in, so the actor is `system:unlock` (SID `S-1-0-0`). Who approved
+it is on the approval event and in the `data` of the events the station caused.
 
-Sprawdzenie ról (kto może wywołać co) robi serwer przez polityki ASP.NET
-Core. Funkcje sprawdzają to **drugi raz**, żeby błąd w polityce nie
-wystarczył (`BL004`):
+Checking roles (who may call what) is done by the server through ASP.NET Core
+policies. The functions check it a **second time**, so that a bug in a policy
+is not enough (`BL004`):
 
-| Funkcja | Wymagana rola w `p_actor_roles` |
+| Function | Role required in `p_actor_roles` |
 |---|---|
-| `bl_issuance_*`, `bl_mgmt_key_candidates` | `Admin` albo `SecurityOfficer` |
-| `bl_secret_disclose` dla `puk` | `Admin`, `SecurityOfficer` albo `Helpdesk` |
-| `bl_secret_disclose` dla `mgmt-key` | `Admin` |
-| `bl_audit` | — (odmowa logowania nie ma jeszcze ról) |
-| `bl_totp_begin`, `_confirm`, `_accept`, `_backup_use` | dowolna z trzech ról — bilet dostaje tylko ktoś, kto ją ma |
-| `bl_totp_reset` | `Admin`, i nie dla własnego SID |
-| `bl_factors_reset` | `Admin`, i nie dla własnego SID |
-| `bl_webauthn_*` | dowolna z trzech ról — i tylko własne klucze, co sprawdza sama funkcja (`BL014`) |
-| `bl_operator_factors` | dowolna z trzech ról; zawsze o samym aktorze |
-| `bl_card_withdraw` | `Admin` albo `SecurityOfficer` — kto może wydać, ten może wycofać |
-| `bl_recycle_*`, `bl_revocation_request` | `Admin`, `SecurityOfficer` albo `Helpdesk` (D-44) |
-| `bl_revocation_begin`, `bl_revocation_result` | `Admin` albo `SecurityOfficer` — Helpdesk nie unieważnia, nawet gdyby ominął API |
-| `bl_unlock_waiting`, `bl_unlock_decide` | `Admin`, `SecurityOfficer` albo `Helpdesk` — te same, co odsłonięcie PUK-a |
-| `bl_unlock_request`, `bl_unlock_collect`, `bl_unlock_finish` | — (stacja bez zalogowanego; zamiast roli sprawdzany jest `secret_hash`, a koperta wychodzi tylko po zatwierdzeniu) |
+| `bl_issuance_*`, `bl_mgmt_key_candidates` | `Admin` or `SecurityOfficer` |
+| `bl_secret_disclose` for `puk` | `Admin`, `SecurityOfficer` or `Helpdesk` |
+| `bl_secret_disclose` for `mgmt-key` | `Admin` |
+| `bl_audit` | — (a refused sign-in has no roles yet) |
+| `bl_totp_begin`, `_confirm`, `_accept`, `_backup_use` | any of the three roles — only somebody who has one gets a ticket |
+| `bl_totp_reset` | `Admin`, and not for their own SID |
+| `bl_factors_reset` | `Admin`, and not for their own SID |
+| `bl_webauthn_*` | any of the three roles — and only one's own keys, which the function checks itself (`BL014`) |
+| `bl_operator_factors` | any of the three roles; always about the actor themself |
+| `bl_card_withdraw` | `Admin` or `SecurityOfficer` — whoever may issue may withdraw |
+| `bl_recycle_*`, `bl_revocation_request` | `Admin`, `SecurityOfficer` or `Helpdesk` (D-44) |
+| `bl_revocation_begin`, `bl_revocation_result` | `Admin` or `SecurityOfficer` — Helpdesk does not revoke, not even by going around the API |
+| `bl_unlock_waiting`, `bl_unlock_decide` | `Admin`, `SecurityOfficer` or `Helpdesk` — the same as revealing a PUK |
+| `bl_unlock_request`, `bl_unlock_collect`, `bl_unlock_finish` | — (a station with nobody signed in; instead of a role, the `secret_hash` is checked, and the envelope comes out only after an approval) |
 
-Powód krótszy niż 5 znaków (po `trim`) jest odrzucany w bazie (`BL005`), nie
-tylko w UI. `actor_sid` może być pusty wyłącznie dla `auth.denied` — złe
-hasło nie daje `objectSid` do zapisania.
+A reason shorter than 5 characters (after a `trim`) is rejected in the database
+(`BL005`), not only in the UI. `actor_sid` may be empty for `auth.denied`
+alone — a wrong password yields no `objectSid` to record.
 
-Poza kodami `BL` funkcje zgłaszają błędy standardowe, które są błędem
-programisty, nie operatora: `22023` (brakujący argument, np. koperta PUK dla
-karty z PUK), `23514` (naruszenie `CHECK`, np. `RequesterName` z `&` albo
-bez jednego `\`). Serwer mapuje je na 500.
+Besides the `BL` codes the functions raise standard errors, which are a
+programmer's mistake rather than an operator's: `22023` (a missing argument,
+e.g. the PUK envelope for a card that has a PUK), `23514` (a `CHECK`
+violation, e.g. a `RequesterName` with an `&` or without exactly one `\`). The
+server maps those to a 500.
 
-Szyfrowanie jest poza bazą: funkcje przyjmują i zwracają gotowe koperty
-(`bytea`). KEK nigdy nie trafia do PostgreSQL.
+Encryption happens outside the database: the functions take and return finished
+envelopes (`bytea`). The KEK never reaches PostgreSQL.
 
-## Błędy
+## Errors
 
-Funkcje zgłaszają błędy własną klasą SQLSTATE `BL`:
+The functions raise errors with their own SQLSTATE class, `BL`:
 
-| SQLSTATE | Klucz komunikatu | HTTP |
+| SQLSTATE | Message key | HTTP |
 |---|---|---|
-| `BL001` | `error.issuance.invalid-state`; dla zgłoszeń odblokowania (0057) `error.unlock.invalid-state` — już rozpatrzone, pobrane albo zakończone; dla wycofania (0058) `error.card.withdrawn` — karta już wycofana albo nie ma czego wycofać | 409 |
+| `BL001` | `error.issuance.invalid-state`; for unblock requests (0057) `error.unlock.invalid-state` — already decided, collected or finished; for a withdrawal (0058) `error.card.withdrawn` — the card is already withdrawn, or there is nothing to withdraw | 409 |
 | `BL002` | `error.not-found` | 404 |
-| `BL003` | `error.card.reserved-elsewhere` — karta ma otwartą rezerwację innego wydania | 409 |
-| `BL004` | `error.forbidden` — rola aktora nie pozwala na tę funkcję | 403 |
+| `BL003` | `error.card.reserved-elsewhere` — the card has an open reservation from another issuance | 409 |
+| `BL004` | `error.forbidden` — the actor's role does not allow this function | 403 |
 | `BL005` | `error.reason.required` | 400 |
-| `BL006` | `error.totp.invalid` — krok już użyty albo kod zapasowy nieznany lub zużyty | 401 |
+| `BL006` | `error.totp.invalid` — the step has already been used, or the backup code is unknown or spent | 401 |
 | `BL007` | `error.totp.already-configured` | 409 |
 | `BL008` | `error.totp.setup-required` | 409 |
-| ~~`BL009`~~ | ~~`error.profile.unattested-not-allowed`~~ — odwołane przez D-47 wraz z Crescendo; numer nie wraca do użycia | — |
-| `BL010` | `error.card.recycle-in-progress` — token jest czyszczony; dotyczy też rezerwacji wydania (wyzwalacz na `issuances`) | 409 |
-| `BL011` | `error.recycle.not-authorized` — brak ważnej autoryzacji resetu: zły, zużyty albo przeterminowany nonce | 403 |
-| `BL012` | `error.recycle.wrong-card` — token w czytniku to nie ten z żądania | 409 |
-| `BL013` | `error.webauthn.no-challenge` — nie ma ceremonii w toku albo wygasła (0028) | 409 |
-| `BL014` | `error.webauthn.unknown-key` — żaden aktywny klucz tego operatora nie ma tego identyfikatora; cudzy, wycofany i nieznany dostają tę samą odpowiedź | 404 (przy logowaniu serwer zamienia na 401) |
-| `BL015` | `error.webauthn.counter` — licznik podpisów się nie ruszył w przód, czyli tak wygląda skopiowany klucz | 409 (przy logowaniu 401) |
+| ~~`BL009`~~ | ~~`error.profile.unattested-not-allowed`~~ — withdrawn by D-47 along with Crescendo; the number does not come back into use | — |
+| `BL010` | `error.card.recycle-in-progress` — the token is being wiped; this also covers reserving an issuance (a trigger on `issuances`) | 409 |
+| `BL011` | `error.recycle.not-authorized` — no valid reset authorisation: a wrong, spent or expired nonce | 403 |
+| `BL012` | `error.recycle.wrong-card` — the token in the reader is not the one from the request | 409 |
+| `BL013` | `error.webauthn.no-challenge` — there is no ceremony in progress, or it expired (0028) | 409 |
+| `BL014` | `error.webauthn.unknown-key` — no active key of this operator has that identifier; somebody else's, a withdrawn one and an unknown one all get the same answer | 404 (at sign-in the server turns it into a 401) |
+| `BL015` | `error.webauthn.counter` — the signature counter did not move forward, which is what a cloned key looks like | 409 (401 at sign-in) |
 
-`MESSAGE` to zawsze klucz komunikatu, a nie zdanie — serwer mapuje SQLSTATE na
-kod HTTP i przekazuje klucz klientowi, który tłumaczy go na język operatora
-([08](08-localization.md)). Nieznany SQLSTATE = 500 i pełny wpis w logu.
+`MESSAGE` is always a message key, never a sentence — the server maps the
+SQLSTATE to an HTTP code and passes the key to the client, which translates it
+into the operator's language ([08](08-localization.md)). An unknown SQLSTATE =
+500 and a full entry in the log.
 
-## Odczyt przez NHibernate
+## Reading through NHibernate
 
-- Mapowania FluentNHibernate (`ClassMap<T>`) z `ReadOnly()` na każdej klasie
-  i `SchemaAction.None` — NHibernate nie tworzy ani nie zmienia schematu.
-- `ISession` otwierana z `DefaultReadOnly = true` i `FlushMode.Manual`:
-  przypadkowa zmiana właściwości encji nie zostanie wysłana do bazy (a gdyby
-  była, `blinkylite_app` i tak nie ma `UPDATE`).
-- Wywołania funkcji w jednym miejscu — klasa `Procedures`
-  ([Procedures.cs](../src/BlinkyLite.Server/Data/Procedures.cs)) z typowaną
-  metodą na każdą funkcję. Przez **Npgsql, nie NHibernate**: `inet`, `text[]`,
-  `jsonb` i `bytea` wymagają jawnego typu parametru, który NHibernate by
-  zgadywał. Każde wywołanie to jedno zapytanie, więc jedna transakcja — cała
-  logika i tak jest w funkcji. `PostgresException` z SQLSTATE `BL…` wychodzi
-  jako `DatabaseRuleException(SqlState, MessageKey, Detail)`. Żaden
-  kontroler nie pisze SQL.
-- Czas: `timestamptz` ↔ `DateTime` z `Kind = Utc`; `Procedures` odrzuca
-  lokalny `DateTime` wyjątkiem, zanim dotrze do bazy. Zapytanie LINQ z
-  parametrem UTC na kolumnie `timestamptz` działa (test).
-- `bytea` ↔ `byte[]`, `jsonb` ↔ `string`. `text[]` (`actor_roles`) i `inet`
-  (`source_ip`) są mapowane formułą (`array_to_string`, `host`) — tylko do
-  odczytu i tak.
-- Typy SQL w mapowaniach są wypisane jawnie, a całkowite pod nazwami
-  PostgreSQL (`int8`, `int4`, `int2`): `SchemaValidator` porównuje z
-  `udt_name` i każdą kolumnę `bigint` zgłaszał jako rozjazd.
-- Karta to rodzina i serial w niej (0081, migracja 0009): `serial` i każde
-  `card_serial` to `text`, a nie `bigint` — CUID Crescendo ma 80 bitów.
-  Funkcje z kartą w sygnaturze zostały w 0009 usunięte i założone na nowo z
-  parametrem `text` (zmiana typu parametru to dla PostgreSQL inna funkcja);
-  te, które biorą tylko wiersz wydania, działają bez zmian.
-- Przy starcie `SchemaValidator` NHibernate porównuje mapowania z bazą
-  (wzorzec z `Blinky.Infrastructure/SchemaValidator.cs`), jako
-  `blinkylite_app` — więc widzi tylko kolumny, do których aplikacja ma prawo.
-  Rozjazd to jedna czytelna linia w logu z listą kolumn, a nie pętla
-  restartów.
+- FluentNHibernate mappings (`ClassMap<T>`) with `ReadOnly()` on every class
+  and `SchemaAction.None` — NHibernate neither creates nor alters the schema.
+- `ISession` is opened with `DefaultReadOnly = true` and `FlushMode.Manual`: an
+  accidental change to an entity's property will not be sent to the database
+  (and if it were, `blinkylite_app` has no `UPDATE` anyway).
+- Function calls live in one place — the `Procedures` class
+  ([Procedures.cs](../src/BlinkyLite.Server/Data/Procedures.cs)) with a typed
+  method per function. Through **Npgsql, not NHibernate**: `inet`, `text[]`,
+  `jsonb` and `bytea` need an explicit parameter type, which NHibernate would
+  guess at. Each call is one query and therefore one transaction — all of the
+  logic is in the function anyway. A `PostgresException` with a `BL…` SQLSTATE
+  comes out as `DatabaseRuleException(SqlState, MessageKey, Detail)`. No
+  controller writes SQL.
+- Time: `timestamptz` ↔ `DateTime` with `Kind = Utc`; `Procedures` rejects a
+  local `DateTime` with an exception before it reaches the database. A LINQ
+  query with a UTC parameter against a `timestamptz` column works (a test).
+- `bytea` ↔ `byte[]`, `jsonb` ↔ `string`. `text[]` (`actor_roles`) and `inet`
+  (`source_ip`) are mapped with a formula (`array_to_string`, `host`) —
+  read-only in any case.
+- The SQL types in the mappings are written out explicitly, and the integer
+  ones under their PostgreSQL names (`int8`, `int4`, `int2`):
+  `SchemaValidator` compares them with `udt_name` and reported every `bigint`
+  column as a mismatch.
+- A card is a family plus a serial within it (0081, migration 0009): `serial`
+  and every `card_serial` is `text`, not `bigint` — a Crescendo CUID is 80
+  bits. The functions with a card in their signature were dropped in 0009 and
+  created again with a `text` parameter (to PostgreSQL, a different parameter
+  type is a different function); the ones that take only an issuance row work
+  unchanged.
+- At start-up, NHibernate's `SchemaValidator` compares the mappings with the
+  database (the pattern from `Blinky.Infrastructure/SchemaValidator.cs`), as
+  `blinkylite_app` — so it sees only the columns the application is entitled
+  to. A mismatch is one readable line in the log listing the columns, not a
+  restart loop.
 
-## Migracje
+## Migrations
 
 ```
 db/
   init/
-    00_roles.sql                    ← raz, superużytkownik: role i prawa do bazy
+    00_roles.sql                    ← once, as a superuser: the roles and database privileges
   migrations/
-    0001_tables.sql                 ← tabele, indeksy, domyślne prawa
-    0002_functions_issuance.sql     ← _bl_* pomocnicze + bl_issuance_*
+    0001_tables.sql                 ← tables, indexes, default privileges
+    0002_functions_issuance.sql     ← the _bl_* helpers + bl_issuance_*
     0003_functions_secrets_audit.sql← bl_secret_disclose, bl_mgmt_key_candidates, bl_audit
-    0004_grants.sql                 ← uprawnienia app/readonly
-    0005_reserve_takes_issuance_id.sql ← id wydania z serwera (AAD kopert)
-    0006_operator_totp.sql          ← drugi składnik operatora i kody zapasowe
-    0007_unlock_requests.sql        ← zgłoszenia zdalnego odblokowania PIN
+    0004_grants.sql                 ← privileges for app/readonly
+    0005_reserve_takes_issuance_id.sql ← the issuance id from the server (envelope AAD)
+    0006_operator_totp.sql          ← the operator's second factor and backup codes
+    0007_unlock_requests.sql        ← remote PIN unblock requests
 ```
 
-- Serwer z `--migrate` (connection string `Owner`) zakłada schemat
-  `blinkylite` i tabelę `schema_migrations`, a potem wykonuje brakujące pliki
-  po kolei, każdy w transakcji, i zapisuje `(version, sha256, applied_at)`.
-  Skrypty są osadzone w binarce serwera — obraz Docker i paczka MSIX niosą
-  dokładnie te pliki, z którymi build był testowany.
-- **Tylko jako `blinkylite_owner`.** Uruchomiony jako ktokolwiek inny (np.
-  superużytkownik) migrator odmawia: tabele i funkcje `SECURITY DEFINER`
-  należałyby do złej roli, a funkcje działałyby z jej prawami.
-- Blokada doradcza (`pg_advisory_lock`) — dwa serwery z `--migrate`
-  jednocześnie czekają na siebie zamiast zderzyć się w połowie 0001.
-- **Zastosowany plik jest niezmienny.** Suma kontrolna (liczona po LF, więc
-  checkout z CRLF jej nie zmienia) inna niż zapisana = serwer odmawia startu
-  z nazwą pliku (kod wyjścia 3). Zmiana funkcji to nowa migracja z
-  `CREATE OR REPLACE FUNCTION`. Baza z migracją nieznaną temu buildowi (nowszy
-  serwer) — też odmowa.
-- Zwykły start serwera (rola `blinkylite_app`) sprawdza, czy wszystkie
-  migracje są zastosowane i niezmienione, i dopiero wtedy przyjmuje ruch.
-- Ten sam zestaw plików dla Dockera i Windows.
+- The server with `--migrate` (the `Owner` connection string) creates the
+  `blinkylite` schema and the `schema_migrations` table, then runs the missing
+  files in order, each in a transaction, recording
+  `(version, sha256, applied_at)`. The scripts are embedded in the server's
+  binary — the Docker image and the MSIX package carry exactly the files the
+  build was tested with.
+- **Only as `blinkylite_owner`.** Run as anybody else (a superuser, say) the
+  migrator refuses: the tables and the `SECURITY DEFINER` functions would
+  belong to the wrong role, and the functions would run with its privileges.
+- An advisory lock (`pg_advisory_lock`) — two servers with `--migrate` at the
+  same time wait for each other instead of colliding half-way through 0001.
+- **An applied file is immutable.** A checksum (computed over LF, so a CRLF
+  checkout does not change it) that differs from the recorded one = the server
+  refuses to start, naming the file (exit code 3). Changing a function means a
+  new migration with `CREATE OR REPLACE FUNCTION`. A database holding a
+  migration this build does not know (a newer server) is a refusal as well.
+- An ordinary server start (the `blinkylite_app` role) checks that every
+  migration is applied and unchanged, and only then accepts traffic.
+- The same set of files for Docker and for Windows.
 
-## Testy bazy
+## Database tests
 
-Testy integracyjne na prawdziwym PostgreSQL (kontener, job CI na Linuksie —
-serwer i jego testy to czyste `net10.0`), w
-[`tests/BlinkyLite.DbTests`](../tests/BlinkyLite.DbTests). Każdy przebieg
-zakłada własną bazę, uruchamia w niej `00_roles.sql` jako superużytkownik i
-migracje jako `blinkylite_owner` — dokładnie jak instalacja — a potem
-testuje jako `blinkylite_app`:
+Integration tests against a real PostgreSQL (a container, the CI job on Linux —
+the server and its tests are plain `net10.0`), in
+[`tests/BlinkyLite.DbTests`](../tests/BlinkyLite.DbTests). Every run creates a
+database of its own, runs `00_roles.sql` in it as a superuser and the
+migrations as `blinkylite_owner` — exactly as an installation does — and then
+tests as `blinkylite_app`:
 
-- każda funkcja: ścieżka poprawna, każde niedozwolone przejście → `BL001`;
-- audyt jest zapisany razem ze zmianą, a przy wymuszonym błędzie nie ma ani
-  zmiany, ani audytu;
-- `blinkylite_app` nie może `INSERT/UPDATE/DELETE/TRUNCATE` żadnej tabeli;
-- `bl_secret_disclose` dla `mgmt-key` bez roli `Admin` → `BL004`;
-- dwie równoległe rezerwacje tej samej karty — dokładnie jedna wygrywa;
-- migracje na pustej bazie, a potem drugi raz — nic nie robią;
-- `SchemaValidator` przechodzi po migracjach;
-- ponadto: koperty nieczytelne dla `app` i `readonly`; `app` wykonuje
-  dokładnie listę `bl_*`, `PUBLIC` nic; każda `bl_*` jest `SECURITY DEFINER`
-  ze stałym `search_path` i należy do właściciela; `bl_audit` nie podrobi
-  `puk.disclosed`; zmieniona albo „przyszła” migracja zatrzymuje serwer;
-  migrator odmawia pracy jako superużytkownik.
+- every function: the correct path, and every forbidden transition → `BL001`;
+- the audit entry is written together with the change, and with a forced error
+  there is neither the change nor the audit entry;
+- `blinkylite_app` cannot `INSERT/UPDATE/DELETE/TRUNCATE` any table;
+- `bl_secret_disclose` for `mgmt-key` without the `Admin` role → `BL004`;
+- two parallel reservations of the same card — exactly one wins;
+- the migrations on an empty database, and then a second time — they do
+  nothing;
+- `SchemaValidator` passes after the migrations;
+- and besides: the envelopes unreadable for `app` and `readonly`; `app`
+  executes exactly the `bl_*` list and `PUBLIC` nothing; every `bl_*` is
+  `SECURITY DEFINER` with a fixed `search_path` and belongs to the owner;
+  `bl_audit` cannot forge a `puk.disclosed`; a changed or "future" migration
+  stops the server; the migrator refuses to work as a superuser.

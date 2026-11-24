@@ -1,63 +1,64 @@
-# 09 — Powiadomienie o wygaśnięciu przez bota Microsoft Teams (po 1.0)
+# 09 — The expiry notice through a Microsoft Teams bot (after 1.0)
 
-Patch 0060. Serwer raz dziennie sprawdza, czyj certyfikat niedługo wygaśnie,
-i wysyła temu użytkownikowi **prywatną wiadomość w Teams** od bota
-BlinkyLite. To tylko informacja: bot niczego nie odnawia i nie dotyka karty
-ani CA. Odnowienie robi Blinky albo operator nowym wydaniem.
+Patch 0060. Once a day the server checks whose certificate is about to expire
+and sends that user a **private message in Teams** from the BlinkyLite bot. It
+is information only: the bot renews nothing and touches neither the card nor
+the CA. Renewal is Blinky's job, or an operator's with a new issuance.
 
-## Jak to działa
+## How it works
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant T as Timer w BlinkyLite.Server<br/>(raz dziennie)
+    participant T as Timer in BlinkyLite.Server<br/>(once a day)
     participant DB as PostgreSQL
-    participant E as Entra ID<br/>(token aplikacji)
+    participant E as Entra ID<br/>(application token)
     participant G as Microsoft Graph
     participant B as Bot Connector (Teams)
-    actor U as Użytkownik w Teams
+    actor U as The user in Teams
 
-    T->>DB: wydania Issued, cert_not_after ≤ teraz + próg
-    T->>E: token (certyfikat aplikacji)
+    T->>DB: Issued issuances, cert_not_after ≤ now + threshold
+    T->>E: a token (the application's certificate)
     T->>G: GET /users?$filter=onPremisesSecurityIdentifier eq '{SID}'
-    G-->>T: id użytkownika w Entra, preferredLanguage
-    T->>G: POST /users/{id}/teamwork/installedApps (jeśli bot nie zainstalowany)
-    T->>B: POST /v3/conversations (rozmowa 1:1 z użytkownikiem)
-    T->>B: POST /v3/conversations/{id}/activities (Adaptive Card)
-    B-->>U: „Twój certyfikat wygasa 12.10.2026”
-    T->>DB: bl_expiry_notified(issuance, próg, kanał=teams)
+    G-->>T: the user's id in Entra, preferredLanguage
+    T->>G: POST /users/{id}/teamwork/installedApps (if the bot is not installed)
+    T->>B: POST /v3/conversations (a 1:1 conversation with the user)
+    T->>B: POST /v3/conversations/{id}/activities (an Adaptive Card)
+    B-->>U: "Your certificate expires on 12.10.2026"
+    T->>DB: bl_expiry_notified(issuance, threshold, channel=teams)
 ```
 
-- **Bot jednokierunkowy.** Manifest aplikacji Teams ma
-  `"isNotificationOnly": true` — użytkownik nie może do bota pisać, więc
-  serwer **nie potrzebuje publicznego endpointu przychodzącego**. Wystarczy
-  ruch wychodzący.
-- **Bez SDK bota.** Do samego wysyłania wystarcza REST Bot Connectora i
-  Graph przez `HttpClient` + token z MSAL (`Microsoft.Identity.Client`). SDK
-  obsługuje głównie rozmowę, której tu nie ma, i byłby największą zależnością
-  w serwerze.
-- **Użytkownik po SID.** Wydanie zapisuje `objectSid` z AD; w Entra ID
-  (środowisko hybrydowe, Entra Connect / Cloud Sync) ten sam SID jest w
-  `onPremisesSecurityIdentifier`. Zmiana UPN nie psuje dopasowania.
-- **Instalacja bota u użytkownika.** Wiadomość prywatna wymaga, żeby
-  aplikacja była zainstalowana u odbiorcy. Serwer instaluje ją sam przez
-  Graph (`installedApps`) przy pierwszym powiadomieniu — nikt nie musi tego
-  robić ręcznie.
+- **A one-way bot.** The Teams application manifest has
+  `"isNotificationOnly": true` — the user cannot write to the bot, so the
+  server **needs no public inbound endpoint**. Outbound traffic is enough.
+- **No bot SDK.** For sending alone, the Bot Connector's REST API and Graph
+  through `HttpClient` plus a token from MSAL
+  (`Microsoft.Identity.Client`) are enough. The SDK mostly handles the
+  conversation, which does not exist here, and would be the largest dependency
+  in the server.
+- **The user is found by SID.** An issuance records the `objectSid` from AD; in
+  Entra ID (a hybrid environment, Entra Connect / Cloud Sync) that same SID is
+  in `onPremisesSecurityIdentifier`. A UPN change does not break the match.
+- **Installing the bot for the user.** A private message requires the
+  application to be installed for the recipient. The server installs it itself
+  through Graph (`installedApps`) at the first notification — nobody has to do
+  it by hand.
 
-## Treść
+## The content
 
-Adaptive Card w języku użytkownika: `preferredLanguage` z Entra, a jeśli
-brak albo nie jest jednym z czterech — domyślny z konfiguracji. Teksty z
-katalogu `Messages` ([08](08-localization.md)), prostym językiem:
+An Adaptive Card in the user's language: `preferredLanguage` from Entra, or, if
+it is missing or not one of the four, the default from the configuration. The
+texts come from the `Messages` catalogue ([08](08-localization.md)), in plain
+language:
 
-> **Twój certyfikat logowania kartą wkrótce wygaśnie**
-> Klucz YubiKey nr 29051525 · certyfikat ważny do 12.10.2026 (za 7 dni)
-> Zgłoś się do działu IT, żeby go odnowić.
+> **Your smart-card logon certificate expires soon**
+> YubiKey no. 29051525 · certificate valid until 12.10.2026 (in 7 days)
+> Contact IT to renew it.
 
-Bez przycisków akcji — bot niczego nie obsługuje. Tekst „Zgłoś się do…”
-i ewentualny link (np. do portalu zgłoszeń) są w konfiguracji.
+No action buttons — the bot handles nothing. The "Contact…" text and any link
+(to a ticketing portal, say) come from the configuration.
 
-## Konfiguracja
+## Configuration
 
 ```json
 "ExpiryNotification": {
@@ -76,96 +77,104 @@ i ewentualny link (np. do portalu zgłoszeń) są w konfiguracji.
 }
 ```
 
-Progi 30 i 7 dni to wartości domyślne; każdy próg wysyła się dla danego
-wydania dokładnie raz (`expiry_notifications`, unikalne
-`issuance_id` + `threshold_days`). Wydanie w stanie `Superseded` nie dostaje
-powiadomień — użytkownik ma już nowszą kartę.
+The 30- and 7-day thresholds are the defaults; each threshold is sent for a
+given issuance exactly once (`expiry_notifications`, unique on `issuance_id` +
+`threshold_days`). An issuance in state `Superseded` gets no notices — the user
+already has a newer card.
 
-## Co przygotowuje administrator (raz)
+## What the administrator prepares (once)
 
-1. **Rejestracja aplikacji w Entra ID** z **certyfikatem** (nie hasłem);
-   certyfikat w `LocalMachine\My` (Windows/MSIX) albo w Docker secret.
-2. **Uprawnienia aplikacyjne Graph**, zgoda administratora:
-   `User.Read.All` (znalezienie użytkownika po SID),
-   `TeamsAppInstallation.ReadWriteSelfForUser.All` (zainstalowanie bota u
-   użytkownika — tylko tej jednej aplikacji, nie dowolnych).
-3. **Azure Bot** powiązany z tą rejestracją, z włączonym kanałem Microsoft
-   Teams.
-4. **Aplikacja Teams** (manifest z `bots[].isNotificationOnly = true`,
-   ikona, nazwa „BlinkyLite”) wgrana do katalogu organizacji przez
-   administratora Teams. Manifest i ikony leżą w `packaging/teams/`.
-5. **Ruch wychodzący z serwera** do `login.microsoftonline.com`,
-   `graph.microsoft.com`, `smba.trafficmanager.net` (HTTPS 443).
+1. **An application registration in Entra ID** with a **certificate** (not a
+   secret); the certificate in `LocalMachine\My` (Windows/MSIX) or in a Docker
+   secret.
+2. **Graph application permissions**, with admin consent: `User.Read.All`
+   (finding the user by SID) and
+   `TeamsAppInstallation.ReadWriteSelfForUser.All` (installing the bot for the
+   user — only that one application, not arbitrary ones).
+3. **An Azure Bot** tied to that registration, with the Microsoft Teams channel
+   enabled.
+4. **A Teams application** (a manifest with
+   `bots[].isNotificationOnly = true`, an icon, the name "BlinkyLite")
+   uploaded to the organisation's catalogue by a Teams administrator. The
+   manifest and the icons live in `packaging/teams/`.
+5. **Outbound traffic from the server** to `login.microsoftonline.com`,
+   `graph.microsoft.com` and `smba.trafficmanager.net` (HTTPS 443).
 
-## Skąd wziąć kod (prace wstępne, 11 października 2026)
+## Where to take the code from (preparatory work, 11 October 2026)
 
-Połowa tego patcha jest już napisana w innym projekcie właściciela —
-**`campusvdi-manager`** — tyle że dla poczty, nie dla Teams. Zanim ktoś
-zacznie 0060 od zera, warto tam zajrzeć.
+Half of this patch is already written in another of the owner's projects —
+**`campusvdi-manager`** — only for e-mail rather than Teams. Before anybody
+starts 0060 from scratch, it is worth looking there.
 
-| Co | Gdzie w `campusvdi-manager` | Ile z tego zostaje |
+| What | Where in `campusvdi-manager` | How much of it survives |
 |---|---|---|
-| Token aplikacji przez MSAL, **certyfikat wygrywa nad sekretem**, klient cache'owany per konfiguracja | `backend/src/CampusVdi.Integrations.Mail/Microsoft365/MicrosoftTokenProvider.cs` | **prawie całość** — 09 zakłada dokładnie ten mechanizm |
-| Kształt wywołania Graph: klasyfikacja błędów na trwałe i przejściowe, timeouty, zero sekretów w komunikatach | `.../Microsoft365/GraphMailTransport.cs` | **wzorzec**, nie treść — my wołamy inne końcówki |
-| Kolejka wychodząca: zajęcie wiersza, ponowienia, czyszczenie starych | `Application/Mail/MailOutbox.cs`, `Infrastructure/Jobs/MailJobRunner.cs` | wzorzec; u nas rolę kolejki pełni `bl_expiry_notified` |
+| An application token through MSAL, **the certificate beating the secret**, the client cached per configuration | `backend/src/CampusVdi.Integrations.Mail/Microsoft365/MicrosoftTokenProvider.cs` | **nearly all of it** — 09 assumes exactly this mechanism |
+| The shape of a Graph call: classifying errors as permanent or transient, timeouts, no secrets in messages | `.../Microsoft365/GraphMailTransport.cs` | the **pattern**, not the content — we call different endpoints |
+| An outbound queue: claiming a row, retries, pruning old ones | `Application/Mail/MailOutbox.cs`, `Infrastructure/Jobs/MailJobRunner.cs` | the pattern; here the queue's role is played by `bl_expiry_notified` |
 
-**Czego nie przenosić.** Tamten projekt stoi na Quartzu i repozytoriach w
-stylu EF. Tu obowiązuje `PeriodicTimer` w usłudze (bez osobnego procesu) i
-zapis **wyłącznie** przez funkcje `bl_*`. Sama poczta nie jest potrzebna.
+**What not to carry over.** That project stands on Quartz and EF-style
+repositories. Here the rule is a `PeriodicTimer` in the service (no separate
+process) and writes **exclusively** through `bl_*` functions. E-mail itself is
+not needed.
 
-**Czego tam nie ma i trzeba napisać:** Bot Connector (`POST /v3/conversations`
-i `activities`), instalacja bota u użytkownika przez `installedApps`,
-wyszukanie po `onPremisesSecurityIdentifier`, Adaptive Card w czterech
-językach i `bl_expiry_notified`.
+**What is not there and has to be written:** the Bot Connector
+(`POST /v3/conversations` and `activities`), installing the bot for a user
+through `installedApps`, the lookup by `onPremisesSecurityIdentifier`, the
+Adaptive Card in four languages, and `bl_expiry_notified`.
 
-> **Warunek, bez którego nie wolno skopiować ani linii:** `campusvdi-manager`
-> jest na **AGPL-3.0**, a BlinkyLite na Apache-2.0. Zgodność idzie tylko w
-> jedną stronę — kod z AGPL wciągnięty tutaj uczyniłby AGPL-em całość, razem
-> z §13, który każe oferować źródła każdemu, kto korzysta z serwera przez
-> sieć. Właściciel jest autorem obu projektów, więc wystarczy, że wskazane
-> pliki wyda **również na Apache-2.0**; dopóki tego nie zrobi, patrzymy na
-> tamten kod wyłącznie jak na projekt rozwiązania i piszemy swój.
+> **The condition without which not one line may be copied:**
+> `campusvdi-manager` is **AGPL-3.0** and BlinkyLite is Apache-2.0.
+> Compatibility runs one way only — AGPL code pulled in here would make the
+> whole thing AGPL, §13 included, which requires offering the sources to
+> anybody who uses the server over a network. The owner is the author of both
+> projects, so it is enough for them to release the named files **under
+> Apache-2.0 as well**; until they do, we look at that code purely as a design
+> and write our own.
 
-## Jak to zaplanować
+## How to plan it
 
-Dwie części, bo tylko jedna potrzebuje tenanta — i to decyduje o tym, co da
-się sprawdzić bez niczyjej pomocy.
+Two parts, because only one of them needs a tenant — and that decides what can
+be checked without anybody's help.
 
-**Część pierwsza, bez tenanta i bez Entra** (cała sprawdzalna testami):
+**Part one, with no tenant and no Entra** (all of it checkable by tests):
 
-1. Migracja z tabelą progów i funkcją `bl_expiry_notified` — próg zapisany
-   raz, drugie wywołanie zwraca `false`. Test w `DbTests`, w tym dwa
-   równoległe wywołania jednego progu.
-2. Wybór wydań: `Issued`, certyfikat wygasa w progu, karta nie jest wycofana
-   (0058). Zapytanie przez czytający model, test na prawdziwym PostgreSQL.
-3. Pętla dzienna na `PeriodicTimer`, z wysyłką **za interfejsem** i atrapą —
-   tak jak testujemy całą resztę bez sprzętu.
-4. Adaptive Card w czterech językach, z `Messages.resx`; wybór języka z
-   `preferredLanguage`, z podmianą na domyślny spoza naszej czwórki.
-5. Zdarzenia audytu `cert.expiry-notified` i `cert.expiry-notify-failed` z
-   powodami z tabeli „Błędy" niżej.
+1. The migration with the thresholds table and the `bl_expiry_notified`
+   function — a threshold recorded once, and the second call returning `false`.
+   A test in `DbTests`, including two parallel calls for one threshold.
+2. Selecting the issuances: `Issued`, the certificate expiring within the
+   threshold, the card not withdrawn (0058). A query through the read model,
+   tested against a real PostgreSQL.
+3. The daily loop on a `PeriodicTimer`, with the sending **behind an
+   interface** and a stub — the way everything else is tested without
+   hardware.
+4. The Adaptive Card in four languages, from `Messages.resx`; the language
+   from `preferredLanguage`, falling back to the default for anything outside
+   our four.
+5. The audit events `cert.expiry-notified` and `cert.expiry-notify-failed`,
+   with the reasons from the "Errors" table below.
 
-**Część druga, dopiero z tenantem:** token MSAL na certyfikacie, wyszukanie
-użytkownika w Graph, `installedApps`, rozmowa 1:1 i wysłanie karty. Do tego
-rejestracja aplikacji i manifest Teams z `isNotificationOnly`.
+**Part two, only with a tenant:** the MSAL token on a certificate, the user
+lookup in Graph, `installedApps`, the 1:1 conversation and sending the card.
+Plus the application registration and the Teams manifest with
+`isNotificationOnly`.
 
-Nowa zależność: **`Microsoft.Identity.Client`** w serwerze — wersja trafia do
-`Directory.Packages.props` po prawdziwym restore, nie z pamięci.
+A new dependency: **`Microsoft.Identity.Client`** in the server — its version
+goes into `Directory.Packages.props` after a real restore, not from memory.
 
-Kolejność jest taka, a nie odwrotna, bo część pierwsza zamyka wszystko, co
-może pójść źle po cichu — wysłanie dwóch wiadomości o tym samym progu albo
-powiadomienie o karcie, która została wycofana. Część druga albo działa, albo
-zwraca błąd, który widać od razu.
+The order is this way round, not the other, because part one closes everything
+that can go wrong silently — sending two messages about the same threshold, or
+a notice about a card that has been withdrawn. Part two either works or returns
+an error you see at once.
 
-## Błędy
+## Errors
 
-| Sytuacja | Co się dzieje |
+| Situation | What happens |
 |---|---|
-| Brak użytkownika w Entra o tym SID (konto tylko on-premises) | brak wysyłki, audyt `cert.expiry-notify-failed` z powodem `user-not-in-entra`; widoczne w przeglądarce dla Admina |
-| Graph / Bot Connector niedostępny | ponowna próba przy następnym uruchomieniu; próg nie jest oznaczany jako wysłany |
-| Użytkownik zablokował bota | audyt `cert.expiry-notify-failed`, bez ponawiania |
-| Serwer wyłączony w dniu progu | następne uruchomienie wysyła zaległy próg (warunek „≤ teraz + próg”, nie „= dokładnie”) |
+| No user in Entra with that SID (an on-premises-only account) | nothing is sent, and `cert.expiry-notify-failed` is audited with the reason `user-not-in-entra`; visible in the browser to an Admin |
+| Graph / the Bot Connector unavailable | another attempt at the next run; the threshold is not marked as sent |
+| The user blocked the bot | `cert.expiry-notify-failed` audited, with no retry |
+| The server was off on the threshold's day | the next run sends the overdue threshold (the condition is "≤ now + threshold", not "= exactly") |
 
-Dwa progi w jednym uruchomieniu (np. serwer leżał tydzień) → wysyłany jest
-tylko najbliższy, a starsze oznaczane jako pominięte — użytkownik nie
-dostaje dwóch wiadomości naraz.
+Two thresholds in one run (the server was down for a week, say) → only the
+nearest one is sent and the older ones are marked as skipped — the user does
+not get two messages at once.
