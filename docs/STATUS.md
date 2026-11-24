@@ -1,0 +1,540 @@
+# Status projektu — BlinkyLite
+
+**Ostatnia aktualizacja:** 2026-11-24
+**Faza:** 2 — Wydanie
+**Ogólnie:** certyfikaty wydane z WPF logują do Windows, także przez
+wbudowany sterownik PIV bez minidrivera Yubico (0026). Serwer stoi w Dockerze
+za nginx na 443 z konsolą web (0055, na razie tylko logowanie i pusty widok
+wydań). Logowanie ma obowiązkowy drugi składnik TOTP (0027) i działa w labie
+w codziennym użyciu. Przeglądarka (0030):
+lista wydań dla trzech ról, PUK jednej karty z powodem, szczegóły dla Admin/SO,
+MK i dziennik audytu dla Admina, a „Zweryfikuj klucz” w WPF i PowerShell —
+napisana i przetestowana, jeszcze nie sprawdzona w labie. Zablokowany PIN
+odblokowuje osobna aplikacja: PUK-iem z helpdesku (0056) albo przez telefon,
+z zatwierdzeniem w konsoli i PUK-iem, którego nikt nie wypowiada (0057).
+Adres serwera dla obu okien ustawia administrator przez GPO, więc nikt go nie
+wpisuje. Odblokowanie PIN przez telefon **działa w labie** (0057, 29 września: kod ze
+stacji WS-01, zatwierdzenie w konsoli, nowy PIN ustawiony, PUK nigdzie nie
+wypowiedziany; adres serwera przyszedł z GPO). Klucz, który wyszedł z użycia,
+da się wycofać — zapis przestaje wtedy twierdzić, że zna PUK, który już niczego
+nie otwiera (0058).
+Operator ma **okno swojego konta** (z nazwiska w górnym pasku): widzi, kiedy potwierdził aplikację z
+kodami i ile kodów zapasowych mu zostało, i dodaje tam **klucz bezpieczeństwa
+Yubico (FIDO2)** — od tego momentu drugi składnik to dotknięcie klucza albo
+sześć cyfr, do wyboru przy każdym logowaniu w przeglądarce (0028, D-49).
+**Działa na sprzęcie:** 24 listopada o 16:22 operator zarejestrował YubiKeya
+w konsoli i zalogował się nim — po dołożeniu ogniw pośrednich atestacji, bez
+których klucz z firmware 5.7.4 nie dawał się dołączyć do korzenia — a o 16:51
+Windows Hello zostało przy rejestracji odrzucone. Od 0029 kod
+z aplikacji **przestaje być obowiązkowy**: obowiązkowy jest drugi składnik, a
+operator wybiera przy pierwszym logowaniu klucz albo kod — z tym, że na stację
+wejdzie tylko z kodem (D-50).
+756 testów jednostkowych i 198 na PostgreSQL 16. Otwarte przed 1.0: ponowne
+wydanie znanej karty (R-11), odzyskiwanie (0022), konfiguracja w web (0031),
+instalatory. Logowanie kontem Windows (0025) działa: operatorzy od dłuższego
+czasu logują się ze stacji biletem Kerberos, bez wpisywania hasła AD (0025 i
+0027 `done` od 16 października).
+
+**Faza 8 (klucze HID Crescendo) jest wycofana — 23 listopada 2026, D-47.**
+Kart nie ma. Patch nie jest skończony, dopóki jego DoD nie sprawdzi ktoś, kto
+go nie pisał, a bez sprzętu 0082–0084 nie wyjdą z `done-unverified` już nigdy —
+więc zamiast gnić po cichu wychodzą z repozytorium: sterownik
+`BlinkyLite.Crescendo`, narzędzie `CrescendoLab`, SDK HID, przełącznik „klucze
+bez atestacji producenta” (migracja 0014) i teksty w czterech językach.
+BlinkyLite wydaje **tylko YubiKey**. Z fazy 8 **zostaje to, co ma wartość bez
+Crescendo**: abstrakcja tokenu (0080) — silnik, WPF, Unlock i moduł PowerShell
+dalej otwierają token przez `BlinkyLite.Tokens`, bo Unlock nie może widzieć
+silnika wydania (D-36) — i tożsamość karty poza samym serialem (0081, migracja
+0009). Rodzina `Crescendo` zostaje **czytelna**: wydania, koperty i audyt są
+tylko dopisywane, więc te karty dalej da się przejrzeć, wycofać i unieważnić
+ich certyfikaty. Czego już nie da się zrobić: otworzyć takiej karty — bez SDK
+żadna stacja jej nie przeczyta, nie odblokuje PIN-u i nie wyczyści.
+
+Profile wydania i keytab Kerberos są w bazie i w konsoli web (0031); **wdrożone
+w labie 13 października** (migracje 0009–0011, keytab w tmpfs, logowanie
+Windows dalej odpowiada). Paczki stacji **0.1.138.0** (klient i Unlock, MSIX
+podpisany `CN=BlinkyLite`) są na stronie Narzędzia i logowania.
+
+Wersja do odczytu maszynowego to [status.json](status.json). Oba pliki muszą
+się zgadzać; `status.json` czyta build albo dashboard. Definicje ukończenia są
+w [05 — Roadmapa](05-roadmap.md); tu jest tylko to, co jest zrobione.
+
+## Gdzie jest projekt
+
+BlinkyLite powstał 19 września 2026 jako uproszczona wersja Blinky: wydanie
+klucza YubiKey PIV z ADCS przez EOBO ze stacji administratora (WPF albo
+PowerShell), z PUK i management key zapisanymi w bazie serwera, logowaniem z
+AD i trzema rolami (Admin, SecurityOfficer, Helpdesk).
+
+Tego samego dnia właściciel ustalił: **MSIX** jako instalator, **NHibernate +
+FluentNHibernate** do odczytu i **zapis wyłącznie przez procedury SQL**,
+interfejs w czterech językach (**EN, DE, SV, PL**), i że projekt ma zostać
+mały. Roadmapa została skrócona z 38 do 16 patchy, a później doszły dwa
+zaplanowane od razu, bo dopisane później byłyby przeróbką: 0005 (sekrety poza
+konfiguracją) i 0054 (eksport do Blinky). Zakres to **wydanie i
+weryfikacja** — zmiana PUK, odblokowanie PIN, reset i dalsze życie karty
+należą do Blinky i są „Poza zakresem” w roadmapie, a nie odłożone na później.
+
+Istnieją: README, dziewięć dokumentów projektowych z diagramami, roadmapa z
+definicjami ukończenia, te pliki statusu i `CLAUDE.md`.
+
+Od 0001 (19 września 2026) istnieje też szkielet: `BlinkyLite.slnx` z sześcioma
+projektami i dwoma projektami testów, wersje pakietów sprawdzone restore'em,
+workflow CI z jobem Windows i Linux. Sprawdzone na tej maszynie (Windows x64,
+SDK 10.0.401):
+
+- `dotnet build BlinkyLite.slnx -c Release` — 0 ostrzeżeń, 0 błędów;
+- `dotnet test` — 12 testów jednostkowych przechodzi; test bazy pominięty z
+  powodem, gdy nie ma `BLINKYLITE_TEST_DB`, a z PostgreSQL 16 w Dockerze
+  przechodzi;
+- `dotnet publish` klienta dla `win-x64` i `win-arm64` — pole *machine* w
+  nagłówku PE to `0x8664` i `0xAA64`, czyli naprawdę dwie architektury;
+- moduł PowerShell ładuje się w pwsh 7.6.6, nie niesie własnej kopii
+  `System.Management.Automation`, a Windows PowerShell 5.1 odmawia go
+  czytelnym komunikatem o wymaganej wersji 7.6;
+- część linuksowa CI (build serwera + test bazy) odtworzona w kontenerze
+  `mcr.microsoft.com/dotnet/sdk:10.0` przeciw PostgreSQL 16 — przechodzi.
+
+Od 0002 (19 września 2026) istnieje baza według [07](07-database.md):
+`db/init/00_roles.sql` (trzy role), cztery migracje (tabele, funkcje
+`bl_issuance_*`, `bl_secret_disclose`, `bl_mgmt_key_candidates`, `bl_audit`,
+uprawnienia), migrator w serwerze (`--migrate`, tylko jako
+`blinkylite_owner`), mapowania FluentNHibernate tylko do odczytu, klasa
+`Procedures` jako jedyna droga zapisu. Sprawdzone:
+
+- 82 testy w `BlinkyLite.DbTests` przechodzą na PostgreSQL 16 — z Windows i
+  z kontenera `dotnet/sdk:10.0` (Linux, jak w CI). Pokrywają każdy punkt z
+  „Testy bazy” w 07: 31 niedozwolonych przejść → `BL001` bez zmiany i bez
+  audytu; audyt, który się nie zapisał, cofa zmianę; `app` i `readonly` nie
+  mogą `INSERT/UPDATE/DELETE/TRUNCATE` żadnej tabeli ani przeczytać kopert;
+  `mgmt-key` bez `Admin` → `BL004`; 20 rund dwóch równoległych rezerwacji
+  jednej karty — zawsze dokładnie jedna wygrywa; migracje drugi raz nic nie
+  robią; `SchemaValidator` przechodzi;
+- serwer naprawdę: `00_roles.sql` przez `psql`, `--migrate` stosuje 4
+  migracje, drugi raz „up to date”, jako superużytkownik odmawia (kod 1);
+  start jako `blinkylite_app` loguje `schema ok` i odpowiada na `/health`;
+  po ręcznej zmianie sumy kontrolnej odmawia startu z nazwą migracji (kod 3).
+
+Po drodze wyszły dwie rzeczy, których projekt nie przewidział i które są
+teraz zapisane w 07: zwykły `SELECT` na `card_secrets` pozwoliłby czytać PUK
+bez audytu (stąd uprawnienie kolumnowe), a `SchemaValidator` porównuje typy
+z `udt_name` (`int8`, nie `bigint`).
+
+Od 0003 (19 września 2026) działa serwer: logowanie LDAPS bind → JWT z rolami
+z grup AD, polityki na każdym endpoincie, wyszukiwanie użytkownika, koperty
+sekretów i jednolity format błędów (`code` + `args`, bez tłumaczenia po
+stronie serwera). Sprawdzone:
+
+- 112 testów jednostkowych: każdy endpoint ma politykę albo jest jawnie
+  anonimowy; złe hasło → 401 i `auth.denied` bez SID; dobre hasło bez grupy →
+  403 z SID; puste hasło nie dociera do LDAP; pięć nieudanych prób blokuje
+  konto przed AD; token cudzym kluczem i token wygasły odrzucone; Helpdesk nie
+  przeszuka katalogu; koperta przeniesiona do innego wydania, innej karty albo
+  do kolumny management key **nie otwiera się**, każdy zmieniony bajt jest
+  wykrywany, a po rotacji KEK stare koperty wciąż się otwierają; żaden publiczny
+  typ ani kolumna nie niesie PIN-u;
+- 84 testy bazy (migracja 0005: id wydania nadaje serwer, bo AAD koperty je
+  zawiera) plus test spinający koperty z `bl_secret_disclose`;
+- serwer naprawdę: po HTTPS `/health` odpowiada, `/api/auth/me` bez tokenu daje
+  401 `error.auth.required`, logowanie bez skonfigurowanego LDAP 503
+  `error.directory.unavailable`, a po zwykłym HTTP w Production serwer odmawia
+  startu (kod 4);
+- **na prawdziwym AD** (20 września 2026): bind przez LDAPS, odczyt grup
+  przechodnich i mapowanie na rolę `Admin` — szczegóły niżej, przy 0050;
+- **CI na GitHub przeszło** 19 września 2026 po pierwszym pushu: job Windows
+  (build, testy, publikacja x64 i ARM64, import modułu) i job Linux (serwer i
+  testy bazy na PostgreSQL 16) — oba zielone.
+
+Od 0004 (19 września 2026) jest katalog komunikatów: 59 kluczy w czterech
+językach (EN, DE, SV, PL) w `BlinkyLite.Contracts/Resources`, klasa `Strings`
+z przełączaniem języka na żywo i słowniczek terminów. Testy wymagają, żeby
+każdy język miał każdy klucz i te same parametry, żeby każdy kod błędu i
+**każda akcja audytu wyczytana z migracji** miały tekst, żeby satelity
+językowe naprawdę się zbudowały i żeby w XAML nie było tekstu dla człowieka.
+To jedyny patch w stanie `done`: cała jego definicja ukończenia jest
+sprawdzana maszynowo, a CI robi to niezależnie ode mnie.
+
+Od 0005 (19 września 2026) sekrety są poza konfiguracją: `ISecretStore`
+czyta je z pliku (`Secrets:Files`, potem `Secrets:Directory` — najpierw
+`.dpapi`, potem zwykły) albo ze zmiennej `BLINKYLITE_SECRET_<NAZWA>`.
+Connection string w konfiguracji nie ma hasła; serwer dokleja je w pamięci.
+`--protect-secret <nazwa>` zapisuje plik DPAPI w zakresie maszyny. Sprawdzone:
+
+- 164 testy jednostkowe: sekret wpisany w `appsettings.json` (klucz JWT, hasło
+  LDAP, KEK, hasło w connection stringu) zatrzymuje start i podaje **nazwę
+  klucza, nie wartość**; w deweloperce ta sama konfiguracja przechodzi; plik
+  wygrywa ze zmienną; brak sekretu mówi, gdzie szukano; round trip DPAPI;
+- serwer naprawdę: w trybie Production z sekretem w konfiguracji kończy się
+  kodem 2 i wymienia oba znalezione klucze; z kluczem JWT w pliku DPAPI,
+  KEK-iem i hasłem bazy w plikach startuje, loguje `schema ok` i odpowiada na
+  `/health`, a w pliku `.dpapi` nie widać wartości.
+
+Ostrzeżenie o zbyt szerokich prawach pliku działa na Linuksie (prawa POSIX),
+czyli wszędzie, gdzie serwer stoi — od D-38 nie ma innego miejsca. Plik DPAPI
+i `--protect-secret` zostają w kodzie, ale żadne wspierane wdrożenie ich nie
+używa; do rozstrzygnięcia, czy je usunąć.
+
+Od 0010 (20 września 2026) w repozytorium jest warstwa PIV: 34 pliki z
+`Blinky.Piv` (PC/SC, komendy APDU, management key, obiekty karty, weryfikacja
+atestacji Yubico z przypiętymi rootami) i 24 pliki testów z dwoma zapisami
+rozmów z prawdziwymi kluczami — 5.4.3, 5.7.1, 5.7.2 Bio i wirtualny czytnik
+Windows Hello. Przeniesione skryptem z przemianowaniem przestrzeni nazw, bez
+przepisywania ręką. 346 testów jednostkowych przechodzi bez sprzętu.
+
+Jedyna zmiana w treści: **`FF` (SET MANAGEMENT KEY) dodane do maskowania
+APDU**. W Blinky go brakuje, a komentarz przy `DB` przypisuje sobie ochronę
+management key — `DB` zapisuje tylko kopię do PRINTED. Nieudana transmisja
+`FF` wypisałaby management key karty w logu. Test to sprawdza. Pochodzenie
+kodu jest w `NOTICE`.
+
+Od 0050 (20 września 2026) serwer **da się uruchomić jednym poleceniem**:
+`docker compose up -d --build` stawia PostgreSQL z trzema rolami, stosuje
+migracje jednorazowym kontenerem jako `blinkylite_owner` i dopiero potem
+startuje serwer jako `blinkylite_app`. Sekrety to Docker secrets, TLS to para
+PEM (klucz też jest sekretem), a wymagania i kroki wdrożenia są w
+[11](11-wymagania-i-wdrozenie.md). Sprawdzone na tej maszynie:
+
+- `docker compose up -d --build` od zera: baza zdrowa, 5 migracji zastosowanych
+  w kontenerze, serwer słucha na 8443, w logu `schema ok`;
+- `/health` odpowiada po HTTPS, `/api/auth/me` bez tokenu daje 401;
+- logowanie przy nieosiągalnym kontrolerze domeny daje 503
+  `error.directory.unavailable` — czyli `libldap` naprawdę się ładuje, a nie
+  wywala się na braku biblioteki.
+
+Trzy rzeczy wyszły dopiero przy uruchomieniu i są poprawione: `--migrate`
+wykonywał się **przed** wczytaniem sekretów, więc nie dostawał hasła
+właściciela bazy; brak `.dockerignore` wpuszczał do obrazu katalogi `obj/` z
+Windows i psuł build; `psql -c` nie rozwija zmiennych, więc skrypt ustawiający
+hasła ról kończył się cicho bez ustawienia czegokolwiek.
+
+Pierwsze wdrożenie na prawdziwym Linuksie (kontener LXC na Proxmoxie,
+20 września 2026) pokazało czwartą rzecz, której Docker Desktop nie potrafi
+pokazać: **kontener bazy wykonuje swoje skrypty startowe jako `uid 999`, a
+pliki sekretów należały do użytkownika serwera (`uid 1654`) z prawami 600**.
+Skrypt nie mógł ich przeczytać, ustawił rolom **puste hasła** i wypisał
+„password set”, bo nieudane podstawienie polecenia nie jest nieudanym
+poleceniem. Serwer nie mógł się zalogować do bazy. Poprawione: hasła do bazy
+należą do `999:1654` z prawami `640`, skrypt sprawdza czytelność pliku i
+odmawia ustawienia pustego hasła, a ostrzeżenie o prawach pilnuje już tylko
+dostępu „dla innych”, bo grupa jest tu świadomym sposobem współdzielenia.
+
+**Potwierdzone na prawdziwej domenie** (20 września 2026, kontener LXC
+`192.0.2.89`, domena `dw-ad.digitalworkspace.pl`): kontrolery znalezione po SRV,
+LDAPS zweryfikowany łańcuchem `DIGITALWORKSPACE-Root-CA` → `DIGITALWORKSPACE-Sub-CA`
+pobranym z `pki.digitalworkspace.pl`, trzy grupy AD zmapowane po SID. Logowanie
+kontem `adm_j.kowalski` zwróciło token z rolą `Admin`, a w audycie są dwa
+wpisy: `auth.denied` dla nieistniejącego konta i `auth.login` z rolą i
+adresem źródłowym. `has_column_privilege('blinkylite_app', 'card_secrets',
+'puk_envelope', 'SELECT')` na tym wdrożeniu zwraca `f` — aplikacja nadal nie
+może przeczytać koperty z pominięciem funkcji. To domyka „działające
+logowanie” z definicji ukończenia 0050 i zarazem lukę 0003, która mówiła, że
+warstwa LDAP nie widziała prawdziwego AD.
+
+Od 0011 (20 września 2026) istnieje **silnik personalizacji**
+(`BlinkyLite.Issuance`): management key do PRINTED z flagą w ADMIN DATA i
+dopiero potem `SET MANAGEMENT KEY`, PUK przed PIN-em, CHUID i CCC zanim
+Windows zostanie poproszony o logowanie, klucz w 9A, atestacja zweryfikowana
+przypiętymi rootami Yubico i żądanie podpisane przez kartę — wszystko w jednej
+transakcji PC/SC. PIN wpisuje człowiek przez `IPinPrompt`, reguły sprawdza
+`PinRules` przeniesione z Blinky, a po użyciu PIN jest zerowany; nie ma go w
+wyniku, w logu ani w pliku.
+
+Po zapisie silnik **odczytuje kartę zamiast zakładać**: czy management key
+wraca z PRINTED taki sam, czy flaga ADMIN DATA mówi „za PIN-em” (to samo, co
+czyta `ykman piv info`), czy podpis CSR daje się sprawdzić ponownym wczytaniem
+żądania, jaki jest stan PIN-u i PUK-u i czy klucz w 9A został **wygenerowany**,
+a nie wgrany. Komplet tych odpowiedzi to definicja ukończenia 0011 zapisana w
+kodzie (`PersonalisationChecks.Passed`).
+
+`tools/BlinkyLite.CardLab` to narzędzie **stacji testowej**, nie część
+produktu: `inventory` tylko czyta, `personalise` wymaga `--yes` i karty
+fabrycznej, a po przebiegu zostawia dwa pliki — raport do odesłania (bez
+PIN-u, PUK-u i management key) i osobny plik z PUK i management key, który ma
+zostać na stacji. Czytnik wybiera po odpowiedzi na `SELECT`, a nie po nazwie,
+bo ten sam token w czytniku OMNIKEY nie nazywa się „YubiKey”. Spakowane
+samodzielnie (`artifacts/BlinkyLite-CardLab-win-x64.zip`, bez instalowania
+.NET) razem z instrukcją po polsku.
+
+**Sprawdzone na sprzęcie** (20 września 2026, stacja `WS-02`, Windows 11
+26100) — obie gałęzie algorytmu management key, po jednym fabrycznym kluczu:
+
+| | 33333333 | 11111111 |
+|---|---|---|
+| firmware | 5.4.3 | 5.8.0 |
+| management key | `TripleDes` | `Aes192` |
+| obudowa z atestacji | `UsbAKeychain` | `UsbCKeychain` |
+| wynik | OK, 6/6 sprawdzeń | OK, 6/6 sprawdzeń |
+
+W obu przebiegach: management key wraca z PRINTED taki sam, flaga ADMIN DATA
+mówi „za PIN-em”, podpis CSR daje się sprawdzić, PIN i PUK są `Set`, w 9A
+klucz `Rsa2048` z `Origin=Generated`, polityka PIN `Once`, dotyk `Never`,
+CHUID i CCC zapisane, atestacja zweryfikowana do przypiętego roota Yubico z
+serialem i firmware zgodnym z kartą. Raporty zostają na stacji — jak
+transkrypty APDU, niosą serial i certyfikaty, więc nie wchodzą do
+repozytorium.
+
+Wcześniej, zanim ten sam klucz 33333333 został zresetowany, silnik **odmówił**
+mu wydania: karta z laboratorium Blinky (management key ustawiony, PUK
+zablokowany, w 9A certyfikat z „Blinky Issuing CA”) dostała
+`error.card.not-factory`, a jej stan po próbie był identyczny, bo ten warunek
+stoi przed transakcją.
+
+**Potwierdzone kodem spoza tego repozytorium.** Definicja ukończenia prosi o
+świadka, którego nie pisaliśmy, bo flagę ADMIN DATA czytał dotąd wyłącznie
+nasz własny kod. `ykman piv info` Yubico powiedział na obu kartach dokładnie
+to zdanie — *„Management key is stored on the YubiKey, protected by PIN."* —
+a przy okazji `Management key algorithm: TDES` na 5.4.3 i `AES192` na 5.8.0
+(czyli algorytm naprawdę czytany z karty, nie zgadywany z firmware), PIN i
+PUK po 3/3 próby, obecne CHUID i CCC oraz `Slot 9A (AUTHENTICATION): Private
+key type: RSA2048`. 0011 jest `done`, a z nim faza 1.
+
+Od 0020 (20 września 2026) stoi **API wydań**: endpoint dla każdego kroku z
+[02](02-issuance.md), wszystkie na polityce `CanIssue`. Serwer robi sekrety i
+pieczętuje je, zanim powstanie rezerwacja (D-03) — test pilnuje, że do bazy
+idzie koperta, a nie PUK. Cel wydania nazywa **SID i nic więcej**: serwer pyta
+AD, kim ten SID jest, więc stacja nie poda UPN-u i SID-u należących do dwóch
+różnych osób, a konto wyłączone w AD dostaje odmowę.
+
+Dwa miejsca, w których serwer odmawia wiary stacji, oba z testem:
+
+- **atestacja** — serwer powtarza sprawdzenie stacji (łańcuch do przypiętego
+  roota Yubico, serial tej karty, SPKI zgodne z kluczem w żądaniu). Trzeci
+  warunek łapie atak, dla którego to wszystko istnieje: stacja zachowuje
+  prawdziwą atestację karty i podsyła żądanie na klucz, który wygenerowała
+  sama. Test buduje syntetyczną PKI Yubico i podmienia klucz — odmowa;
+- **zamknięcie** — certyfikat musi być na kluczu, który karta atestowała, i
+  nazywać tę osobę, dla której wydanie powstało. Certyfikat na inny klucz i
+  certyfikat na innego człowieka: odmowa.
+
+Wdrożone na `192.0.2.89` razem z profilem `DIGITALWORKSPACEYubicoSmartcardLogon`.
+Serwer wstaje z tą konfiguracją, a `/api/profiles` i `/api/issuances` bez
+tokenu odpowiadają `401 error.auth.required`.
+
+Przy wdrożeniu wyszło, że `Dockerfile` nie kopiował warstwy PIV, którą serwer
+od teraz ciągnie dla weryfikacji atestacji — na tej maszynie build przechodził,
+w kontenerze nie. Stary kontener został na miejscu, więc nic nie stanęło.
+
+**Karta wydana z okna** (0023, 21 września 2026): operator zalogował się w
+kliencie WPF, wyszukał osobę, wybrał ją z listy i wydał kartę — komplet kroków
+po polsku, na końcu „Klucz jest gotowy. Certyfikat jest na nim." Pierwszy błąd,
+jaki zobaczył prawdziwy operator, był mój: adres bez portu `:8443` klient
+pokazał jako „coś poszło nie tak po stronie serwera", bo wszystko nierozpoznane
+wpadało u mnie w `error.internal`. Teraz mówi, że nie dało się połączyć, pokazuje
+linię techniczną pod komunikatem i pisze log do `%LOCALAPPDATA%\BlinkyLite`.
+
+**Pierwszy certyfikat wydany** (0021, 20 września 2026, stacja `WS-02`):
+pełne wydanie w 56 sekund, od logowania operatora do certyfikatu odczytanego z
+karty.
+
+| | |
+|---|---|
+| karta | 11111111 (5.8.0, AES-192) |
+| żądanie w CA | 223, `DIGITALWORKSPACE-Sub-CA`, dyspozycja `Issued` |
+| podmiot | `CN=Jan Kowalski, OU=Users, OU=DIGITALWORKSPACE, …` — **zbudowany z AD** |
+| SAN | UPN `jan.kowalski@digitalworkspace.pl` |
+| `1.3.6.1.4.1.311.25.2` | `S-1-5-21-…-1106` — **SID posiadacza karty, nie operatora** |
+| odcisk | `F3C133572477C600635E08D0A98B13EB380A496A`, odczytany z karty i porównany |
+
+W bazie wiersz w stanie `Issued` z numerem żądania i serialem certyfikatu, w
+audycie komplet: `auth.login`, `issuance.reserved`, `customised`, `attested`,
+`submitted`, `issued`.
+
+To domyka zarazem R-07: przy EOBO wystarczyły prawa **agenta**. Posiadacz karty
+nie ma `Enroll` na szablonie i nie potrzebował go — moje wcześniejsze
+ostrzeżenie o `0x80094012` było niepotrzebne.
+
+**Użytkownik zalogował się tą kartą do Windows w domenie** — to jest dowód
+końcowy z definicji ukończenia i jedyny, który liczy. Znaczy, że SID w
+rozszerzeniu, CHUID i CCC, polityka PIN i łańcuch zaufania zgadzają się na
+tyle, że przyjmuje je kontroler domeny, a nie tylko nasze testy.
+
+**Karta działa z wbudowanym sterownikiem PIV Windows** (0026, 21 września 2026,
+`WS-01`, bez żadnego oprogramowania Yubico): `certutil` pokazuje „Identity
+Device (NIST SP 800-73 [PIV])", kontener klucza, podpis po PIN-ie i łańcuch pod
+NT_AUTH, a użytkownik zalogował się kartą do Windows. Minidriver Yubico nie jest
+potrzebny. Po drodze wyszły dwie rzeczy: GUID w CHUID nie był UUID-em, czego
+wymaga NIST, i CHUID był pisany tylko wtedy, gdy go brakowało — więc karta
+wydana ponownie zachowywała starą tożsamość, a stacje, które znały ją z
+poprzednim kluczem, nie widziały nowego (R-11). Obie poprawione, druga jeszcze
+niezweryfikowana. Szczegóły i pomiary: [12](12-hardware-notes.md).
+
+Nie istnieje: przeglądarka web i weryfikacja, odzyskiwanie, moduł PowerShell w
+wersji, przez którą przeszło wydanie.
+
+## Stany
+
+| Stan | Znaczenie |
+|---|---|
+| `done` | DoD sprawdzona przez kogoś, kto patcha nie pisał |
+| `done-unverified` | kod jest i przechodzi testy, ale nie spotkał sprzętu / domeny / CA |
+| `partly-done` | część DoD spełniona; co brakuje — w `gap` |
+| `open` | nie zaczęte |
+| `blocked` | nie da się zrobić tutaj; powód zapisany |
+| `deferred` | świadomie odłożone |
+
+## Patche
+
+| Patch | Faza | Tytuł | Stan |
+|---|---|---|---|
+| 0000 | 0 | Dokumentacja i schemat działania | `done` |
+| 0001 | 0 | Szkielet repozytorium | `done-unverified` |
+| 0002 | 0 | Baza danych (NHibernate + procedury `bl_*`) | `done-unverified` |
+| 0003 | 0 | Serwer | `done` |
+| 0004 | 0 | Języki EN / DE / SV / PL | `done` |
+| 0005 | 0 | Sekrety poza konfiguracją (DPAPI / Docker secrets) | `done` |
+| 0010 | 1 | Import `Blinky.Piv` | `done` |
+| 0011 | 1 | Personalizacja i klucz | `done` |
+| 0020 | 2 | API wydań | `done` |
+| 0021 | 2 | EOBO | `done` |
+| 0026 | 2 | Karta dla wbudowanego sterownika PIV Windows | `done` |
+| 0022 | 2 | Odzyskiwanie | `open` |
+| 0025 | 2 | Logowanie zintegrowane (Negotiate/Kerberos) | `done` |
+| 0027 | 2 | Drugi składnik TOTP dla wszystkich klientów | `done` |
+| 0028 | 2 | Klucz bezpieczeństwa (FIDO2) jako drugi składnik | `done` |
+| 0029 | 2 | Drugi składnik do wyboru: klucz albo kod | `done-unverified` |
+| 0023 | 2 | Klient WPF — wydanie | `done` |
+| 0024 | 2 | MK za PIN-em jako przełącznik profilu | `done-unverified` |
+| 0030 | 3 | Przeglądarka web (Helpdesk) i weryfikacja karty | `done-unverified` |
+| 0031 | 3 | Konfiguracja w aplikacji web: profile i keytab | `done-unverified` |
+| 0040 | 4 | Moduł PowerShell | `partly-done` |
+| 0050 | 5 | Docker | `done` |
+| 0055 | 5 | nginx w Dockerze | `partly-done` |
+| 0052 | 5 | Klient — MSIX | `partly-done` |
+| 0056 | 3 | Odblokowanie PIN dla posiadacza klucza | `done-unverified` |
+| 0057 | 3 | Odblokowanie PIN przez telefon | `partly-done` |
+| 0058 | 3 | Wycofanie klucza z użycia | `done-unverified` |
+| 0053 | 5 | Test end-to-end | `open` |
+| 0054 | 5 | Eksport do Blinky | `open` |
+| 0060 | 6 | Powiadomienie o wygaśnięciu przez bota Teams (po 1.0) | `open` |
+| 0070 | 7 | Agent DEB: odblokowanie PIN na Linuksie (po 1.0) | `open` |
+| 0080 | 8 | Abstrakcja tokenu | `done-unverified` |
+| 0081 | 8 | Tożsamość karty poza YubiKey | `done-unverified` |
+| ~~0082~~ | 8 | ~~Sterownik Crescendo (SDK HID)~~ — wycofany przez D-47, kod usunięty | `deferred` |
+| ~~0083~~ | 8 | ~~Wydanie Crescendo przez EOBO~~ — wycofane przez D-47 | `deferred` |
+| ~~0084~~ | 8 | ~~Crescendo w odblokowaniu i weryfikacji~~ — wycofane przez D-47 | `deferred` |
+| 0090 | 9 | Recycle i kolejka unieważnień: model, API, RBAC | `done-unverified` |
+| 0091 | 9 | Unieważnianie w ADCS z WPF (`ICertAdmin2`) | `done-unverified` |
+| 0092 | 9 | Reset PIV w sterownikach (YubiKey, Crescendo) | `partly-done` |
+| 0093 | 9 | Widoki: konsola web i akcje w WPF | `done-unverified` |
+| 0094 | 9 | Instrukcja operatora i dokumentacja Recycle | `done-unverified` |
+
+## Zdecydowane
+
+Pełna lista z uzasadnieniem: [01 — Architektura, Decyzje](01-architecture.md#decyzje).
+
+| ID | Decyzja |
+|---|---|
+| D-01 | .NET 10; klient `win-x64` i `win-arm64` |
+| D-02 | Warstwa PIV z `Blinky.Piv`, nie Yubico SDK |
+| D-03 | Serwer generuje PUK i MK przed dotknięciem karty |
+| D-04 | CMC przez CertEnroll; builder z Blinky jako rezerwa |
+| D-05 | MK losowy i przechowywany |
+| D-06 | MK także w PRINTED za PIN-em + flaga ADMIN DATA |
+| D-07 | NHibernate + FluentNHibernate do odczytu |
+| D-07a | Zapis wyłącznie przez funkcje PL/pgSQL `bl_*`; aplikacja bez `INSERT/UPDATE/DELETE` |
+| D-07b | Schemat w numerowanych skryptach SQL |
+| D-08 | JWT HS256, 30 min, bez refresh tokenu |
+| D-09 | Logowanie przez LDAPS bind |
+| D-10 | Moduł PowerShell binarny na wspólnym silniku |
+| D-11 | MSIX: klient bundle x64+ARM64, ~~serwer Windows z usługą~~ (odwołane przez D-38); moduł PS jako `.nupkg` (odwołane przez D-35) |
+| D-12 | Języki EN, DE, SV, PL; serwer zwraca kody, klient tłumaczy |
+| D-13 | Profile i role w `appsettings.json`, bez ekranu edycji |
+| D-14 | Helpdesk: lista użytkownik — serial — data; PUK tylko po wybraniu jednego wpisu (WPF) lub wskazaniu w PowerShell; bez szczegółów i weryfikacji |
+| D-15 | Tłumaczenia pisze AI razem z kodem, prostym językiem, według słowniczka |
+| D-16 | Po 1.0: powiadomienie o wygaśnięciu certyfikatu przez jednokierunkowego bota Teams (progi 30 i 7 dni) — tylko informacja, bez odnawiania |
+| D-17 | Grupy `Admin` i `SecurityOfficer` to grupy Enrollment Agenta na CA |
+| D-18 | Sekrety serwera (KEK, klucz JWT, hasło LDAP, hasło do bazy) tylko z pliku sekretu (Docker secret / DPAPI maszyny) albo zmiennej; wpisane w `appsettings.json` zatrzymują start |
+| D-19 | Dane BlinkyLite dają się wyeksportować do Blinky; sekrety w paczce zaszyfrowane do certyfikatu Blinky |
+| D-20 | Akcent klienta `#1DB954`, oba motywy wg ustawienia Windows; role koloru rozdzielone dla kontrastu |
+| D-33 | TOTP po swojemu: bilet 5 min z osobnym `aud` między hasłem a kodem; konfiguracja z QR **tylko w web**; RFC 6238 napisane w repo zamiast Otp.NET; reset tylko przez **innego** Admina |
+| D-32 | nginx na **443** z tym samym certyfikatem co serwer; serwer tylko w sieci wewnętrznej; token w web tylko w pamięci karty przeglądarki |
+| D-31 | **TOTP obowiązkowy** jak w winch, na logowaniu do API — więc dla web, WPF i PowerShell; kody zapasowe jako hash |
+| D-30 | Aplikacja web w **Angular**, wyglądem podobna do Blinky, ale nie taka sama (akcent `#1DB954`) — układ uszczegółowiony przez D-46 |
+| D-29 | Karta ma działać z **wbudowanym sterownikiem PIV Windows**, bez minidrivera Yubico; najpierw pomiar, potem zmiany |
+| D-28 | Admin konfiguruje w aplikacji web **profile (CA, szablon)** i **importuje keytab** — odwołuje „bez ekranu edycji" z D-21; profile w bazie z audytem, role dalej w `appsettings.json` |
+| D-27 | Kerberos dla **wszystkich** klientów (web, WPF, PowerShell) i dla **każdej** nazwy serwisu |
+| D-26 | Całość w Dockerze **za nginx**; TLS także między nginx a serwerem |
+| D-37 | **Zdalne odblokowanie PIN: aplikacja pyta serwer, operator zatwierdza w konsoli.** Karta nie ma challenge–response dla PUK-a (`RESET RETRY COUNTER` bierze tylko PUK, `SET PIN RETRIES` wymaga działającego PIN-u), więc każda „liczba do przepisania" byłaby samym PUK-iem — zamiast tego kod przez telefon, zatwierdzenie z powodem i koperta pobrana przez stację raz. Trzy endpointy bez tokenu, decyzja dla tych samych ról co odsłonięcie PUK-a, bez rotacji PUK-a i bez cmdletów |
+| D-47 | **HID Crescendo wypada z produktu — kart już nie ma.** Sterownik, którego nie ma na czym uruchomić, nie wyjdzie z `done-unverified` nigdy, więc zamiast gnić wychodzi cały: `src/BlinkyLite.Crescendo`, `tools/BlinkyLite.CrescendoLab`, SDK HID, przełącznik „pozwól na klucze bez atestacji producenta” (migracja 0014 zdejmuje kolumnę i zawęża `bl_issuance_attested` do `YubicoAttestation`) oraz teksty w czterech językach. Serwer odmawia wydania każdej rodzinie poza YubiKey **zanim powstanie sekret**, a nie dopiero na stacji bez sterownika. **Historia zostaje:** rodzina `Crescendo` i `key_evidence = GeneratedOnCard` są dalej czytelne, bo wydania i audyt są tylko dopisywane — te karty da się przejrzeć, wycofać i unieważnić. **Czego już nie da się zrobić:** otworzyć takiej karty, odblokować jej PIN-u ani jej wyczyścić. Z fazy 8 zostaje 0080 (abstrakcja tokenu, bo Unlock nie może widzieć silnika — D-36) i 0081 (tożsamość karty). Odwołuje D-42 i D-43 | odpowiada też na R-13 i Q-12/Q-13, które bez SDK są bezprzedmiotowe |
+| D-46 | **Układ konsoli web według ArchitectUI** ([architectui-angular-theme-free](https://github.com/DashboardPack/architectui-angular-theme-free)), bo pozostałe aplikacje w firmie wyglądają tak samo i operator nie ma się uczyć drugiego kształtu: stały pasek boczny 280 px z pozycjami pogrupowanymi pod nagłówkami, górny pasek 60 px, szare tło pod białymi kartami z miękkim cieniem, pasek tytułu strony z kafelkiem ikony. **Kolory i znak bez zmian:** paleta z D-20 i `Palette.cs` obowiązuje dalej wartość w wartość (pilnuje tego `WebPaletteTests`), żaden kolor motywu nie wchodzi — odcienie akcentu powstają z `color-mix` na `--bl-accent-fill`. Motyw nie jest zależnością: bierzemy z niego układ i miary, nie Bootstrapa. Uszczegóławia D-30 w części „wyglądem podobna do Blinky” |
+| D-51 | **Kod nie jest udostępniany; publiczna jest dokumentacja.** Dwa repozytoria: **`BlinkyLiteRepo`** (prywatne, cały kod — to stare `BlinkyLite` po zmianie nazwy) i **`BlinkyLite`** (publiczne, **tylko `docs/` i obrazy Dockera**, nic więcej). Publiczne **nie jest kopią tej historii** — ta zawiera kod — tylko zaczyna się od pustej. Zmiana wcześniejszej zasady, według której całe repozytorium było publiczne. Co zostaje bez zmian: `docs/` jest zanonimizowane, bo to właśnie ono wychodzi na zewnątrz; sekretów nie ma w gicie, bo prywatne repo to nie sejf, tylko repo, którego nikt obcy nie czyta dziś; binaria obcych SDK zostają poza gitem z powodu licencji, nie widoczności. Konsola przestaje pokazywać odnośnik do kodu źródłowego — okno „O BlinkyLite” mówi, kto to napisał, i tyle |
+| D-50 | **Obowiązkowy jest drugi składnik, nie kod** (0029). Przy pierwszym logowaniu w konsoli operator wybiera: klucz bezpieczeństwa albo aplikacja z kodami. Klucz jest pierwszy, bo jest jedyny nie do wyłudzenia, ale **kod zostaje jedyną drogą na stację** — WPF, PowerShell i CardLab nie mają WebAuthn — i konsola mówi to przy wyborze, a nie dopiero przy biurku. **Pierwszy** składnik zakłada się na bilecie po haśle, tak jak kod od 0027; każdy następny wymaga pełnego tokenu, więc wykradzione hasło może dołożyć składnik tylko na koncie, którego nikt jeszcze nie dokończył. **Wycofanie składnika bierze kod i wszystkie czynne klucze** (`bl_factors_reset`): reset, po którym klucz dalej loguje, nie jest resetem. Klucze są wycofywane, nie kasowane. To samo działa z konsoli hosta (`--withdraw-second-factor`), bo zablokowany bywa jedyny Admin — tą samą funkcją i z tym samym wpisem w audycie |
+| D-49 | **Klucz bezpieczeństwa Yubico (FIDO2) obok TOTP, do wyboru przy logowaniu w przeglądarce** (0028). Operator rejestruje klucz w swoim koncie — oknie nad konsolą, otwieranym z nazwiska w górnym pasku, nie osobnej stronie — zalogowany pełnym tokenem, bo bilet po haśle tam nie sięga. **Tylko Yubico, i rozstrzyga o tym łańcuch atestacji** do korzeni osadzonych w binarce, nie AAGUID: AAGUID to słowo urządzenia o sobie samym, a podpisu Yubico podrobić się nie da; nowszy model przechodzi bez aktualizacji listy. Sprawdzane **raz, przy rejestracji** — asercja nie niesie ani atestacji, ani AAGUID, więc logowanie dziedziczy to z wiersza. Biblioteka **Fido2NetLib** zamiast własnej implementacji WebAuthn (wyjątek od D-33: tam chodziło o dwadzieścia linii HMAC-a, tu o CBOR, COSE i weryfikację atestacji). Wyzwanie powstaje i ginie na serwerze, licznik podpisów nie może się cofnąć, klucz się wycofuje z powodem, nie usuwa. RP ID z konfiguracji, **nigdy z nagłówka `Host`**. Kod z aplikacji zostaje obowiązkowy i jest jedyną drogą dla WPF i PowerShella — WebAuthn żyje w przeglądarce. Okno konta pokazuje stan TOTP, ale nowych kodów zapasowych nie wydaje: to dalej reset Admina |
+| D-48 | **MK za PIN-em to przełącznik profilu, domyślnie włączony** (0024). Profil ma pole „trzymaj management key na tokenie, za PIN-em” (kolumna `protect_management_key`, migracja 0016), zmieniane przez Admina w konsoli web z powodem w audycie. Włączone = jak dotąd: minidriver Yubico czyta MK z PRINTED i **dokłada na kartę drugi certyfikat po samym PIN-ie**. Wyłączone = na karcie nie ma ani kopii, ani flagi `0x02`, więc każdy zapis po wydaniu wymaga management key — tak jak karta z HID CMS. MK jest w kopercie na serwerze, więc odzyskiwanie, Recycle i odsłonięcie dla Admina działają bez zmian. Zawęża D-06 (przejęcie karty przez minidriver zmierzone tylko dla kart z **fabrycznym** MK), nie znosi go — [12](12-hardware-notes.md#23-listopada-2026-mk-za-pin-em-a-minidriver-pomiar-na-dwóch-kartach) |
+| D-45 | **Karty Thales/SafeNet IDPrime MD nie są obsługiwane — decyzja ostateczna.** Karta nie ma apletu PIV, tylko aplet minidrivera; Thales nie ma otwartego SDK do kart fizycznych (SDK IDPrime Virtual to inny produkt); PIN odblokowuje klucz admina, nie PUK. Pomiar w [12](12-hardware-notes.md#thales-idprime-md-pomiar-i-decyzja) |
+| D-44 | **Recycle tokena i unieważnianie certyfikatów w produkcie.** Reset PIV w WPF tylko po autoryzacji serwera; żądania unieważnienia zapisane przed resetem; unieważnia WPF przez `ICertAdmin2` jako operator z prawami na CA (Admin, SecurityOfficer); Helpdesk czyści token i zgłasza żądania. Listy w web, akcje w WPF. Zastępuje D-22 w części o resecie w produkcie |
+| ~~D-43~~ | **Odwołane przez D-47.** ~~Klucz bez atestacji producenta tylko z profilu, który na to pozwala.** C4000 nie ma atestacji PIV (Q-11), więc dowodem pochodzenia klucza Crescendo jest niepodpisana flaga „wygenerowany na karcie”, odczytana przez stację. Profil ma przełącznik „pozwól na klucze bez atestacji producenta”, domyślnie wyłączony; **trzymany w bazie**, zmieniany przez Admina w ustawieniach konsoli web przez funkcję `bl_*` z audytem — nie w `.env` ani w `appsettings.json`. Wydanie zapisuje, jakim dowodem przeszło. Wymaga profili w bazie (0031) przed 0083~~ |
+| ~~D-42~~ | **Odwołane przez D-47 — kart nie ma.** ~~Klucze HID Crescendo (C4000, Key V3) obok YubiKey, tym samym serwerem i stacją (faza 8). Silnik rozmawia z tokenem przez jedną abstrakcję (`IIssuanceToken`); Crescendo przez **SDK HID** w `BlinkyLite.Crescendo`, nie przez własną implementację apletu ACA — protokół nie jest publiczny, a licencja SDK zabrania dochodzenia do niego przez SDK. SDK **poza git** (`third_party/hid-crescendo-sdk`, repozytorium jest publiczne); do MSIX trafia tylko część redystrybuowalna. D-02 dla YubiKey bez zmian~~ |
+| D-40 | **Po 1.0 BlinkyLite idzie na Linuksa.** Agent `.deb` do odblokowania PIN (0070). Narzędzie diagnostyczne `sssd-smartcard` wydaje się **własną paczką z własnego repozytorium**, nie razem z naszym agentem — tak też jest czyściej licencyjnie (GPL-3.0 obok naszego Apache-2.0) |
+| D-39 | **Obrazy publikowane na ghcr.io** (`franeksoftsf/blinkylite-server`, `-web`), budowane przez GitHub Actions na tagu `vX.Y.Z` po przejściu testów bazodanowych; `docker-compose.ghcr.yml` uruchamia wydanie bez budowania. To samo konto co repozytorium, żaden sekret do trzymania, brak limitów pobrań |
+| D-38 | **Serwer tylko jako obraz Dockera.** Usługa Windows w MSIX (0051) i ryzyko R-05 odpadają: dwa sposoby instalacji to dwa zestawy ścieżek, praw i źródeł sekretów, z których jeden bywa sprawdzany raz na kwartał, a serwer jest czystym `net10.0`. Windows zostaje po stronie stacji |
+| D-36 | **Odblokowanie PIN PUK-iem wchodzi do produktu** jako osobna aplikacja (`BlinkyLite.Unlock`) i osobny MSIX ze strony logowania — bez logowania i bez serwera; zmiana PUK i reset dalej u Blinky. Instalator klienta widoczny dopiero po zalogowaniu; wspólny wygląd z `BlinkyLite.Ui` |
+| D-35 | Instalator stacji: **MSIX x64** do pobrania z konsoli web (Narzędzia); skrót na pulpicie, `blinkylite-cardlab` w cmd przez alias aplikacji, moduł PowerShell w paczce, kopiowany dla użytkownika przy starcie; CardLab w wydaniu **Station** — bez `reset`/`personalise`/`eobo-probe`; podpis certyfikatem z firmowego ADCS. Odwołuje `.nupkg` z D-11 |
+| D-34 | Licencja **Apache-2.0**, jak Blinky; dane labu w dokumentacji zanonimizowane (`DIGITALWORKSPACE`, `dw-ad`, `jan.kowalski`) |
+| D-25 | Przeglądarka jest **aplikacją web** dla Helpdesku; WPF zostaje narzędziem wydania |
+| D-24 | Klient pamięta adres serwera, login, język i motyw w `%APPDATA%\BlinkyLite\client.json`; **nigdy hasła ani tokenu** |
+| D-23 | Stacja loguje się do serwera **tożsamością Windows operatora** (Negotiate/Kerberos); hasło AD zostaje jako droga zapasowa — zmienia „Poza zakresem", gdzie Negotiate był odrzucony |
+| D-22 | ~~Reset karty do stanu fabrycznego **tylko w narzędziu stacji testowej** (`CardLab reset --yes`), nie w kliencie ani w module PowerShell; zakres produktu bez zmian~~ — częściowo zastąpione przez D-44: reset w produkcie tylko jako krok Recycle |
+| D-21 | Profile konfiguruje odgórnie admin na **serwerze**, klient dostaje je przez `GET /api/profiles` i podaje nazwę profilu; szablon do wiersza wpisuje serwer ze swojej konfiguracji; jeden profil = brak pytania |
+
+## Otwarte pytania
+
+| ID | Pytanie | Blokuje |
+|---|---|---|
+| Q-07 | Czy paczka eksportu ma być dodatkowo podpisana (CMS SignedData), nie tylko zaszyfrowana? | 0054 |
+| Q-08 | Czy eksport ma umieć wybrać podzbiór kart, czy zawsze całość? | 0054 |
+| Q-10 | Czy bot Teams ma brać udział w odblokowaniu PIN (0057)? Trzy osobne rzeczy: **(a)** powiadomienie na kanał helpdesku, że kod czeka — jednokierunkowe, mieści się w bocie z 0060; **(b)** potwierdzenie u właściciela klucza, że to on prosi — drugi kanał dla tego, co dziś sprawdza tylko operator rozpoznający głos; **(c)** zatwierdzanie klikiem w Teams — wejściowy, publicznie osiągalny endpoint i drugi model uprawnień (Entra obok grup AD), więc osobna decyzja. Odblokowanie **bez człowieka odpada**: numer seryjny jest wydrukowany na kluczu, więc bez zatwierdzenia każdy odblokuje dowolną kartę. Przeczy decyzji o bocie jednokierunkowym i potrzebuje bota z 0060 | 0060 |
+| ~~Q-11~~ | **Zamknięte 13.10 przez D-43.** Co dla Crescendo zastępuje atestację Yubico? **Sprawdzone 13.10: C4000 nie ma atestacji PIV** — `F9` to `6D00`, obiektu `5FFF01` nie ma, aplet nie ma klucza atestacji, SDK i dokumentacja HID nic takiego nie znają ([12](12-hardware-notes.md#13-października-2026-atestacja-klucza-na-c4000--nie-ma-q-11)). Zostaje flaga „wygenerowany na karcie” z właściwości apletu, odczytana przez stację i niepodpisana. Do decyzji: przyjąć ją dla rodziny Crescendo (zapisana w wydaniu obok CUID, a serwer dalej pilnuje SPKI z CSR == SPKI w certyfikacie), czy wydawać Crescendo tylko przy profilu, który wprost na to pozwala | 0083 |
+| Q-12 | **W połowie odpowiedziane** (13.10): fabryczny klucz XAUTH to 24 bajty `00`, 3DES (Crescendo Manager), potwierdzone uwierzytelnieniem na Key V3 ([12](12-hardware-notes.md#hid-crescendo-key-v3-pierwszy-kontakt-0080)) — stała jak fabryczny MK YubiKey, nie sekret. Otwarte: AES (16 lub 32 bajty) czy TDES dla nowego klucza admina — dziś TDES, bo SDK bierze typ z długości — i po ilu błędnych XAUTH aplet się zamyka | 0082 |
+| Q-13 | Licencja SDK HID (pkt 3.4.2) zabrania integrowania SDK „z produktami innymi niż HID”. SDK obsługuje u nas tylko tokeny HID i siedzi w osobnym assembly, ale ten sam klient wydaje YubiKey — potwierdzić z HID przed paczką poza labem | 0084 |
+
+Zamknięte 2026-09-21: Q-02 (licencja) — **Apache-2.0** (D-34).
+
+Zamknięte 2026-09-20, **pomiarem na stacji w domenie**:
+- Q-01 (CertEnroll a żądanie podpisane na karcie) — **TAK**. Na `WS-02`
+  wszystkie kroki przeszły na żądaniu z karty 11111111, podpisanym kluczem,
+  którego ta stacja nie ma. Odczytany z powrotem CMC ma treść PKIData, kontrole
+  `1.3.6.1.4.1.311.10.10.1` i RegInfo oraz **dwa** SignerInfo — jeden bez
+  certyfikatu w kopercie, za zgłoszeniodawcę, i jeden agenta. 0021 idzie przez
+  CertEnroll (D-04); ręcznie pisany CMC z Blinky nie jest potrzebny.
+- `requestername` jest w RegInfo **kodowany procentowo**
+  (`DW-AD%5Cjan.kowalski`) — pierwsze odczytanie uznało poprawną nazwę za
+  błędną. Reguła zapisana w [02](02-issuance.md#cmc-i-eobo--co-musi-się-zgadzać-w-adcs).
+
+Zamknięte 2026-09-19, decyzje właściciela:
+- Q-06 (kanał powiadomienia) — **bot Microsoft Teams**; progi domyślnie 30 i 7 dni, konfigurowalne (D-16);
+- Q-09 (kolor klienta) — **`#1DB954`, oba motywy** (D-20);
+- Q-03 (format instalatora) — **MSIX** (D-11);
+- Q-04 (co widzi Helpdesk) — **lista użytkownik/klucz, PUK po wybraniu wpisu** (D-14);
+- Q-05 (kto sprawdza DE i SV) — **tłumaczenia automatyczne, prostym językiem** (D-15).
+
+## Ryzyka
+
+| ID | Ryzyko | Co z tym robimy |
+|---|---|---|
+| R-03 | WinSCard / CertEnroll z .NET 10 na Windows ARM64 nikt nie uruchomił | 0001 publikuje `win-arm64`, 0053 dowodzi na sprzęcie |
+| R-05 | **Zamknięte** 29 września 2026 przez D-38: usługi Windows w MSIX nie będzie, bo serwera na Windows nie będzie | zamknięte; zostaje jako zapis, bo to ryzyko wyznaczało zakres fazy 5 |
+| R-06 | Bot Teams wymaga środowiska hybrydowego (SID w Entra), zgody administratora na uprawnienia Graph i ruchu wychodzącego z serwera | wymagania spisane w [09](09-expiry-notification.md#co-przygotowuje-administrator-raz); konto bez Entra → audyt, nie awaria |
+| R-14 | SDK HID jest zamknięte i licencjonowane odwołalnie (pkt 7.1, 14.2): HID może zmienić API albo licencję, a bez SDK nie wydamy Crescendo | SDK tylko w `BlinkyLite.Crescendo` za `IIssuanceToken`, wersja przypięta w katalogu `third_party`; YubiKey od SDK nie zależy |
+| R-13 | SDK przyjmuje PIN jako `string` (`SetPINDialog`), więc PIN-u dla Crescendo nie wyzerujemy w pamięci tak jak `char[]` dla YubiKey | PIN tylko przez `SetPINDialog`, nigdy w argumencie; `SetLogSensitiveData(false)` i test na logu (0082); opisane w [04](04-security.md) przy 0082 |
+| R-12 | Kto zna hasło operatora **przed** jego pierwszym logowaniem, może skonfigurować drugi składnik na swoim telefonie | pierwsze logowanie zaraz po nadaniu roli; `totp.enrolled` w audycie z adresem; właściciel, który zamiast kodu QR dostaje pytanie o kod, zgłasza to — reset robi inny Admin |
+| R-11 | Karta wydana ponownie pod **starym CHUID** nie jest rozpoznawana na stacjach, które znały ją z poprzednim kluczem — 21.09 ta sama karta działała na `WS-01`, a na `WS-02` i `PC-POZA-DOMENA` (też bez minidrivera Yubico) nie | CHUID i CCC od nowa przy każdym wydaniu (`c17c056`); niezweryfikowane — następne wydanie musi zadziałać na `WS-02` |
+| R-10 | Wbudowany sterownik PIV Windows może odrzucić kartę (`NTE_BAD_KEYSET`) z przyczyny, której nie da się przeczytać — w Blinky nikt jej nie ustalił | 0026 zaczyna od pomiaru na `WS-02`; hipotezy sprawdzane po jednej, z wynikiem w [12](12-hardware-notes.md) |
+| R-09 | Keytab jest równoważny hasłu konta usługi, a D-28 przesyła go przez formularz web | 0031: tylko Admin, tylko TLS, limit 128 KB, parser keytaba; koperta KEK w kolumnie bez `SELECT` dla aplikacji, nigdy nie zwracany przez API (tylko principale i SHA-256); na dysk wyłącznie do tmpfs z prawami 600, sprawdzane **przed** zapisem do bazy; każda podmiana w audycie z odciskiem poprzednim i powodem |
+| R-08 | Negotiate na Kestrelu w kontenerze linuksowym wymaga keytaba dla SPN `HTTP/blinkylite…` i działającego `krb5.conf`; bez tego stacja dostaje 401 bez wyjaśnienia i wygląda to na błąd klienta | 0025: wymagania keytaba w [11](11-wymagania-i-wdrozenie.md) **przed** kodem; logowanie hasłem zostaje jako droga zapasowa. **Zamknięte** 16 października 2026: logowanie Kerberos ze stacji działa w labie |
+| R-07 | **Rozstrzygnięte** 20 września 2026, na korzyść właściciela: przy EOBO wystarczają prawa agenta. Żądanie 223 przeszło, choć posiadacz karty nie ma `Enroll` na szablonie | zamknięte; zostaje jako zapis, bo błędna diagnoza kosztowałaby nadanie uprawnień, które nie są potrzebne |
+
+## Niezweryfikowane
+
+| Co | Dlaczego niezweryfikowane | Kiedy |
+|---|---|---|
+| 0029: wybór składnika i wycofanie MFA | sprawdzone testami (764 jednostkowe, 206 bazodanowych), ale **żaden operator nie przeszedł jeszcze pierwszego logowania z wyborem**, nikomu nie wycofano składnika, a `--withdraw-second-factor` uruchomiono na serwerze tylko na koncie, którego nie ma | nowe konto wybiera klucz i wchodzi do konsoli; Admin wycofuje komuś składnik i widzi w audycie liczbę wycofanych kluczy |
+| 0024: karta wydana bez kopii MK za PIN-em | przełącznik, migracja i samokontrola sprawdzone testami (719 jednostkowych, 183 bazodanowe) i buildem; **żadna karta nie została tak wydana**, więc nie wiadomo, czy loguje do Windows i czy dołożenie drugiego certyfikatu pyta o management key | następne wydanie na `WS-01` z profilu z wyłączonym przełącznikiem |
+| 0001: klient `win-arm64` uruchomiony | binarka ma poprawny nagłówek ARM64, ale nie startowała na maszynie ARM64 | 0053 |
+| 0002: przegląd funkcji `bl_*` | DoD sprawdzał autor; reguły stanów i uprawnień warto, żeby przeczytał ktoś drugi | przegląd przed 0020 |
+| 0027: kod zapasowy i reset składnika przez innego Admina | 0027 zamknięty, bo logowanie z TOTP działa; tych dwóch ścieżek awaryjnych nikt w labie nie ćwiczył | 0053 |
+| 0025: krótka nazwa serwisu bez SPN | SPN jest tylko dla FQDN, świadomie; Kerberos działa pod FQDN | gdy ktoś poprosi o krótką nazwę |
+| ~~0003: TLS Kestrela z certyfikatem z magazynu Windows~~ | **nie dotyczy od D-38** — serwer stoi tylko w Dockerze, gdzie certyfikat jest plikiem z wolumenu. Sprawdzony certyfikat z pliku, i to jest jedyny przypadek | — |
+
+Rzeczy, których Blinky nie sprawdził, a BlinkyLite będzie musiał:
+[06 — Co przychodzi z Blinky](06-from-blinky.md#czego-blinky-nie-sprawdził-a-blinkylite-potrzebuje).
