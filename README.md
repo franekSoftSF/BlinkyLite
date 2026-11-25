@@ -41,10 +41,27 @@ Every answer it asks for, why it asks, and what goes wrong when one is wrong:
 | `blinkylite-station-win-arm64.zip` | the same for ARM64 laptops |
 | `blinkylite-powershell-<version>.zip` | the binary module for pwsh 7.6+ |
 | `SHA256SUMS.txt` | checksums for all of the above |
+| `BlinkyLite-Client-<version>-x64.msix` / `-arm64.msix` | the station as an installer: Start menu entry, desktop shortcut, `blinkylite-cardlab` on the command line |
+| `BlinkyLite-Unlock-<version>-x64.msix` / `-arm64.msix` | the PIN unblock application on its own, for a machine that must not be able to issue anything |
+| `BlinkyLite-SelfSigned.cer` | the certificate the MSIX packages are signed with — read the paragraph below before installing one |
+| `SHA256SUMS-msix.txt` | checksums for the MSIX packages and the certificate |
 
-The MSIX installers are not in a release: they are signed with a key that lives
-on one machine, and an unsigned MSIX cannot be installed. The zips above need
-neither an installer nor a signature.
+The MSIX packages are not built by CI — they are signed with a key that is not
+exportable and lives on one machine, and an unsigned MSIX cannot be installed, so
+a CI-built one would be a download that does not work. They are attached to a
+release by hand, which means a release may not have them.
+
+**They are signed with a self-signed certificate** (`CN=BlinkyLite`), not by a
+certificate authority anybody trusts. A station installs one only after that
+certificate is in its store — `BlinkyLite-SelfSigned.cer` into **Trusted People**
+on the local machine (Trusted People, not Trusted Root: it then vouches for
+installing this package and for nothing else). Without it `Add-AppxPackage` fails
+with `0x800B0109`. For anything past an evaluation, sign the station yourself with
+a code-signing certificate from your own CA, which your domain machines already
+trust — then no new trust has to be granted to anybody, including us.
+
+The station zips need neither an installer nor a signature, which is why they are
+the shorter way to try this.
 
 ## Images
 
