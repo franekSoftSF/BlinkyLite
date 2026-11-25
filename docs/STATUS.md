@@ -1,6 +1,6 @@
 # Project status — BlinkyLite
 
-**Last updated:** 2026-11-24
+**Last updated:** 2026-11-25
 **Phase:** 2 — Issuance
 **In short:** certificates issued from WPF sign users in to Windows, including
 through the built-in PIV driver with no Yubico minidriver (0026). The server
@@ -572,7 +572,7 @@ Closed on 2026-09-19, the owner's decisions:
 
 | What | Why it is unverified | When |
 |---|---|---|
-| 0059: the deployment bundle and the setup scripts | **neither `setup.sh` nor `setup.ps1` has been run on a clean host** — the PFX import, the secret ownership and the `/health` check have only been read, not executed, and no outside engineer has yet deployed from a release. The publishing half of the automation is also unproven: on `v0.1.181` the `packages` job was green, but both `publish` jobs stopped at their own token check (the repository has no `PUBLIC_DOCS_TOKEN`), so the documentation and the release were pushed by hand | the next lab server, or a deployment by one of the engineers the repository was sent to; the automation, on the first tag after the secret exists |
+| 0059: the deployment bundle and the setup scripts | **neither `setup.sh` nor `setup.ps1` has been run on a clean host** — the PFX import, the secret ownership and the `/health` check have only been read, not executed, and no outside engineer has yet deployed from a release. The publishing automation itself is verified: on 2026-11-25 `publish-docs` and `release-packages` both ran green end to end for `0.1.181` | the next lab server, or a deployment by one of the engineers the repository was sent to |
 | 0029: choosing a factor and withdrawing MFA | checked by tests (764 unit, 206 database), but **no operator has yet been through a first sign-in with the choice**, nobody has had their factor withdrawn, and `--withdraw-second-factor` has only been run on the server against an account that does not exist | a new account picks a key and gets into the console; an Admin withdraws somebody's factor and sees the number of withdrawn keys in the audit trail |
 | 0024: a card issued with no MK copy behind the PIN | the switch, the migration and the self-check are covered by tests (719 unit, 183 database) and the build; **no card has been issued that way**, so it is unknown whether it signs anybody in to Windows and whether adding a second certificate asks for the management key | the next issuance on `WS-01` from a profile with the switch off |
 | 0001: the `win-arm64` client actually run | the binary has a correct ARM64 header, but it has not started on an ARM64 machine | 0053 |
